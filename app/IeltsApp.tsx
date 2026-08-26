@@ -62,6 +62,11 @@ type ElectronicWritingModel = {
   paragraphs: string[];
   analysis: string[];
 };
+type WritingFeedback = {
+  metrics: { label: string; value: string; tone: "good" | "watch" }[];
+  strengths: string[];
+  priorities: string[];
+};
 type OfficialAnswer = {
   number: string;
   accepted: string[];
@@ -309,6 +314,97 @@ function officialAnswerIsCorrect(answer: OfficialAnswer, taskAnswers: OfficialAn
   const groupResponses = groupAnswers.map(responseFor);
   return groupResponses.every((response, index) => response && acceptedFor(groupAnswers[index]).includes(response))
     && new Set(groupResponses).size === groupResponses.length;
+}
+
+const writingStopWords = new Set([
+  "about", "after", "also", "and", "are", "because", "been", "before", "being", "between", "both", "but", "can", "children", "could", "does", "education", "families", "family", "from", "have", "into", "more", "most", "other", "people", "should", "some", "such", "than", "that", "their", "them", "there", "these", "they", "this", "those", "through", "very", "what", "when", "where", "which", "while", "will", "with", "women", "would", "your",
+]);
+
+function analyzeWritingResponse(response: string, minimumWords: number): WritingFeedback {
+  const words = response.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) ?? [];
+  const lowercaseWords = words.map((word) => word.toLowerCase());
+  const paragraphs = response.split(/\n+/).map((paragraph) => paragraph.trim()).filter((paragraph) => paragraph.length > 20);
+  const sentences = response.split(/[.!?]+/).map((sentence) => sentence.trim()).filter(Boolean);
+  const averageSentenceLength = sentences.length > 0 ? Math.round(words.length / sentences.length) : 0;
+  const longSentenceCount = sentences.filter((sentence) => (sentence.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) ?? []).length > 34).length;
+  const connectorMatches = response.match(/\b(however|although|overall|therefore|moreover|furthermore|whereas|while|consequently|nevertheless|in addition|by contrast|for example|for instance|on the other hand|in conclusion)\b/gi) ?? [];
+  const frequency = lowercaseWords.reduce<Record<string, number>>((counts, word) => {
+    if (word.length >= 5 && !writingStopWords.has(word)) counts[word] = (counts[word] ?? 0) + 1;
+    return counts;
+  }, {});
+  const repeatedWords = Object.entries(frequency).filter(([, count]) => count >= 4).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const uniqueRatio = words.length > 0 ? new Set(lowercaseWords).size / words.length : 0;
+  const lower = response.toLowerCase();
+  const opening = lower.slice(0, 650);
+  const ending = lower.slice(-650);
+  const strengths: string[] = [];
+  const priorities: string[] = [];
+  const isTaskOne = minimumWords === 150;
+
+  strengths.push(`已达到最低词数要求，目前共 ${words.length} 词。`);
+  if (paragraphs.length >= 4) strengths.push(`文章分为 ${paragraphs.length} 个有效段落，结构容易识别。`);
+  else priorities.push(`目前只能识别出 ${paragraphs.length || 1} 个段落。建议使用“引言—主体 1—主体 2—结论/总览”的四段结构，并用空行分段。`);
+
+  if (connectorMatches.length >= 4) strengths.push(`检测到 ${connectorMatches.length} 处明确衔接表达，段落关系较清楚。`);
+  else priorities.push("衔接表达偏少。下一轮至少加入 4 个有实际逻辑作用的连接方式，例如 however、whereas、therefore 和 by contrast。");
+
+  if (averageSentenceLength >= 13 && averageSentenceLength <= 28 && longSentenceCount <= 1) strengths.push(`平均句长约 ${averageSentenceLength} 词，长短控制较稳。`);
+  else if (longSentenceCount > 1 || averageSentenceLength > 28) priorities.push(`检测到 ${longSentenceCount} 个超过 34 词的长句，平均句长约 ${averageSentenceLength} 词。优先拆分主从关系不清的长句。`);
+  else priorities.push(`平均句长约 ${averageSentenceLength} 词。可以适量合并过短句，并加入定语从句或让步结构。`);
+
+  if (uniqueRatio >= 0.43) strengths.push("实词变化度较好，没有明显依赖少量基础词反复表达。");
+  if (repeatedWords.length > 0) priorities.push(`重复较明显的词：${repeatedWords.map(([word, count]) => `${word} ×${count}`).join("、")}。保留必要关键词，其余位置尝试同义替换或改写句型。`);
+
+  if (isTaskOne) {
+    const hasOverview = /\b(overall|in general|it is clear|it can be seen|on the whole)\b/.test(lower);
+    const comparisonCount = (lower.match(/\b(whereas|while|compared|higher|lower|more than|less than|by contrast|respectively)\b/g) ?? []).length;
+    const dataCount = (response.match(/\b\d+(?:\.\d+)?(?:,\d{3})?\b|\b(?:million|thousand|percent|approximately|roughly|about|around)\b/gi) ?? []).length;
+    if (hasOverview) strengths.push("检测到独立总览信号，符合 Task 1 先概括主趋势的要求。");
+    else priorities.unshift("Task 1 缺少清晰总览。请在引言后增加 Overall 段，只概括两项最重要趋势，不堆数字。");
+    if (comparisonCount >= 3) strengths.push(`包含 ${comparisonCount} 处比较表达，能够把数据关系写出来。`);
+    else priorities.push("数据描述多、比较不足。至少补充三组横向或纵向比较，而不是逐根柱子罗列数字。");
+    if (dataCount < 5) priorities.push("具体数据支撑偏少。主体段应选择关键年份和极值，并用 about / approximately 表示图表估值。");
+  } else {
+    const hasPosition = /\b(i agree|i disagree|i believe|in my view|i would argue|my view is)\b/.test(opening);
+    const hasConclusion = /\b(in conclusion|to conclude|in summary|overall)\b/.test(ending);
+    const exampleCount = (lower.match(/\b(for example|for instance|such as)\b/g) ?? []).length;
+    const balanceCount = (lower.match(/\b(however|although|nevertheless|on the other hand|while)\b/g) ?? []).length;
+    if (hasPosition) strengths.push("引言中能够识别出明确立场，读者不需要猜测你的观点。");
+    else priorities.unshift("Task 2 引言中的立场不够明确。请直接写 I agree / disagree，或说明你在多大程度上同意。");
+    if (hasConclusion) strengths.push("结尾包含明确总结信号，能够回扣中心立场。");
+    else priorities.push("结尾缺少可识别的结论。用 1–2 句重新回答题目，不要在结论引入新论点。");
+    if (exampleCount > 0) strengths.push(`检测到 ${exampleCount} 处举例信号，论点有展开意识。`);
+    else priorities.push("主体段缺少明确例证。每个核心论点至少补充一个现实例子或具体因果过程。");
+    if (balanceCount === 0) priorities.push("论证目前较单向。可以加入一次让步或反方回应，再解释为什么你的立场仍然成立。");
+  }
+
+  if (priorities.length === 0) priorities.push("核心结构已经达标。下一轮重点逐句检查冠词、主谓一致和单复数，并尝试让每个主体段的主题句更直接地回答题目。");
+
+  return {
+    metrics: [
+      { label: "词数", value: `${words.length}/${minimumWords}+`, tone: words.length >= minimumWords ? "good" : "watch" },
+      { label: "段落", value: `${paragraphs.length || 1}`, tone: paragraphs.length >= 4 ? "good" : "watch" },
+      { label: "衔接表达", value: `${connectorMatches.length}`, tone: connectorMatches.length >= 4 ? "good" : "watch" },
+      { label: "长句风险", value: `${longSentenceCount}`, tone: longSentenceCount <= 1 ? "good" : "watch" },
+    ],
+    strengths: strengths.slice(0, 6),
+    priorities: priorities.slice(0, 5),
+  };
+}
+
+function WritingFeedbackPanel({ response, minimumWords }: { response: string; minimumWords: number }) {
+  const feedback = analyzeWritingResponse(response, minimumWords);
+  return (
+    <section className="official-writing-feedback" aria-label="个性化写作建议">
+      <header><div><span>PERSONALISED WRITING REVIEW</span><b>根据本次作文生成的改进建议</b></div><small>即时诊断 · 非官方评分</small></header>
+      <div className="official-writing-feedback-metrics">{feedback.metrics.map((metric) => <div className={metric.tone === "good" ? "is-good" : "needs-work"} key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong></div>)}</div>
+      <div className="official-writing-feedback-columns">
+        <section><b>这次做得好的地方</b><ul>{feedback.strengths.map((item) => <li key={item}>{item}</li>)}</ul></section>
+        <section><b>下一轮优先修改</b><ol>{feedback.priorities.map((item) => <li key={item}>{item}</li>)}</ol></section>
+      </div>
+      <p>说明：当前反馈根据文章结构、语言信号与可量化特征生成，可以帮助你快速复盘，但不能替代 IELTS 考官对语法准确性、论证质量和具体 Band 分数的人工判断。</p>
+    </section>
+  );
 }
 
 export default function IeltsApp() {
@@ -897,7 +993,8 @@ function OfficialTestRunner({
             }}>
               <header><div><span>COMPUTER-DELIVERED WRITING</span><strong>{task.label} 作答区</strong><small>最低要求 {task.minimumWords} 词；提交后解锁官方范文与考官评语</small></div><b>{openResponseWordCount}<small> words</small></b></header>
               <textarea aria-label={`${task.label} answer`} disabled={taskSubmitted} placeholder="在这里输入你的英文答案……" value={openResponse} onChange={(event) => setOfficialResponses((current) => ({ ...current, [openResponseKey]: event.target.value }))} />
-              <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词，可以查看官方范文进行复盘。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={continueEditingCurrentTask}>继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
+              <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词；下方已生成个性化建议，也可以打开电子范文对照。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={continueEditingCurrentTask}>根据建议继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
+              {taskSubmitted && <WritingFeedbackPanel response={openResponse} minimumWords={task.minimumWords} />}
             </form>
           ) : writingTaskMode && paperMode === "answers" && task.electronicModel ? (
             <section className="official-writing-model">

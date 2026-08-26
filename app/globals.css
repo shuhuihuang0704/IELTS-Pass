@@ -312,6 +312,24 @@ button { cursor: pointer; }
 .official-writing-response>footer span { color:#6f6870; font-size:9px; }
 .official-writing-response>footer button { min-height:36px; padding:0 14px; border:0; border-radius:9px; color:white; background:var(--ink); font-size:9px; white-space:nowrap; }
 .official-writing-response>footer button:disabled { color:#9a949c; background:#e8e4e8; cursor:not-allowed; }
+.official-writing-feedback { margin-top:14px; padding-top:14px; border-top:1px solid #e2dce5; }
+.official-writing-feedback>header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.official-writing-feedback>header span,.official-writing-feedback>header b { display:block; }
+.official-writing-feedback>header span { color:var(--violet); font-size:8px; letter-spacing:.55px; }
+.official-writing-feedback>header b { margin-top:4px; font-size:12px; }
+.official-writing-feedback>header small { color:var(--muted); font-size:8px; text-align:right; }
+.official-writing-feedback-metrics { margin-top:11px; display:grid; grid-template-columns:repeat(2,1fr); gap:7px; }
+.official-writing-feedback-metrics>div { padding:9px; display:flex; align-items:center; justify-content:space-between; gap:8px; border-radius:9px; color:#8a5b20; background:#fff4df; }
+.official-writing-feedback-metrics>div.is-good { color:#176c4f; background:#eaf6f0; }
+.official-writing-feedback-metrics span { font-size:8px; }
+.official-writing-feedback-metrics strong { font-size:10px; }
+.official-writing-feedback-columns { margin-top:10px; display:grid; gap:9px; }
+.official-writing-feedback-columns>section { padding:11px; border-radius:10px; background:#f3f0f5; }
+.official-writing-feedback-columns>section+section { background:#fff3ed; }
+.official-writing-feedback-columns b { font-size:10px; }
+.official-writing-feedback-columns ul,.official-writing-feedback-columns ol { margin:8px 0 0; padding-left:18px; color:#625b64; font-size:8px; line-height:1.6; }
+.official-writing-feedback-columns li+li { margin-top:5px; }
+.official-writing-feedback>p { margin:10px 0 0; color:#817a83; font-size:7px; line-height:1.55; }
 .official-writing-model { margin-top:13px; padding:18px; border:1px solid #e1dbe7; border-radius:17px; background:#fbfafc; }
 .official-writing-model>header { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
 .official-writing-model>header span,.official-writing-model>header b,.official-writing-model>header small { display:block; }

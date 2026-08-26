@@ -181,6 +181,15 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /task\.electronicModel\.paragraphs\.map/);
   assert.match(app, /task\.electronicModel\.analysis\.map/);
   assert.match(styles, /\.official-writing-model>article/);
+  assert.match(app, /analyzeWritingResponse/);
+  assert.match(app, /WritingFeedbackPanel/);
+  assert.match(app, /PERSONALISED WRITING REVIEW/);
+  assert.match(app, /根据本次作文生成的改进建议/);
+  assert.match(app, /Task 1 缺少清晰总览/);
+  assert.match(app, /Task 2 引言中的立场不够明确/);
+  assert.match(app, /重复较明显的词/);
+  assert.match(app, /根据建议继续修改/);
+  assert.match(styles, /\.official-writing-feedback-metrics/);
   assert.match(app, /2 INDEPENDENT WRITING TASKS/);
   assert.match(app, /每个 Writing Task 独立保存作文与完成状态/);
   assert.match(app, /提交后只解锁本 Task 的范文与考官评语/);
