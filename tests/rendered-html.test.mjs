@@ -113,6 +113,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /完整完成一项训练后/);
   assert.match(app, /旧版累计/);
   assert.match(app, /showStudyHistory/);
+  assert.match(app, /readingSourceEvidence/);
+  assert.match(app, /原文荧光定位/);
+  assert.match(app, /荧光笔定位原文/);
+  assert.match(app, /NOT GIVEN 核验范围/);
+  assert.match(app, /readingAnalysisMethod/);
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
   assert.match(app, /disabled=\{score === null\}/);
@@ -219,7 +224,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /提交全部答案/);
   assert.match(app, /正确答案：/);
   assert.match(app, /answer\.explanation/);
-  assert.match(app, />解析</);
+  assert.match(app, />判断依据</);
   assert.match(app, /固定在右侧 · 可独立滚动完成当前 Passage 全部题目/);
   assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet \{ max-height:calc\(100vh - 24px\); overflow-y:auto; position:sticky/);
   assert.match(styles, /\.official-reading-booklet \{ min-width:0; max-height:calc\(100vh - 24px\)/);

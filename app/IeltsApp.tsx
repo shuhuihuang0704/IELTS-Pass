@@ -76,6 +76,10 @@ type OfficialAnswer = {
   choices?: string[];
   group?: string;
 };
+type ReadingSourceEvidence = {
+  location: string;
+  excerpt: string;
+};
 type OfficialTaskSegment = {
   id: string;
   label: string;
@@ -215,6 +219,48 @@ const readingMaterial: OfficialTestMaterial = {
     ] },
   ],
 };
+const readingSourceEvidence: Record<string, ReadingSourceEvidence> = {
+  "reading-passage-1:1": { location: "第 1 段，第 1–3 行 · 官方文章册 P2", excerpt: "When it comes to looking for advanced engineering materials, the animal kingdom rarely comes to mind." },
+  "reading-passage-1:2": { location: "第 1 段，第 5–7 行 · 官方文章册 P2", excerpt: "Spider-silk, for example, is stronger than steel, and is now finding its way into bulletproof jackets." },
+  "reading-passage-1:3": { location: "第 2 段，第 8–11 行 · 官方文章册 P2", excerpt: "NEREIS VIRENS, also known as the sandworm or ragworm, is a burrowing marine worm found in shallow waters in the North Atlantic region." },
+  "reading-passage-1:4": { location: "第 2 段，第 11–13 行 · 官方文章册 P2", excerpt: "Dr Broomell and Dr Waite were curious about the composition of the only hard parts of an otherwise squishy animal." },
+  "reading-passage-1:5": { location: "第 2 段，第 13–15 行 · 官方文章册 P2", excerpt: "the remarkable toughness of its jaws, which rivals that of human teeth and exceeds the hardness of many synthetic plastics" },
+  "reading-passage-1:6": { location: "第 4 段，第 1–4 行 · 官方文章册 P3", excerpt: "the jaws of worms from clean water, too, were stuffed with similar quantities of zinc" },
+  "reading-passage-1:7": { location: "第 5 段，第 1–5 行 · 官方文章册 P3", excerpt: "This revealed that the material from which they are made is as strong as aluminium and impressively light." },
+  "reading-passage-1:8": { location: "第 5 段，第 5–7 行 · 官方文章册 P3", excerpt: "Most strong biological structures of this sort, such as shells, are highly mineralised." },
+  "reading-passage-1:9": { location: "第 5 段，第 12–14 行 · 官方文章册 P3", excerpt: "when Dr Broomell and Dr Waite stuck ragworm jaws in an X-ray spectroscope they found no sign of mineralisation at all" },
+  "reading-passage-1:10": { location: "第 7 段，第 1–4 行 · 官方文章册 P4", excerpt: "The protein in question contains a lot of an amino acid called histidine." },
+  "reading-passage-1:11": { location: "第 6 段，第 5–8 行 · 官方文章册 P4", excerpt: "tiny structures along the sides of their bodies that work like legs, but are in fact gills" },
+  "reading-passage-1:12": { location: "第 6 段，第 8–10 行 · 官方文章册 P4", excerpt: "At the front of their bulbous blue heads they have curved fangs that they use to capture and tear apart their crustaceous prey." },
+  "reading-passage-1:13": { location: "第 8 段，第 1–4 行 · 官方文章册 P4", excerpt: "These qualities are a desirable combination in an engineering material – and particularly so in those materials used in aircraft." },
+  "reading-passage-2:14": { location: "第 1 段，第 1–3 行 · 官方文章册 P5", excerpt: "Archaeology is partly the discovery of the treasures of the past, partly the careful work of the scientific analyst, partly the exercise of the creative imagination." },
+  "reading-passage-2:15": { location: "第 1 段，第 6–10 行 · 官方文章册 P5 · NOT GIVEN 核验范围", excerpt: "But it is also the painstaking task of interpretation, so that we come to understand what these things mean for the human story." },
+  "reading-passage-2:16": { location: "第 2 段，第 5–8 行 · 官方文章册 P5", excerpt: "However far from reality such portrayals are, they capture the essential truth that archaeology is an exciting quest" },
+  "reading-passage-2:17": { location: "第 3–5 段 · 官方文章册 P5–P6 · NOT GIVEN 核验范围", excerpt: "But how does archaeology relate to disciplines such as anthropology and history that are also concerned with the human story?" },
+  "reading-passage-2:18": { location: "第 8 段，第 7–10 行 · 官方文章册 P7", excerpt: "written records around 3000 BC in Western Asia, and much later in most other parts of the world" },
+  "reading-passage-2:19": { location: "第 4 段，第 9–12 行；第 5 段，第 1–4 行 · 官方文章册 P6", excerpt: "Anthropology is thus a broad discipline – so broad that it is generally broken down into three smaller disciplines ... Physical anthropology ... concerns the study of human biological or physical characteristics and how they evolved." },
+  "reading-passage-2:20": { location: "第 4 段，第 9–12 行；第 5 段，第 1–4 行 · 官方文章册 P6", excerpt: "Anthropology is thus a broad discipline – so broad that it is generally broken down into three smaller disciplines ... Physical anthropology ... concerns the study of human biological or physical characteristics and how they evolved." },
+  "reading-passage-2:21": { location: "第 7 段，第 1–9 行 · 官方文章册 P7", excerpt: "Why are some dwellings round and others square? ... learning how such societies use material culture – how they make their tools and weapons, why they build their settlements where they do" },
+  "reading-passage-2:22": { location: "第 7 段，第 1–9 行 · 官方文章册 P7", excerpt: "Why are some dwellings round and others square? ... learning how such societies use material culture – how they make their tools and weapons, why they build their settlements where they do" },
+  "reading-passage-2:23": { location: "第 9 段，第 6–8 行 · 官方文章册 P8", excerpt: "in no way lessens the importance of the useful information contained in oral histories" },
+  "reading-passage-2:24": { location: "第 10 段，第 1–3 行 · 官方文章册 P8", excerpt: "Since the aim of archaeology is the understanding of humankind, it is a humanistic study, and since it deals with the human past, it is a historical discipline." },
+  "reading-passage-2:25": { location: "第 10 段，第 1–3 行 · 官方文章册 P8", excerpt: "Since the aim of archaeology is the understanding of humankind, it is a humanistic study, and since it deals with the human past, it is a historical discipline." },
+  "reading-passage-2:26": { location: "第 10 段，第 8–13 行 · 官方文章册 P8", excerpt: "the practice of the archaeologist is rather like that of the scientist who collects data, conducts experiments, formulates a hypothesis, tests the hypothesis against more data" },
+  "reading-passage-3:27": { location: "E 段，第 5–8 行 · 官方文章册 P11", excerpt: "It's important to have specific goals ... you need to think about the series of smaller triumphs which will get you there." },
+  "reading-passage-3:28": { location: "D 段，第 7–10 行 · 官方文章册 P10", excerpt: "When approaching an event, you need to say, ‘I've planned for this, and I've tried my best.’" },
+  "reading-passage-3:29": { location: "B 段，第 9–12 行 · 官方文章册 P9", excerpt: "Freeman believes that we all fall into one of two categories: those motivated to succeed and those motivated to avoid failure." },
+  "reading-passage-3:30": { location: "F 段，第 10–14 行 · 官方文章册 P11", excerpt: "Perry believes we need to train ourselves not to be afraid of failure." },
+  "reading-passage-3:31": { location: "C 段，第 1–6 行 · 官方文章册 P10", excerpt: "those motivated to avoid failure ... put themselves in non-challenging situations where they're guaranteed success" },
+  "reading-passage-3:32": { location: "G 段，第 9–13 行 · 官方文章册 P12", excerpt: "High achievers create opportunities. They expose themselves to the training, the people and the materials that help them reach their potential." },
+  "reading-passage-3:33": { location: "F 段，第 6–9 行 · 官方文章册 P11", excerpt: "The technique of centred breathing makes you concentrate on the rise and fall of your breath. Focus on the present moment" },
+  "reading-passage-3:34": { location: "B 段，第 13–16 行 · 官方文章册 P9–P10", excerpt: "Australian skier Alisa Camplin tore a knee ligament four months before the Winter Olympics: rather than give up, she redirected her amazing ability to concentrate" },
+  "reading-passage-3:35": { location: "G 段，第 1–3 行 · 官方文章册 P11", excerpt: "Sometimes when things go continuously awry, they are known in sport as ‘losing streaks’." },
+  "reading-passage-3:36": { location: "E 段，第 1–6 行 · 官方文章册 P10–P11", excerpt: "First, identify what your internal dialogue is saying ... take note of the external situations ... Thirdly, come up with cue words or actions" },
+  "reading-passage-3:37": { location: "F 段，第 1–4 行 · 官方文章册 P11", excerpt: "Job interviews, performance reviews and even first dates can all create stomach-churning tension." },
+  "reading-passage-3:38": { location: "B 段，第 8–13 行 · 官方文章册 P9", excerpt: "Maintaining motivation is one of the most difficult long-term tasks we face ... The type we are has a profound impact on how we approach challenges and our chances of success." },
+  "reading-passage-3:39": { location: "B 段，第 8–13 行 · 官方文章册 P9", excerpt: "Maintaining motivation is one of the most difficult long-term tasks we face ... The type we are has a profound impact on how we approach challenges and our chances of success." },
+  "reading-passage-3:40": { location: "A 段，第 1–6 行；B 段，第 1–3 行 · 官方文章册 P9", excerpt: "our lives and those of elite sporting champions are not without parallel ... The psychological tools used to develop personal drive and self-belief to record levels can be applied effectively to ordinary situations." },
+};
 const writingMaterial: OfficialTestMaterial = {
   id: "writing",
   label: "Academic Writing · Task 1 + Task 2",
@@ -315,6 +361,16 @@ function officialAnswerIsCorrect(answer: OfficialAnswer, taskAnswers: OfficialAn
   const groupResponses = groupAnswers.map(responseFor);
   return groupResponses.every((response, index) => response && acceptedFor(groupAnswers[index]).includes(response))
     && new Set(groupResponses).size === groupResponses.length;
+}
+
+function readingAnalysisMethod(answer: OfficialAnswer) {
+  const accepted = answer.accepted.map((item) => item.toUpperCase());
+  if (accepted.includes("NOT GIVEN")) return "先在定位范围内寻找题干的比较对象与判断关系；原文没有提供该项比较，不能凭常识补全，所以选 NOT GIVEN。";
+  if (accepted.includes("FALSE") || accepted.includes("NO")) return "把题干主干与高亮原句逐项对照；两者方向或范围直接冲突，因此判为 FALSE / NO，而不是信息缺失。";
+  if (accepted.includes("TRUE") || accepted.includes("YES")) return "高亮原句与题干表达的是同一事实，差别只是同义替换或句式变化，因此判为 TRUE / YES。";
+  if (answer.group) return "这是成组答案：分别核对两处高亮信息，并确认两个作答位没有重复；只有组合和顺序规则同时满足才得分。";
+  if (!answer.choices) return "答案来自高亮原句的原词复现；回填后还要检查题目词数限制、单复数和拼写。";
+  return "先用题干关键词定位，再比较各选项与高亮句的主语、动作、范围和因果关系；只选择被原文直接支持的一项。";
 }
 
 const writingStopWords = new Set([
@@ -804,6 +860,8 @@ function OfficialTestRunner({
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
   const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
   const [showAttemptHistory, setShowAttemptHistory] = useState(false);
+  const [activeReadingQuestion, setActiveReadingQuestion] = useState<string | null>(null);
+  const readingBookletRef = useRef<HTMLDivElement>(null);
   const task = material.tasks[taskIndex];
   const taskUnitLabel = material.passagePdfUrl ? "Passage" : "Task";
   const audioTrack = material.audioTracks?.[audioTrackIndex];
@@ -813,6 +871,8 @@ function OfficialTestRunner({
   const taskRecordKey = officialTaskRecordId(session, material, task);
   const taskAttemptHistory = progress.officialTaskAttemptHistory[taskRecordKey] ?? [];
   const taskAnswers = task.answers ?? [];
+  const activeReadingAnswer = taskAnswers.find((answer) => answer.number === (activeReadingQuestion ?? taskAnswers[0]?.number));
+  const activeReadingEvidence = activeReadingAnswer ? readingSourceEvidence[`${task.id}:${activeReadingAnswer.number}`] : undefined;
   const openResponseKey = `${taskKey}:open-response`;
   const openResponse = officialResponses[openResponseKey] ?? "";
   const openResponseWordCount = openResponse.trim() ? openResponse.trim().split(/\s+/).length : 0;
@@ -874,6 +934,7 @@ function OfficialTestRunner({
       ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length
       : null;
     setSubmittedTasks(nextSubmittedTasks);
+    if (material.passagePdfUrl && taskAnswers[0]) setActiveReadingQuestion(taskAnswers[0].number);
     updateProgress((current) => {
       const notebook = current.notebook.map((entry) => {
         const answer = taskAnswers.find((item) => entry.id === `question:${session.setCode}:${task.id}:${item.number}`);
@@ -909,7 +970,12 @@ function OfficialTestRunner({
     setTaskIndex(index);
     setPaperMode("questions");
     setShowAttemptHistory(false);
+    setActiveReadingQuestion(null);
     setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
+  };
+  const showReadingEvidence = (questionNumber: string) => {
+    setActiveReadingQuestion(questionNumber);
+    window.setTimeout(() => readingBookletRef.current?.scrollTo({ top: 0, behavior: "smooth" }), 0);
   };
   const continueEditingCurrentTask = () => {
     setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
@@ -991,6 +1057,7 @@ function OfficialTestRunner({
                   const correct = taskSubmitted && officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey);
                   const noteId = `question:${session.setCode}:${task.id}:${answer.number}`;
                   const savedToNotebook = progress.notebook.some((entry) => entry.id === noteId);
+                  const sourceEvidence = readingSourceEvidence[`${task.id}:${answer.number}`];
                   return (
                     <div className={`official-answer-item ${taskSubmitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={answer.number}>
                       <span>Q{answer.number}</span>
@@ -1013,7 +1080,7 @@ function OfficialTestRunner({
                           source: `${session.title} · ${session.setCode}`,
                         }))}
                       >{savedToNotebook ? "★ 已加入" : taskSubmitted && !correct ? "☆ 加入错题本" : "☆ 标记"}</button>
-                      {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <p><strong>解析</strong><span>{answer.explanation}</span></p>}</small>}
+                      {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <div className="official-reading-analysis"><div><strong>原文定位</strong><span>{sourceEvidence?.location ?? "当前题暂无精确定位"}</span></div><p><strong>判断依据</strong><span>{answer.explanation}</span></p><p><strong>解题方法</strong><span>{readingAnalysisMethod(answer)}</span></p>{sourceEvidence && <button type="button" onClick={() => showReadingEvidence(answer.number)}>荧光笔定位原文 →</button>}</div>}</small>}
                     </div>
                   );
                 })}
@@ -1068,11 +1135,19 @@ function OfficialTestRunner({
             </div>
           )}
           {material.passagePdfUrl && paperMode === "questions" ? (
-            <div className="official-reading-booklet">
+            <div className="official-reading-booklet" ref={readingBookletRef}>
               <header>
                 <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? "✓ 本 Passage 已单独提交" : "独立作答 · 不影响其他 Passage"}</small></div>
                 <span>{task.questionLabel}</span>
               </header>
+              {taskSubmitted && activeReadingAnswer && activeReadingEvidence && (
+                <section className="official-reading-evidence" id="official-reading-evidence" aria-live="polite">
+                  <header><div><span>HIGHLIGHTED SOURCE</span><strong>Q{activeReadingAnswer.number} · 原文荧光定位</strong></div><button type="button" onClick={() => setActiveReadingQuestion(null)} aria-label="关闭原文荧光定位">×</button></header>
+                  <div className="official-reading-location"><span>定位</span><b>{activeReadingEvidence.location}</b></div>
+                  <blockquote><mark>{activeReadingEvidence.excerpt}</mark></blockquote>
+                  <div className="official-reading-reasoning"><strong>为什么是这个答案</strong><p>{activeReadingAnswer.explanation}</p><small>{readingAnalysisMethod(activeReadingAnswer)}</small></div>
+                </section>
+              )}
               <section className="official-reading-pair" key={task.id}>
                 <header><b>{task.label} · 阅读文章</b><small>仅显示当前 Passage</small></header>
                 <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => <div className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
