@@ -90,6 +90,20 @@ type ReadingSourceEvidence = {
   location: string;
   excerpt: string;
 };
+type SpeakingTopicTemplate = {
+  title: string;
+  steps: { label: string; prompt: string; example: string }[];
+  usefulPhrases: string[];
+};
+type OfficialSpeakingPrompt = {
+  examinerQuestion: string;
+  supportingQuestions: string[];
+  cuePoints?: string[];
+  preparationSeconds: number;
+  targetSeconds: number;
+  examNote: string;
+  topicTemplate: SpeakingTopicTemplate;
+};
 type OfficialTaskSegment = {
   id: string;
   label: string;
@@ -105,6 +119,7 @@ type OfficialTaskSegment = {
   answerLabel?: string;
   minimumWords?: number;
   electronicModel?: ElectronicWritingModel;
+  speakingPrompt?: OfficialSpeakingPrompt;
   answers?: OfficialAnswer[];
 };
 type OfficialTestMaterial = {
@@ -320,9 +335,63 @@ const speakingMaterial: OfficialTestMaterial = {
     { label: "Part 3 · Two-way discussion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking/ielts-speaking-part-3-sample-recording.mp3" },
   ],
   tasks: [
-    { id: "part-1", label: "Part 1 · Introduction and interview", questionLabel: "Part 1", questionPage: 3, audioTrackIndex: 0 },
-    { id: "part-2", label: "Part 2 · Long turn", questionLabel: "Part 2", questionPage: 5, audioTrackIndex: 1 },
-    { id: "part-3", label: "Part 3 · Two-way discussion", questionLabel: "Part 3", questionPage: 6, audioTrackIndex: 2 },
+    { id: "part-1", label: "Part 1 · Introduction and interview", questionLabel: "Part 1 · Home town", questionPage: 3, audioTrackIndex: 0, speakingPrompt: {
+      examinerQuestion: "Let's talk about your home town or village. What kind of place is it?",
+      supportingQuestions: [
+        "What's the most interesting part of your town or village?",
+        "What kind of jobs do the people in your town or village do?",
+        "Would you say it's a good place to live? Why?",
+        "Tell me about the kind of accommodation you live in.",
+      ],
+      preparationSeconds: 60,
+      targetSeconds: 35,
+      examNote: "正式 Part 1 通常需要直接回答，没有固定准备时间；这里的 60 秒是 App 强化训练模式。",
+      topicTemplate: {
+        title: "Part 1 · 直接回答 — 细节 — 感受",
+        steps: [
+          { label: "1 · Direct answer", prompt: "先用一句话直接回答地点和类型。", example: "I come from a medium-sized coastal city in southern China." },
+          { label: "2 · Specific detail", prompt: "补充一个可见、可感受的具体特点。", example: "It is best known for its long waterfront and a fairly relaxed pace of life." },
+          { label: "3 · Personal feeling", prompt: "说明这个特点对你的影响。", example: "What I like most is that I can get away from the busy centre within a few minutes." },
+        ],
+        usefulPhrases: ["It is best known for…", "What stands out is…", "The thing I like most is…", "Compared with larger cities…"],
+      },
+    } },
+    { id: "part-2", label: "Part 2 · Individual long turn", questionLabel: "Part 2 · An important possession", questionPage: 5, audioTrackIndex: 1, speakingPrompt: {
+      examinerQuestion: "Describe something you own which is very important to you.",
+      supportingQuestions: ["Is it valuable in terms of money?", "Would it be easy to replace?"],
+      cuePoints: ["where you got it from", "how long you have had it", "what you use it for", "and explain why it is important to you"],
+      preparationSeconds: 60,
+      targetSeconds: 100,
+      examNote: "正式 Part 2 会给 1 分钟准备，并要求连续陈述 1–2 分钟；本训练与正式流程一致。",
+      topicTemplate: {
+        title: "Part 2 · 物品故事五步法",
+        steps: [
+          { label: "1 · Identify", prompt: "点明物品并给它一个鲜明特征。", example: "The possession I'd like to talk about is an old digital camera that I still use." },
+          { label: "2 · Origin", prompt: "交代来源、时间和当时的情境。", example: "My father gave it to me before my first solo trip, about six years ago." },
+          { label: "3 · Use", prompt: "描述你怎样使用它，加入一次具体经历。", example: "I used it to photograph a sunrise during that trip, and the picture is still on my desk." },
+          { label: "4 · Meaning", prompt: "从实用价值转向情感意义。", example: "It matters to me because it represents both his trust and my growing independence." },
+          { label: "5 · Reflection", prompt: "用现在与未来收尾。", example: "Even though my phone is more convenient, I would never replace it voluntarily." },
+        ],
+        usefulPhrases: ["I'd like to talk about…", "What makes it irreplaceable is…", "It reminds me of…", "From a practical point of view…"],
+      },
+    } },
+    { id: "part-3", label: "Part 3 · Two-way discussion", questionLabel: "Part 3 · Status and values", questionPage: 6, audioTrackIndex: 2, speakingPrompt: {
+      examinerQuestion: "What kind of things give status to people in your country?",
+      supportingQuestions: ["Have things changed since your parents' time?", "Do you think advertising influences what people buy?"],
+      preparationSeconds: 60,
+      targetSeconds: 55,
+      examNote: "正式 Part 3 是即时双向讨论，没有固定准备时间；这里的 60 秒用于训练观点组织。",
+      topicTemplate: {
+        title: "Part 3 · 观点 — 原因 — 例子 — 限定",
+        steps: [
+          { label: "1 · Position", prompt: "先给清晰但不过度绝对的观点。", example: "In many cases, visible signs of wealth still give people status." },
+          { label: "2 · Reason", prompt: "解释背后的社会或心理原因。", example: "This is partly because expensive goods are an easy way to signal success to strangers." },
+          { label: "3 · Example", prompt: "给出国家、群体或代际层面的例子。", example: "For instance, luxury cars and designer labels are often displayed on social media." },
+          { label: "4 · Qualification", prompt: "加入例外、变化或另一面。", example: "That said, younger people also admire expertise, creativity and social influence." },
+        ],
+        usefulPhrases: ["In many cases…", "This is largely because…", "A clear example would be…", "That said…", "Over time, this may change because…"],
+      },
+    } },
   ],
 };
 
@@ -1048,7 +1117,7 @@ function OfficialTestRunner({
   const [activeReadingQuestion, setActiveReadingQuestion] = useState<string | null>(null);
   const readingBookletRef = useRef<HTMLDivElement>(null);
   const task = material.tasks[taskIndex];
-  const taskUnitLabel = material.passagePdfUrl ? "Passage" : "Task";
+  const taskUnitLabel = task.speakingPrompt ? "Part" : material.passagePdfUrl ? "Passage" : "Task";
   const audioTrack = material.audioTracks?.[audioTrackIndex];
   const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
   const displayPdfUrl = paperMode === "answers" && material.answerPdfUrl ? material.answerPdfUrl : material.pdfUrl;
@@ -1061,11 +1130,11 @@ function OfficialTestRunner({
   const openResponseKey = `${taskKey}:open-response`;
   const openResponse = officialResponses[openResponseKey] ?? "";
   const openResponseWordCount = openResponse.trim() ? openResponse.trim().split(/\s+/).length : 0;
-  const taskRequiresSubmission = taskAnswers.length > 0 || Boolean(task.minimumWords);
+  const taskRequiresSubmission = taskAnswers.length > 0 || Boolean(task.minimumWords) || Boolean(task.speakingPrompt);
   const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
   const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
   const taskSubmitted = submittedTasks[taskKey] ?? false;
-  const isolateOfficialTaskPages = Boolean((material.audioTracks && task.transcriptPage) || task.minimumWords);
+  const isolateOfficialTaskPages = Boolean((material.audioTracks && task.transcriptPage) || task.minimumWords || task.speakingPrompt);
   const officialTaskPaperPages = paperMode === "answers" && task.answerPage
     ? task.answerPages ?? [task.answerPage]
     : task.questionPages ?? [task.questionPage];
@@ -1073,13 +1142,14 @@ function OfficialTestRunner({
   const answerPageLabel = (task.answerPages ?? (task.answerPage ? [task.answerPage] : [])).join("–");
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
-    .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords))
+    .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords) || Boolean(sessionTask.speakingPrompt))
     .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: (sessionTask.answers?.length ?? 0) || 1 })));
   const requiredQuestionCount = requiredTasks.reduce((total, requiredTask) => total + requiredTask.questionCount, 0);
   const submittedRequiredTaskCount = requiredTasks.filter((requiredTask) => submittedTasks[requiredTask.key]).length;
-  const materialRequiredTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0 || Boolean(materialTask.minimumWords));
+  const materialRequiredTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0 || Boolean(materialTask.minimumWords) || Boolean(materialTask.speakingPrompt));
   const writingTaskMode = materialRequiredTasks.some((materialTask) => Boolean(materialTask.minimumWords));
-  const requiredCompletionLabel = writingTaskMode ? `${requiredTasks.length} 个 Writing Task` : `${requiredQuestionCount} 题`;
+  const speakingTaskMode = materialRequiredTasks.some((materialTask) => Boolean(materialTask.speakingPrompt));
+  const requiredCompletionLabel = speakingTaskMode ? `${requiredTasks.length} 个 Speaking Part` : writingTaskMode ? `${requiredTasks.length} 个 Writing Task` : `${requiredQuestionCount} 题`;
   const materialQuestionCount = materialRequiredTasks.reduce((total, materialTask) => total + ((materialTask.answers?.length ?? 0) || 1), 0);
   const submittedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => submittedTasks[`${material.id}:${materialTask.id}`]).length;
   const recordId = officialPracticeRecordId(session);
@@ -1110,11 +1180,11 @@ function OfficialTestRunner({
     setRemainingSeconds(session.durationMinutes * 60);
     setTimerState("idle");
   };
-  const submitCurrentTask = () => {
+  const submitCurrentTask = (responseOverride?: Record<string, string>) => {
     const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
     const taskResponses = taskAnswers.length > 0
       ? Object.fromEntries(taskAnswers.map((answer) => [answer.number, officialResponses[`${taskKey}:${answer.number}`] ?? ""]))
-      : { "open-response": openResponse };
+      : responseOverride ?? { "open-response": openResponse };
     const taskScore = taskAnswers.length > 0
       ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length
       : null;
@@ -1216,12 +1286,12 @@ function OfficialTestRunner({
           </div>
           {material.tasks.length > 1 && (
             <section className="official-task-map" aria-label="官方练习任务导航">
-              <header><div><span>{material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{material.audioTracks ? "每个 Task 独立保存答案、得分、完成状态和原文解锁；题号重复也不会串联。" : material.passagePdfUrl ? "每个 Passage 独立保存答案、得分和完成状态；提交一篇不会显示另外两篇的答案。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
+              <header><div><span>{speakingTaskMode ? "3 INDEPENDENT SPEAKING PARTS" : material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {speakingTaskMode ? "Speaking Part" : material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{speakingTaskMode ? "每个 Part 独立完成考官提问、60 秒准备、录音提交与反馈；提交一个不会完成另外两个。" : material.audioTracks ? "每个 Task 独立保存答案、得分、完成状态和原文解锁；题号重复也不会串联。" : material.passagePdfUrl ? "每个 Passage 独立保存答案、得分和完成状态；提交一篇不会显示另外两篇的答案。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
               <div>{material.tasks.map((materialTask, index) => {
                 const materialTaskKey = `${material.id}:${materialTask.id}`;
                 const materialTaskSubmitted = submittedTasks[materialTaskKey] ?? false;
-                const materialTaskSize = (materialTask.answers?.length ?? 0) > 0 ? `${materialTask.answers?.length} 题` : materialTask.minimumWords ? `至少 ${materialTask.minimumWords} 词` : "开放练习";
-                return <button className={`${taskIndex === index ? "is-active " : ""}${materialTaskSubmitted ? "is-complete" : ""}`} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>{material.passagePdfUrl ? "独立 Passage" : material.audioTracks ? "独立 Task" : "Task"} {index + 1}</span><b>{materialTask.label}</b><small>{materialTaskSize} {materialTaskSubmitted ? "· ✓ 已单独提交" : "· 未完成"}</small></button>;
+                const materialTaskSize = (materialTask.answers?.length ?? 0) > 0 ? `${materialTask.answers?.length} 题` : materialTask.minimumWords ? `至少 ${materialTask.minimumWords} 词` : materialTask.speakingPrompt ? `目标 ${materialTask.speakingPrompt.targetSeconds} 秒` : "开放练习";
+                return <button className={`${taskIndex === index ? "is-active " : ""}${materialTaskSubmitted ? "is-complete" : ""}`} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>{materialTask.speakingPrompt ? "独立 Part" : material.passagePdfUrl ? "独立 Passage" : material.audioTracks ? "独立 Task" : "Task"} {index + 1}</span><b>{materialTask.label}</b><small>{materialTaskSize} {materialTaskSubmitted ? "· ✓ 已单独提交" : "· 未完成"}</small></button>;
               })}</div>
             </section>
           )}
@@ -1291,6 +1361,15 @@ function OfficialTestRunner({
                 </section>
               )}
             </form>
+          ) : task.speakingPrompt ? (
+            <OfficialSpeakingResponse
+              key={taskKey}
+              task={task}
+              submitted={taskSubmitted}
+              storedResponses={progress.officialTaskResults[taskRecordKey]?.responses}
+              onSubmit={submitCurrentTask}
+              onRedo={redoCurrentTask}
+            />
           ) : task.minimumWords ? (
             <form className="official-writing-response" onSubmit={(event) => {
               event.preventDefault();
@@ -1314,7 +1393,7 @@ function OfficialTestRunner({
           )}
           {material.audioTracks && audioTrack && (
             <div className="official-audio-dock">
-              <label>当前独立 Task 的官方录音<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
+              <label>{speakingTaskMode ? "当前 Part 的官方示范录音" : "当前独立 Task 的官方录音"}<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
               {/* eslint-disable-next-line jsx-a11y/media-has-caption -- The official transcript is included in the embedded source PDF. */}
               <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
             </div>
@@ -1348,7 +1427,7 @@ function OfficialTestRunner({
                 <div className="official-task-page-stack">
                   {officialTaskPaperPages.map((page, index) => <div className="official-pdf-page-lock" key={`${paperMode}-${page}`}>
                     <iframe className="official-paper-frame" tabIndex={-1} title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"} · P${page}`} src={`${displayPdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />
-                    {index === 0 && paperMode === "questions" && !taskSubmitted && <div className="official-page-lock-badge"><span>🔒 当前 Task 独立显示</span><small>{material.audioTracks ? "提交后只解锁本 Task 的听力原文" : "提交后只解锁本 Task 的范文与考官评语"}</small></div>}
+                    {index === 0 && paperMode === "questions" && !taskSubmitted && <div className="official-page-lock-badge"><span>{task.speakingPrompt ? "🔒 当前 Part 独立显示" : "🔒 当前 Task 独立显示"}</span><small>{task.speakingPrompt ? "录音提交后生成本 Part 的复盘建议" : material.audioTracks ? "提交后只解锁本 Task 的听力原文" : "提交后只解锁本 Task 的范文与考官评语"}</small></div>}
                   </div>)}
                 </div>
               ) : (
@@ -1367,6 +1446,341 @@ function OfficialTestRunner({
         </section>
       </div>
     </>
+  );
+}
+
+type SpeakingAudioMetrics = { rms: number; quietRatio: number; clipRatio: number };
+
+function analyzeOfficialSpeakingResponse(
+  transcript: string,
+  durationSeconds: number,
+  pauseCount: number,
+  audioMetrics: SpeakingAudioMetrics,
+  targetSeconds: number,
+) {
+  const words = transcript.toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g) ?? [];
+  const uniqueWords = new Set(words);
+  const fillerCount = (transcript.match(/\b(?:um|uh|er|you know|basically|actually)\b/gi) ?? []).length;
+  const connectorCount = (transcript.match(/\b(?:because|for example|for instance|however|although|whereas|therefore|that said|on the other hand)\b/gi) ?? []).length;
+  const wordsPerMinute = durationSeconds > 0 ? Math.round(words.length / durationSeconds * 60) : 0;
+  const strengths: string[] = [];
+  const priorities: string[] = [];
+
+  if (durationSeconds >= targetSeconds * .75) strengths.push(`回答持续 ${durationSeconds} 秒，已接近本 Part 的 ${targetSeconds} 秒训练目标。`);
+  else priorities.push(`回答只有 ${durationSeconds} 秒；用“观点—原因—例子—补充”再扩展约 ${Math.max(10, targetSeconds - durationSeconds)} 秒。`);
+  if (connectorCount >= 2) strengths.push(`识别稿中检测到 ${connectorCount} 个展开或转折信号，答案结构较清楚。`);
+  else priorities.push("加入 because、for example、that said 等连接信号，让考官听清观点如何展开。");
+  if (fillerCount <= 2) strengths.push("明显填充词较少，表达比反复使用 um / actually 更利落。");
+  else priorities.push(`识别到约 ${fillerCount} 个填充词；卡顿时短暂停顿，比连续说 um / actually 更自然。`);
+  if (audioMetrics.quietRatio > 0 && audioMetrics.quietRatio <= .38) strengths.push("录音中的有效声音占比较稳定，没有出现大段无声区间。");
+  else if (audioMetrics.quietRatio > .38) priorities.push(`约 ${Math.round(audioMetrics.quietRatio * 100)}% 的录音处于低音量区间；把麦克风放近一些，并用意群而不是单词逐个停顿。`);
+  if (audioMetrics.rms > 0 && audioMetrics.rms < .025) priorities.push("整体音量偏低；回听时检查句尾是否越说越轻，下一轮让关键词保持清晰。");
+  if (audioMetrics.clipRatio > .01) priorities.push("录音出现削波迹象，可能离麦克风过近；稍微拉开距离再录一次。");
+  if (pauseCount > 2) priorities.push(`本次手动暂停了 ${pauseCount} 次；正式考试不能暂停，下一轮尝试用完整意群连续作答。`);
+  if (!transcript.trim()) priorities.push("浏览器没有生成可靠识别稿；请先回听录音，再在识别稿框补充关键内容，才能获得词汇与结构分析。");
+  if (words.length > 0 && uniqueWords.size / words.length >= .62) strengths.push("识别稿的词汇重复度较低，表达有一定变化。");
+  if (wordsPerMinute > 0 && (wordsPerMinute < 90 || wordsPerMinute > 175)) priorities.push(`当前约 ${wordsPerMinute} 词/分钟；建议保持约 100–160 词/分钟，并优先保证清楚。`);
+
+  return {
+    metrics: [
+      { label: "回答长度", value: `${durationSeconds}s / ${targetSeconds}s` },
+      { label: "估算语速", value: wordsPerMinute ? `${wordsPerMinute} wpm` : "待补识别稿" },
+      { label: "低音量区间", value: audioMetrics.quietRatio ? `${Math.round(audioMetrics.quietRatio * 100)}%` : "未检测" },
+      { label: "词汇变化", value: words.length ? `${Math.round(uniqueWords.size / words.length * 100)}%` : "待补识别稿" },
+    ],
+    strengths: strengths.length ? strengths.slice(0, 3) : ["录音已完整保存于当前页面，可以通过回听进行自我复盘。"],
+    priorities: priorities.length ? priorities.slice(0, 4) : ["下一轮尝试加入一个更具体的个人例子，并让结尾句明确回扣问题。"],
+  };
+}
+
+function SpeakingTranscriptHighlight({ transcript }: { transcript: string }) {
+  if (!transcript.trim()) return <p className="speaking-transcript-empty">暂无可靠识别稿，可回听录音后手动补充再重做一次。</p>;
+  const highlighted = transcript.split(/(\b(?:because|for example|for instance|however|although|whereas|therefore|that said|on the other hand)\b|\b(?:um|uh|er|you know|basically|actually)\b)/gi);
+  return <p>{highlighted.map((part, index) => {
+    if (/^(?:because|for example|for instance|however|although|whereas|therefore|that said|on the other hand)$/i.test(part)) return <mark className="is-good" key={`${part}-${index}`}>{part}</mark>;
+    if (/^(?:um|uh|er|you know|basically|actually)$/i.test(part)) return <mark className="needs-work" key={`${part}-${index}`}>{part}</mark>;
+    return <span key={`${part}-${index}`}>{part}</span>;
+  })}</p>;
+}
+
+function OfficialSpeakingResponse({
+  task,
+  submitted,
+  storedResponses,
+  onSubmit,
+  onRedo,
+}: {
+  task: OfficialTaskSegment;
+  submitted: boolean;
+  storedResponses?: Record<string, string>;
+  onSubmit: (responses: Record<string, string>) => void;
+  onRedo: () => void;
+}) {
+  const prompt = task.speakingPrompt!;
+  const [phase, setPhase] = useState<"idle" | "asking" | "preparing" | "ready" | "recording" | "recorded">(submitted ? "recorded" : "idle");
+  const [prepRemaining, setPrepRemaining] = useState(prompt.preparationSeconds);
+  const [showSubtitles, setShowSubtitles] = useState(false);
+  const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
+  const [recordingState, setRecordingState] = useState<"idle" | "recording" | "paused" | "finished">(submitted ? "finished" : "idle");
+  const [durationSeconds, setDurationSeconds] = useState(Number(storedResponses?.durationSeconds ?? 0));
+  const [pauseCount, setPauseCount] = useState(Number(storedResponses?.pauseCount ?? 0));
+  const [transcript, setTranscript] = useState(storedResponses?.transcript ?? "");
+  const [prepNotes, setPrepNotes] = useState(storedResponses?.prepNotes ?? "");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [status, setStatus] = useState(submitted ? "本 Part 已提交。录音文件只保留在录制时的当前页面，识别稿和分析已保存。" : "先播放考官问题，问题结束后开始 60 秒准备。");
+  const [audioMetrics, setAudioMetrics] = useState<SpeakingAudioMetrics>({
+    rms: Number(storedResponses?.audioRms ?? 0),
+    quietRatio: Number(storedResponses?.quietRatio ?? 0),
+    clipRatio: Number(storedResponses?.clipRatio ?? 0),
+  });
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const audioUrlRef = useRef("");
+  const examinerUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  type RecognitionResultEvent = { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> };
+  type Recognition = { lang: string; continuous: boolean; interimResults: boolean; start: () => void; stop: () => void; onresult: ((event: RecognitionResultEvent) => void) | null; onerror: (() => void) | null };
+  type RecognitionConstructor = new () => Recognition;
+  const recognitionRef = useRef<Recognition | null>(null);
+
+  useEffect(() => {
+    if (phase !== "preparing") return;
+    const timer = window.setTimeout(() => setPrepRemaining((current) => {
+      if (current <= 1) {
+        setPhase("ready");
+        setStatus("准备时间结束，可以开始录音。");
+        return 0;
+      }
+      return current - 1;
+    }), 1000);
+    return () => window.clearTimeout(timer);
+  }, [phase, prepRemaining]);
+
+  useEffect(() => {
+    if (recordingState !== "recording") return;
+    const timer = window.setInterval(() => setDurationSeconds((current) => current + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [recordingState]);
+
+  useEffect(() => () => {
+    recognitionRef.current?.stop();
+    if (recorderRef.current?.state !== "inactive") recorderRef.current?.stop();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+    if (examinerUtteranceRef.current) {
+      examinerUtteranceRef.current.onend = null;
+      examinerUtteranceRef.current.onerror = null;
+    }
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, []);
+
+  const beginPreparation = () => {
+    setExaminerAudioState("idle");
+    setPrepRemaining(prompt.preparationSeconds);
+    setPhase("preparing");
+    setStatus("准备计时已开始。可在下方记录关键词，不要写完整稿。");
+  };
+
+  const playExaminerQuestion = () => {
+    if (submitted || recordingState === "recording" || recordingState === "paused") return;
+    setShowSubtitles(false);
+    setPhase("asking");
+    setStatus("考官正在提问；听不懂时可以打开字幕或暂停。");
+    if (!("speechSynthesis" in window)) {
+      setShowSubtitles(true);
+      beginPreparation();
+      return;
+    }
+    if (examinerUtteranceRef.current) {
+      examinerUtteranceRef.current.onend = null;
+      examinerUtteranceRef.current.onerror = null;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(prompt.examinerQuestion);
+    utterance.lang = "en-GB";
+    utterance.rate = .86;
+    examinerUtteranceRef.current = utterance;
+    setExaminerAudioState("playing");
+    utterance.onend = beginPreparation;
+    utterance.onerror = beginPreparation;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const toggleExaminerAudio = () => {
+    if (!("speechSynthesis" in window)) return;
+    if (examinerAudioState === "playing") {
+      window.speechSynthesis.pause();
+      setExaminerAudioState("paused");
+    } else if (examinerAudioState === "paused") {
+      window.speechSynthesis.resume();
+      setExaminerAudioState("playing");
+    }
+  };
+
+  const startRecognition = () => {
+    const speechWindow = window as typeof window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
+    const Constructor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Constructor) return;
+    const recognition = new Constructor();
+    recognition.lang = "en-GB";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      let nextText = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        if (event.results[index].isFinal) nextText += `${event.results[index][0].transcript} `;
+      }
+      if (nextText) setTranscript((current) => `${current} ${nextText}`.trim());
+    };
+    recognition.onerror = () => setStatus("录音仍在继续，但浏览器没有可靠生成识别稿；结束后可手动补充。");
+    recognitionRef.current = recognition;
+    try { recognition.start(); } catch { /* Speech recognition is optional; recording still continues. */ }
+  };
+
+  const analyseAudio = async (blob: Blob) => {
+    try {
+      const audioContext = new AudioContext();
+      const audioBuffer = await audioContext.decodeAudioData(await blob.arrayBuffer());
+      const samples = audioBuffer.getChannelData(0);
+      let squareSum = 0;
+      let clipped = 0;
+      let quietWindows = 0;
+      let windows = 0;
+      for (let offset = 0; offset < samples.length; offset += 1024) {
+        let windowSquareSum = 0;
+        const end = Math.min(samples.length, offset + 1024);
+        for (let index = offset; index < end; index += 1) {
+          const value = samples[index];
+          squareSum += value * value;
+          windowSquareSum += value * value;
+          if (Math.abs(value) > .98) clipped += 1;
+        }
+        const windowRms = Math.sqrt(windowSquareSum / Math.max(1, end - offset));
+        if (windowRms < .015) quietWindows += 1;
+        windows += 1;
+      }
+      setAudioMetrics({
+        rms: Math.sqrt(squareSum / Math.max(1, samples.length)),
+        quietRatio: quietWindows / Math.max(1, windows),
+        clipRatio: clipped / Math.max(1, samples.length),
+      });
+      await audioContext.close();
+    } catch {
+      setStatus("录音已完成，但当前浏览器无法读取音量数据；仍可回听并提交识别稿分析。");
+    }
+  };
+
+  const startRecording = async () => {
+    if (submitted || !navigator.mediaDevices?.getUserMedia || !("MediaRecorder" in window)) {
+      setStatus("当前浏览器不支持网页录音；请使用最新版 Chrome 或 Safari 并允许麦克风权限。");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      chunksRef.current = [];
+      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = "";
+      setAudioUrl("");
+      setTranscript("");
+      setDurationSeconds(0);
+      setPauseCount(0);
+      setAudioMetrics({ rms: 0, quietRatio: 0, clipRatio: 0 });
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => { if (event.data.size > 0) chunksRef.current.push(event.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        audioUrlRef.current = url;
+        setAudioUrl(url);
+        setRecordingState("finished");
+        setPhase("recorded");
+        setStatus("录音完成。请先回听并检查识别稿，再提交本 Part。");
+        stream.getTracks().forEach((track) => track.stop());
+        void analyseAudio(blob);
+      };
+      recorder.start(500);
+      startRecognition();
+      setRecordingState("recording");
+      setPhase("recording");
+      setStatus("正在录音。正式考试不能暂停；这里保留暂停键用于训练和设备检查。");
+    } catch {
+      setStatus("无法使用麦克风。请在浏览器地址栏允许麦克风权限后重试。");
+    }
+  };
+
+  const toggleRecording = () => {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+    if (recordingState === "recording") {
+      recorder.pause();
+      setPauseCount((current) => current + 1);
+      setRecordingState("paused");
+      setStatus("录音已暂停；继续后会录在同一段音频中。");
+    } else if (recordingState === "paused") {
+      recorder.resume();
+      setRecordingState("recording");
+      setStatus("录音已继续。");
+    }
+  };
+
+  const stopRecording = () => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
+  };
+
+  const feedback = analyzeOfficialSpeakingResponse(transcript, durationSeconds, pauseCount, audioMetrics, prompt.targetSeconds);
+  const submitRecording = () => {
+    if (!audioUrl || durationSeconds < 3) return;
+    onSubmit({
+      transcript,
+      prepNotes,
+      durationSeconds: String(durationSeconds),
+      pauseCount: String(pauseCount),
+      audioRms: String(audioMetrics.rms),
+      quietRatio: String(audioMetrics.quietRatio),
+      clipRatio: String(audioMetrics.clipRatio),
+    });
+  };
+  const restartPractice = () => {
+    recognitionRef.current?.stop();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+    audioUrlRef.current = "";
+    setAudioUrl("");
+    setPhase("idle");
+    setRecordingState("idle");
+    setPrepRemaining(prompt.preparationSeconds);
+    setDurationSeconds(0);
+    setPauseCount(0);
+    setTranscript("");
+    setPrepNotes("");
+    setAudioMetrics({ rms: 0, quietRatio: 0, clipRatio: 0 });
+    setStatus("先播放考官问题，问题结束后开始 60 秒准备。");
+    onRedo();
+  };
+
+  return (
+    <section className="official-speaking-response">
+      <header><div><span>COMPUTER-DELIVERED SPEAKING PRACTICE</span><strong>{task.label} · 语音作答区</strong><small>考官提问 → 60 秒准备 → 录音 → 回听 → 提交反馈</small></div><b>{submitted ? "✓ 已提交" : recordingState === "recording" ? `● ${durationSeconds}s` : `${prompt.targetSeconds}s 目标`}</b></header>
+      <div className="speaking-examiner-card">
+        <div className="speaking-examiner-avatar">EX</div>
+        <div><span>EXAMINER QUESTION</span><p className={showSubtitles ? "" : "is-hidden"}>{showSubtitles ? prompt.examinerQuestion : phase === "idle" ? "点击播放后，考官会用英语提问。" : "🔊 考官问题正在播放 · 字幕已隐藏"}</p></div>
+        <div className="speaking-examiner-actions"><button type="button" disabled={submitted || recordingState === "recording" || recordingState === "paused"} onClick={playExaminerQuestion}>{phase === "idle" ? "▶ 播放考官问题" : "↺ 重听问题"}</button><button type="button" disabled={examinerAudioState === "idle"} onClick={toggleExaminerAudio}>{examinerAudioState === "paused" ? "▶ 继续" : "Ⅱ 暂停"}</button><button type="button" onClick={() => setShowSubtitles((current) => !current)}>{showSubtitles ? "隐藏字幕" : "显示字幕"}</button></div>
+      </div>
+      {(phase === "preparing" || phase === "ready") && !submitted && <div className="speaking-prep-panel"><header><div><span>PREPARATION</span><strong>{phase === "ready" ? "准备结束" : "60 秒准备中"}</strong></div><b>{String(prepRemaining).padStart(2, "0")}<small>s</small></b></header><div><i style={{ width: `${prepRemaining / prompt.preparationSeconds * 100}%` }} /></div>{prompt.cuePoints && <ul>{prompt.cuePoints.map((point) => <li key={point}>{point}</li>)}</ul>}<textarea aria-label="Speaking preparation notes" placeholder="只记关键词，例如：camera · father · first trip · independence" value={prepNotes} onChange={(event) => setPrepNotes(event.target.value)} /><button type="button" onClick={startRecording}>{phase === "ready" ? "● 开始录音" : "准备好了，提前开始录音"}</button></div>}
+      <div className="official-speaking-recorder">
+        <div className={`speaking-recording-orb ${recordingState === "recording" ? "is-recording" : ""}`}><span>{recordingState === "recording" ? "●" : recordingState === "paused" ? "Ⅱ" : "◉"}</span><b>{String(Math.floor(durationSeconds / 60)).padStart(2, "0")}:{String(durationSeconds % 60).padStart(2, "0")}</b><small>{recordingState === "recording" ? "Recording" : recordingState === "paused" ? "Paused" : recordingState === "finished" ? "Ready to review" : "Not started"}</small></div>
+        <div className="speaking-recorder-actions">{phase === "idle" && !submitted && <button type="button" disabled>请先听考官提问</button>}{(phase === "preparing" || phase === "ready") && !submitted && <button type="button" onClick={startRecording}>● 开始录音</button>}{(recordingState === "recording" || recordingState === "paused") && <><button type="button" onClick={toggleRecording}>{recordingState === "paused" ? "▶ 继续录音" : "Ⅱ 暂停录音"}</button><button type="button" className="is-danger" onClick={stopRecording}>■ 结束录音</button></>}{recordingState === "finished" && !submitted && <button type="button" onClick={startRecording}>↺ 重新录制</button>}{/* eslint-disable jsx-a11y/media-has-caption */}{audioUrl && <audio controls src={audioUrl}>当前浏览器不支持录音回放。</audio>}{/* eslint-enable jsx-a11y/media-has-caption */}</div>
+      </div>
+      <div className="speaking-recording-status" aria-live="polite">{status}</div>
+      {(recordingState === "finished" || submitted) && <div className="speaking-transcript-editor"><label htmlFor={`speaking-transcript-${task.id}`}>语音识别稿 <small>可修正浏览器识别错误；修改后再提交会让词汇与结构分析更准确</small></label><textarea id={`speaking-transcript-${task.id}`} disabled={submitted} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="浏览器未生成识别稿时，可以在回听后补充主要内容……" /></div>}
+      {!submitted && recordingState === "finished" && <footer><span>{durationSeconds < 3 ? "录音过短，请至少说 3 秒。" : "请回听并核对识别稿；提交后才计为本 Part 完成。"}</span><button type="button" disabled={!audioUrl || durationSeconds < 3} onClick={submitRecording}>提交语音并生成反馈</button></footer>}
+      {submitted && <section className="official-speaking-feedback"><header><div><span>PERSONALISED SPEAKING REVIEW</span><strong>根据本次录音与识别稿生成的改进建议</strong></div><button type="button" onClick={restartPractice}>再做一次</button></header><div className="speaking-feedback-metrics">{feedback.metrics.map((metric) => <article key={metric.label}><span>{metric.label}</span><b>{metric.value}</b></article>)}</div><div className="speaking-feedback-columns"><article><strong>这次做得好</strong><ul>{feedback.strengths.map((item) => <li key={item}>{item}</li>)}</ul></article><article><strong>下一轮优先改进</strong><ul>{feedback.priorities.map((item) => <li key={item}>{item}</li>)}</ul></article></div><div className="speaking-transcript-highlight"><header><b>识别稿荧光复盘</b><small><i className="good" /> 展开词 · <i className="watch" /> 填充词</small></header><SpeakingTranscriptHighlight transcript={transcript} /></div><p className="speaking-feedback-limit">本地分析会检查时长、语速、停顿区间、音量和语言结构，但不能可靠判断单个音素是否准确，也不冒充 IELTS 官方分数。请结合录音回听和官方示范录音复盘发音。</p></section>}
+      <section className="speaking-topic-template"><header><div><span>TOPIC TEMPLATE</span><strong>{prompt.topicTemplate.title}</strong></div><small>模板用于组织观点，不要背成固定答案</small></header><div>{prompt.topicTemplate.steps.map((step) => <article key={step.label}><b>{step.label}</b><p>{step.prompt}</p><blockquote>{step.example}</blockquote></article>)}</div><aside><b>可替换表达</b><p>{prompt.topicTemplate.usefulPhrases.join(" · ")}</p></aside>{submitted && <div className="speaking-follow-up"><b>继续模拟时，考官可能追问</b>{prompt.supportingQuestions.map((question) => <p key={question}>“{question}”</p>)}</div>}<p className="speaking-exam-note">{prompt.examNote}</p></section>
+    </section>
   );
 }
 
