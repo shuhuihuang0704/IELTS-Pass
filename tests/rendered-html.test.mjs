@@ -45,6 +45,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /speakingPart3Turns/);
   assert.match(state, /listeningScore/);
   assert.match(state, /localDayKey/);
+  assert.match(state, /localWeekKey/);
+  assert.match(state, /officialPracticeCompleted/);
   assert.match(state, /dailyVocabularyCompleted/);
   assert.match(state, /dailyDictationCompleted/);
   assert.match(state, /dailyDictationSeen/);
@@ -91,6 +93,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
   assert.match(app, /answeredCount < totalQuestions/);
+  assert.match(app, /真题训练计划/);
+  assert.match(app, /IELTS 官方公开样题/);
+  assert.match(app, /Cambridge IELTS 真题册/);
+  assert.match(app, /打开官方练习/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
 });

@@ -16,6 +16,7 @@ import {
   completionPercent,
   defaultProgress,
   localDayKey,
+  localWeekKey,
   mergeStoredProgress,
   rateReviewWord,
   reviewIntervals,
@@ -28,6 +29,26 @@ type View = "today" | "practice" | "scene" | "review" | "profile";
 type Feedback = { tone: "success" | "error" | "neutral"; text: string } | null;
 
 const storageKey = "ielts-ai-learning-progress-v1";
+
+type OfficialTestSession = {
+  id: string;
+  isoDay: number;
+  dayLabel: string;
+  time: string;
+  title: string;
+  duration: string;
+  source: string;
+  description: string;
+  href: string;
+};
+
+const officialAcademicSamplesUrl = "https://ielts.org/take-a-test/preparation-resources/sample-test-questions/academic-test";
+const officialTestSchedule: OfficialTestSession[] = [
+  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Academic Reading 计时套题", duration: "60 分钟", source: "IELTS 官方公开样题", description: "一次完成 3 篇、40 题；结束后再查答案，不在中途暂停。", href: officialAcademicSamplesUrl },
+  { id: "listening", isoDay: 4, dayLabel: "周四", time: "20:00", title: "Listening 40 题整套训练", duration: "40 分钟", source: "IELTS 官方公开样题", description: "约 30 分钟连续作答，再用 10 分钟核对拼写与错题。", href: officialAcademicSamplesUrl },
+  { id: "full-mock", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Listening + Reading + Writing 模考", duration: "150 分钟", source: "IELTS 官方机考体验 / 已购正版真题", description: "严格连续计时；可使用官方机考样题，或自己购买的 Cambridge IELTS 完整 Test。", href: officialAcademicSamplesUrl },
+  { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Speaking 全流程 + 错题复盘", duration: "55 分钟", source: "IELTS 官方 Speaking 样题", description: "先完成 11–14 分钟口语，再集中复盘本周真题错因。", href: officialAcademicSamplesUrl },
+];
 
 function speak(text: string, rate = 0.9) {
   if (!("speechSynthesis" in window)) return false;
@@ -105,7 +126,7 @@ export default function IeltsApp() {
             onNavigate={setView}
           />
         )}
-        {view === "practice" && <PracticeView progress={progress} onOpen={openSkill} />}
+        {view === "practice" && <PracticeView progress={progress} onOpen={openSkill} updateProgress={updateProgress} />}
         {view === "scene" && (
           <SceneView
             activeSkill={activeSkill}
@@ -212,6 +233,12 @@ function TodayView({
   const todayWordSet = new Set(getDailyVocabulary(progress.dailyVocabularyDate).map((word) => word.word));
   const todaySeenCount = progress.dailyVocabularyKnown.filter((word) => todayWordSet.has(word)).length;
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
+  const weekKey = localWeekKey();
+  const completedOfficialSessions = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`));
+  const todayIsoDay = ((new Date().getDay() + 6) % 7) + 1;
+  const nextOfficialSession = officialTestSchedule.find((session) => session.isoDay >= todayIsoDay && !progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`))
+    ?? officialTestSchedule.find((session) => !progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`))
+    ?? officialTestSchedule[0];
   return (
     <>
       <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" />
@@ -251,11 +278,24 @@ function TodayView({
           </button>
         </aside>
       </div>
+      <section className="official-plan-strip">
+        <div><span>WEEKLY OFFICIAL PRACTICE</span><strong>本周真题训练</strong><p>下一项：{nextOfficialSession.dayLabel} {nextOfficialSession.time} · {nextOfficialSession.title}</p></div>
+        <div className="official-plan-progress"><strong>{completedOfficialSessions.length}<small>/4</small></strong><span>本周已完成</span></div>
+        <button onClick={() => onNavigate("practice")}>查看真题计划 <span>→</span></button>
+      </section>
     </>
   );
 }
 
-function PracticeView({ progress, onOpen }: { progress: LearningProgress; onOpen: (skill: Skill) => void }) {
+function PracticeView({
+  progress,
+  onOpen,
+  updateProgress,
+}: {
+  progress: LearningProgress;
+  onOpen: (skill: Skill) => void;
+  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+}) {
   return (
     <>
       <PageHeader eyebrow="FOCUSED PRACTICE" title="选择一项，进行" accent="专项练习。" />
@@ -270,7 +310,55 @@ function PracticeView({ progress, onOpen }: { progress: LearningProgress; onOpen
           </button>
         ))}
       </div>
+      <OfficialPracticePlan progress={progress} updateProgress={updateProgress} />
     </>
+  );
+}
+
+function OfficialPracticePlan({
+  progress,
+  updateProgress,
+}: {
+  progress: LearningProgress;
+  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+}) {
+  const weekKey = localWeekKey();
+  const completedCount = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`)).length;
+
+  const toggleSession = (session: OfficialTestSession) => {
+    const recordId = `${weekKey}:${session.id}`;
+    updateProgress((current) => ({
+      ...current,
+      officialPracticeCompleted: current.officialPracticeCompleted.includes(recordId)
+        ? current.officialPracticeCompleted.filter((item) => item !== recordId)
+        : [...current.officialPracticeCompleted, recordId],
+    }));
+  };
+
+  return (
+    <section className="official-practice-plan">
+      <header className="official-practice-heading">
+        <div><span>AUTHENTIC TEST WEEK</span><h2>真题训练计划</h2><p>每周 4 次 · 共约 5 小时 · 独立于每日基础训练</p></div>
+        <strong>{completedCount}<small>/4</small></strong>
+      </header>
+      <div className="official-source-note"><b>内容来源说明</b><p>本 App 只链接 IELTS 官方公开样题并记录训练进度。你已购买的 Cambridge IELTS 真题册可以按周六计划使用，但题目正文不会被上传或再分发。</p></div>
+      <div className="official-session-list">
+        {officialTestSchedule.map((session, index) => {
+          const recordId = `${weekKey}:${session.id}`;
+          const completed = progress.officialPracticeCompleted.includes(recordId);
+          return (
+            <article className={completed ? "official-session is-complete" : "official-session"} key={session.id}>
+              <div className="official-session-date"><span>{session.dayLabel}</span><strong>{session.time}</strong></div>
+              <div className="official-session-copy"><small>0{index + 1} · {session.source}</small><h3>{session.title}</h3><p>{session.description}</p><b>{session.duration}</b></div>
+              <div className="official-session-actions">
+                <a href={session.href} target="_blank" rel="noreferrer">打开官方练习 ↗</a>
+                <button onClick={() => toggleSession(session)}>{completed ? "✓ 已完成" : "完成后记录"}</button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

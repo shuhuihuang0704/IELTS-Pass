@@ -84,6 +84,17 @@ button { cursor: pointer; }
 .memory-row { width:100%; justify-content:space-between; border:0; color:inherit; text-align:left; }
 .memory-row b { width:32px; height:32px; display:grid; place-items:center; border-radius:11px; color:white; background:var(--ink); font-size:12px; }
 .mobile-nav { display:none; }
+.official-plan-strip { margin-top:18px; padding:22px 24px; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:28px; border:1px solid rgba(54,46,72,.07); border-radius:24px; background:white; box-shadow:0 10px 28px rgba(35,30,48,.04); }
+.official-plan-strip>div:first-child>span { color:var(--violet); font-size:9px; letter-spacing:.8px; }
+.official-plan-strip>div:first-child>strong { display:block; margin-top:5px; font-size:17px; }
+.official-plan-strip p { margin:5px 0 0; color:var(--muted); font-size:10px; }
+.official-plan-progress { min-width:80px; padding-left:22px; border-left:1px solid #ebe7ed; }
+.official-plan-progress strong,.official-plan-progress span { display:block; }
+.official-plan-progress strong { color:var(--violet); font-size:25px; }
+.official-plan-progress strong small { font-size:11px; }
+.official-plan-progress span { margin-top:3px; color:var(--muted); font-size:9px; }
+.official-plan-strip>button { min-height:42px; padding:0 15px; border:0; border-radius:13px; color:white; background:var(--ink); font-size:11px; }
+.official-plan-strip>button span { margin-left:9px; }
 
 @media (max-width:900px) {
   .app-shell { grid-template-columns:1fr; padding-bottom:76px; }
@@ -138,6 +149,33 @@ button { cursor: pointer; }
 .practice-card>p { margin:7px 0 24px; color:var(--muted); font-size:12px; }
 .skill-status { display:inline-block; padding:6px 9px; border-radius:9px; color:#736d75; background:rgba(255,255,255,.6); font-size:10px; }
 .skill-status.is-complete { color:#187354; background:#d9f0e7; }
+.official-practice-plan { margin-top:20px; padding:29px; border-radius:28px; background:white; box-shadow:0 10px 28px rgba(35,30,48,.04); }
+.official-practice-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.official-practice-heading span { color:var(--violet); font-size:9px; letter-spacing:.9px; }
+.official-practice-heading h2 { margin:7px 0 0; font-size:28px; letter-spacing:-1px; }
+.official-practice-heading p { margin:7px 0 0; color:var(--muted); font-size:11px; }
+.official-practice-heading>strong { color:var(--violet); font-size:42px; letter-spacing:-2px; }
+.official-practice-heading>strong small { font-size:14px; letter-spacing:0; }
+.official-source-note { margin-top:22px; padding:15px 17px; border-radius:15px; color:#5b5273; background:#f0edf9; }
+.official-source-note b { font-size:11px; }
+.official-source-note p { margin:5px 0 0; font-size:10px; line-height:1.55; }
+.official-session-list { margin-top:15px; }
+.official-session { padding:18px 0; display:grid; grid-template-columns:78px 1fr auto; align-items:center; gap:18px; border-top:1px solid #ece8ee; }
+.official-session:first-child { border-top:0; }
+.official-session-date { min-height:58px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:15px; background:#f2f0ec; }
+.official-session-date span { color:var(--muted); font-size:9px; }
+.official-session-date strong { margin-top:5px; font-size:13px; }
+.official-session-copy small { color:var(--violet); font-size:8px; letter-spacing:.35px; }
+.official-session-copy h3 { margin:5px 0 0; font-size:15px; }
+.official-session-copy p { max-width:580px; margin:5px 0 0; color:var(--muted); font-size:10px; line-height:1.45; }
+.official-session-copy>b { display:inline-block; margin-top:7px; color:#554a9b; font-size:9px; }
+.official-session-actions { min-width:126px; display:flex; flex-direction:column; gap:7px; }
+.official-session-actions a,.official-session-actions button { min-height:34px; padding:0 11px; display:grid; place-items:center; border:0; border-radius:10px; text-decoration:none; font-size:9px; }
+.official-session-actions a { color:#4438a2; background:#ece8f8; }
+.official-session-actions button { color:white; background:var(--ink); }
+.official-session.is-complete { opacity:.72; }
+.official-session.is-complete .official-session-date { color:#176c4f; background:#e4f2ec; }
+.official-session.is-complete .official-session-actions button { color:#176c4f; background:#e4f2ec; }
 .scene-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:30px; padding:7px; border-radius:18px; background:#e5e0da; }
 .scene-tabs button { min-height:48px; border:0; border-radius:13px; color:#777179; background:transparent; font-size:12px; }
 .scene-tabs button span { display:inline-grid; width:23px; height:23px; margin-right:7px; place-items:center; border-radius:50%; color:#827b84; background:rgba(255,255,255,.55); font-size:9px; }
@@ -374,11 +412,23 @@ button { cursor: pointer; }
   .reading-passage { position:static; max-height:none; }
   .listening-transcript { position:static; max-height:none; }
   .profile-grid { grid-template-columns:repeat(2,1fr); }
+  .official-session { grid-template-columns:72px 1fr; }
+  .official-session-actions { grid-column:2; flex-direction:row; }
+  .official-session-actions a,.official-session-actions button { flex:1; }
 }
 @media (max-width:560px) {
   .practice-grid { grid-template-columns:1fr; }
   .practice-card { min-height:200px; }
   .practice-glyph { margin-bottom:25px; }
+  .official-plan-strip { grid-template-columns:1fr auto; gap:15px; padding:19px; }
+  .official-plan-progress { padding-left:15px; }
+  .official-plan-strip>button { grid-column:1 / -1; }
+  .official-practice-plan { padding:21px; border-radius:22px; }
+  .official-practice-heading h2 { font-size:24px; }
+  .official-practice-heading>strong { font-size:34px; }
+  .official-session { grid-template-columns:58px 1fr; gap:12px; }
+  .official-session-date { min-height:54px; }
+  .official-session-actions { grid-column:1 / -1; }
   .scene-tabs { grid-template-columns:repeat(4,1fr); padding:5px; }
   .scene-tabs button { min-height:48px; font-size:0; }
   .scene-tabs button span { margin:0; font-size:10px; }

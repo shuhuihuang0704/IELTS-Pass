@@ -28,6 +28,7 @@ export type LearningProgress = {
   readingScore: number | null;
   speakingTurns: number;
   speakingPart3Turns: number;
+  officialPracticeCompleted: string[];
   minutes: number;
   streak: number;
 };
@@ -37,6 +38,13 @@ export function localDayKey(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+export function localWeekKey(date = new Date()) {
+  const monday = new Date(date);
+  const daysSinceMonday = (monday.getDay() + 6) % 7;
+  monday.setDate(monday.getDate() - daysSinceMonday);
+  return localDayKey(monday);
 }
 
 export const reviewIntervals = [1, 3, 7, 14, 30, 60] as const;
@@ -66,6 +74,7 @@ export const defaultProgress: LearningProgress = {
   readingScore: null,
   speakingTurns: 0,
   speakingPart3Turns: 0,
+  officialPracticeCompleted: [],
   minutes: 12,
   streak: 6,
 };
@@ -168,5 +177,6 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     readingScore: isCurrentVocabularyDay ? (stored.readingScore ?? null) : null,
     speakingTurns: isCurrentVocabularyDay ? (stored.speakingTurns ?? 0) : 0,
     speakingPart3Turns: isCurrentVocabularyDay ? (stored.speakingPart3Turns ?? 0) : 0,
+    officialPracticeCompleted: Array.isArray(stored.officialPracticeCompleted) ? stored.officialPracticeCompleted : [],
   };
 }
