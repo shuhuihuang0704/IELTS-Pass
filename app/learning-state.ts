@@ -26,6 +26,18 @@ export type OfficialTaskResult = {
   completedAt: string;
 };
 
+export type DailyStudyActivity = {
+  id: string;
+  label: string;
+  minutes: number;
+};
+
+export type DailyStudyRecord = {
+  date: string;
+  minutes: number;
+  activities: DailyStudyActivity[];
+};
+
 export type LearningProgress = {
   completed: Record<Skill, boolean>;
   masteredWords: string[];
@@ -49,6 +61,7 @@ export type LearningProgress = {
   officialPracticeCompleted: string[];
   officialTaskResults: Record<string, OfficialTaskResult>;
   officialTaskAttemptHistory: Record<string, OfficialTaskResult[]>;
+  dailyStudyHistory: Record<string, DailyStudyRecord>;
   carryoverTasks: Skill[];
   minutes: number;
   streak: number;
@@ -99,10 +112,33 @@ export const defaultProgress: LearningProgress = {
   officialPracticeCompleted: [],
   officialTaskResults: {},
   officialTaskAttemptHistory: {},
+  dailyStudyHistory: {},
   carryoverTasks: [],
   minutes: 12,
   streak: 6,
 };
+
+export function recordStudyActivity(
+  progress: LearningProgress,
+  activity: DailyStudyActivity,
+  date = localDayKey(),
+): LearningProgress {
+  const currentRecord = progress.dailyStudyHistory[date] ?? { date, minutes: 0, activities: [] };
+  if (currentRecord.activities.some((item) => item.id === activity.id)) return progress;
+
+  return {
+    ...progress,
+    minutes: progress.minutes + activity.minutes,
+    dailyStudyHistory: {
+      ...progress.dailyStudyHistory,
+      [date]: {
+        date,
+        minutes: currentRecord.minutes + activity.minutes,
+        activities: [...currentRecord.activities, activity],
+      },
+    },
+  };
+}
 
 export function scheduleWordForReview(
   progress: LearningProgress,
@@ -221,6 +257,7 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     officialPracticeCompleted: Array.isArray(stored.officialPracticeCompleted) ? stored.officialPracticeCompleted : [],
     officialTaskResults: stored.officialTaskResults && typeof stored.officialTaskResults === "object" ? stored.officialTaskResults : {},
     officialTaskAttemptHistory: stored.officialTaskAttemptHistory && typeof stored.officialTaskAttemptHistory === "object" ? stored.officialTaskAttemptHistory : {},
+    dailyStudyHistory: stored.dailyStudyHistory && typeof stored.dailyStudyHistory === "object" ? stored.dailyStudyHistory : {},
     carryoverTasks,
   };
 }

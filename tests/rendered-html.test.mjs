@@ -48,6 +48,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /localDayKey/);
   assert.match(state, /localWeekKey/);
   assert.match(state, /officialPracticeCompleted/);
+  assert.match(state, /DailyStudyRecord/);
+  assert.match(state, /dailyStudyHistory/);
+  assert.match(state, /recordStudyActivity/);
   assert.match(state, /OfficialTaskResult/);
   assert.match(state, /officialTaskResults/);
   assert.match(state, /officialTaskAttemptHistory: Record<string, OfficialTaskResult\[\]>/);
@@ -106,6 +109,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /加入笔记/);
   assert.match(app, /toggleNotebookEntry/);
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
+  assert.match(app, /每日学习记录/);
+  assert.match(app, /完整完成一项训练后/);
+  assert.match(app, /旧版累计/);
+  assert.match(app, /showStudyHistory/);
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
   assert.match(app, /disabled=\{score === null\}/);

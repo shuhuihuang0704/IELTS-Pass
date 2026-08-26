@@ -19,6 +19,7 @@ import {
   localWeekKey,
   mergeStoredProgress,
   rateReviewWord,
+  recordStudyActivity,
   reviewIntervals,
   scheduleWordForReview,
   type LearningProgress,
@@ -437,12 +438,19 @@ export default function IeltsApp() {
   };
 
   const completeSkill = (skill: Skill, minutes: number) => {
-    updateProgress((current) => ({
-      ...current,
-      completed: { ...current.completed, [skill]: true },
-      carryoverTasks: current.carryoverTasks.filter((item) => item !== skill),
-      minutes: current.completed[skill] ? current.minutes : current.minutes + minutes,
-    }));
+    updateProgress((current) => {
+      const next = {
+        ...current,
+        completed: { ...current.completed, [skill]: true },
+        carryoverTasks: current.carryoverTasks.filter((item) => item !== skill),
+      };
+      if (current.completed[skill]) return next;
+      return recordStudyActivity(next, {
+        id: `daily-skill:${skill}`,
+        label: skills.find((item) => item.id === skill)?.label ?? skill,
+        minutes,
+      });
+    });
   };
 
   const percent = completionPercent(progress);
@@ -585,6 +593,7 @@ function TodayView({
   onOpenSkill: (skill: Skill) => void;
   onNavigate: (view: View) => void;
 }) {
+  const [showStudyHistory, setShowStudyHistory] = useState(false);
   const carryoverSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]);
   const nextSkill = skills.find((skill) => skill.id === carryoverSkill)
     ?? skills.find((skill) => !progress.completed[skill.id])
@@ -642,7 +651,7 @@ function TodayView({
             <span className="daily-word-copy"><strong>每日高频词</strong><small>300 词核心库轮换 · 每天 5 × 20</small></span>
             <b>→</b>
           </button>
-          <div className="streak-row"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟</small></span></div>
+          <button className="streak-row" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <button className="memory-row" onClick={() => onNavigate("review")}>
             <span><strong>笔记与复习</strong><small>{progress.notebook.length} 条笔记 · {dueReviewCount} 个今日到期</small></span><b>→</b>
           </button>
@@ -653,7 +662,48 @@ function TodayView({
         <div className="official-plan-progress"><strong>{completedOfficialSessions.length}<small>/4</small></strong><span>本周已完成</span></div>
         <button onClick={() => onNavigate("practice")}>查看官方套题计划 <span>→</span></button>
       </section>
+      {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>
+  );
+}
+
+function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress; onClose: () => void }) {
+  const today = localDayKey();
+  const dayCount = Math.min(14, Math.max(6, progress.streak));
+  const days = Array.from({ length: dayCount }, (_, index) => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() - index);
+    const key = localDayKey(date);
+    return { key, record: progress.dailyStudyHistory[key] };
+  });
+  const recordedMinutes = Object.values(progress.dailyStudyHistory).reduce((total, record) => total + record.minutes, 0);
+  const legacyMinutes = Math.max(0, progress.minutes - recordedMinutes);
+
+  return (
+    <div className="study-history-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="study-history-dialog" role="dialog" aria-modal="true" aria-labelledby="study-history-title">
+        <header>
+          <div><span>STUDY HISTORY</span><h2 id="study-history-title">每日学习记录</h2><p>完整完成一项训练后，时间和内容才会记录到当天。</p></div>
+          <button onClick={onClose} aria-label="关闭每日学习记录">×</button>
+        </header>
+        {legacyMinutes > 0 && <div className="study-history-legacy"><strong>旧版累计 {legacyMinutes} 分钟</strong><p>这部分时长保存于每日明细功能上线前，无法可靠拆分到具体日期，因此不补造学习内容。</p></div>}
+        <div className="study-history-list">
+          {days.map(({ key, record }) => {
+            const date = new Date(`${key}T12:00:00`);
+            const dateLabel = date.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
+            return (
+              <article className={record ? "has-study" : ""} key={key}>
+                <div className="study-history-date"><span>{key === today ? "今天" : dateLabel}</span><strong>{record?.minutes ?? 0}<small> 分钟</small></strong></div>
+                <div className="study-history-activities">
+                  {record?.activities.length ? record.activities.map((activity) => <span key={activity.id}><b>{activity.label}</b><small>{activity.minutes} 分钟</small></span>) : <p>{key === today ? "今天还没有完成完整训练" : "暂无可用的每日明细"}</p>}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -832,7 +882,8 @@ function OfficialTestRunner({
         return { ...entry, detail: `我的答案：${response}\n正确答案：${answer.displayAnswer}` };
       });
       const allRequiredSubmitted = requiredTasks.length > 0 && requiredTasks.every((requiredTask) => nextSubmittedTasks[requiredTask.key]);
-      return {
+      const isFirstSessionCompletion = allRequiredSubmitted && !current.officialPracticeCompleted.includes(recordId);
+      const next = {
         ...current,
         notebook,
         officialTaskResults: {
@@ -844,10 +895,13 @@ function OfficialTestRunner({
             completedAt: new Date().toISOString(),
           },
         },
-        officialPracticeCompleted: allRequiredSubmitted && !current.officialPracticeCompleted.includes(recordId)
+        officialPracticeCompleted: isFirstSessionCompletion
           ? [...current.officialPracticeCompleted, recordId]
           : current.officialPracticeCompleted,
       };
+      return isFirstSessionCompletion
+        ? recordStudyActivity(next, { id: `official-session:${recordId}`, label: `套题 · ${session.title}`, minutes: session.durationMinutes })
+        : next;
     });
   };
   const changeTask = (index: number) => {
@@ -1081,14 +1135,16 @@ function SceneView({
       const dailyVocabularyCompleted = section === "daily" || current.dailyVocabularyCompleted;
       const dailyDictationCompleted = section === "dictation" || current.dailyDictationCompleted;
       const fullyCompleted = dailyVocabularyCompleted && dailyDictationCompleted;
-      return {
+      const next = {
         ...current,
         dailyVocabularyCompleted,
         dailyDictationCompleted,
         completed: { ...current.completed, vocabulary: fullyCompleted },
         carryoverTasks: fullyCompleted ? current.carryoverTasks.filter((item) => item !== "vocabulary") : current.carryoverTasks,
-        minutes: fullyCompleted && !current.completed.vocabulary ? current.minutes + 15 : current.minutes,
       };
+      return fullyCompleted && !current.completed.vocabulary
+        ? recordStudyActivity(next, { id: "daily-skill:vocabulary", label: "词汇训练", minutes: 15 })
+        : next;
     });
   };
   return (
