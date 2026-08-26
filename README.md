@@ -1,100 +1,132 @@
-# vinext-starter
+<p align="center">
+  <img src="./public/og.png" alt="IELTS AI — 从真实场景，练到雅思 7.0" width="100%" />
+</p>
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+<h1 align="center">IELTS Pass</h1>
 
-## Prerequisites
+<p align="center">
+  一款以真实场景串联词汇、听力、口语和阅读的跨端雅思学习应用。
+  <br />
+  手机随时学，电脑深度练；每次错误都会回到下一次复习。
+</p>
 
-- Node.js `>=22.13.0`
+<p align="center">
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-6257DC?style=flat-square" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-6257DC?style=flat-square" />
+  <img alt="Responsive" src="https://img.shields.io/badge/Mobile%20%2B%20Desktop-responsive-23866C?style=flat-square" />
+  <img alt="Status" src="https://img.shields.io/badge/MVP-testable-CF694C?style=flat-square" />
+</p>
 
-## Quick Start
+## 为什么做这个产品
+
+多数雅思工具把词汇、听力、口语和阅读拆成四座孤岛。IELTS Pass 采用另一条路径：让同一个真实场景贯穿四项能力，并把练习结果统一进入进度与复习系统。
+
+例如在「第一次在英国租房」场景中，用户会依次：
+
+1. 学习 `deposit`、`furnished`、`utilities` 等高频词汇。
+2. 精听一段租房咨询并完成题目。
+3. 与 AI 房东确认房租、押金和入住日期。
+4. 阅读租房广告并完成雅思题型。
+5. 自动复习本次答错的单词和表达。
+
+## 当前可以测试什么
+
+- **场景学习路径**：词汇 → 听力 → 口语 → 阅读。
+- **电脑打字记词**：听音拼写、Enter 检查、提示、例句发音。
+- **内置听力练习**：英式语音播放、单选题、原文与解析。
+- **AI 口语演示**：文字输入、浏览器语音识别、场景追问与语音回复。
+- **阅读做题**：判断题与信息定位题，即时统计得分。
+- **进度激励**：今日完成度、连续学习、本周时长、各项完成状态。
+- **记忆回流**：词汇错误自动进入复习，掌握后可以移出。
+- **本地持久化**：刷新浏览器后保留学习记录。
+- **响应式布局**：同一套功能适配手机与电脑，但使用不同信息布局。
+
+> 当前口语使用可替换的本地场景逻辑，目的是在没有 API 密钥时也能完整测试学习闭环。正式 AI 模型、账号和跨设备云同步属于下一阶段。
+
+## 本地运行
+
+### 环境要求
+
+- Node.js `>= 22.13.0`
+- npm `>= 10`
+- 推荐使用 Chrome 测试语音识别
+
+### 启动开发版本
 
 ```bash
+git clone git@github.com:shuhuihuang0704/IELTS-Pass.git
+cd IELTS-Pass
 npm install
 npm run dev
+```
+
+打开 [http://localhost:3000](http://localhost:3000)。
+
+### 验证质量
+
+```bash
+npm test
+npm run lint
 npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+## 推荐测试路线
 
-## Included Shape
+1. 在首页点击「继续场景词汇」。
+2. 输入错误单词，确认它进入「复习」。
+3. 输入正确答案并完成整组，观察今日进度变化。
+4. 切换到听力，播放录音并提交答案。
+5. 切换到口语，用文字或麦克风询问房租、押金和日期。
+6. 完成阅读三道题，查看分数。
+7. 刷新页面，确认进度仍然存在。
+8. 缩小浏览器宽度，检查手机端底部导航和练习布局。
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+## 技术结构
 
-## Workspace Auth Headers
+```text
+app/
+├── IeltsApp.tsx        # 应用导航、四项练习与进度交互
+├── learning-data.ts    # 场景语料、题目和词汇
+├── learning-state.ts   # 学习状态、持久化合并与完成度计算
+├── globals.css         # 跨端视觉系统与响应式布局
+├── layout.tsx          # 产品元数据与分享卡片
+└── page.tsx            # 应用入口
 
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+tests/
+└── rendered-html.test.mjs
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+技术栈：React 19、TypeScript、vinext、Vite、Cloudflare Workers / Sites。
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## 产品原则
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+- **真实进度，不制造虚假成长**：能力变化必须来自已完成的练习。
+- **AI 服务学习闭环**：AI 用于互动、反馈和个性化，不替代可靠内容。
+- **跨端但不简单放大**：手机强调随时学习，电脑强调键盘和完整做题。
+- **错误是学习资产**：错词、错句和错题必须能够再次出现。
+- **内容与模型解耦**：未来更换 AI 服务时，不重做学习流程和数据结构。
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+## Roadmap
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+- [x] 响应式应用外壳与品牌视觉
+- [x] 租房场景的词汇、听力、口语、阅读闭环
+- [x] 进度激励和浏览器本地持久化
+- [x] 自动构建测试与社交分享封面
+- [ ] 接入真实 AI 对话与结构化口语反馈
+- [ ] 用户登录与手机、电脑进度同步
+- [ ] 扩充雅思题型和人工审核场景语料
+- [ ] 模考、写作与能力趋势报告
+- [ ] 小范围真实用户测试和订阅体系
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+更完整的分阶段计划见 [PRODUCT_PLAN.md](./PRODUCT_PLAN.md)。
 
-## Useful Commands
+## 数据与隐私
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+当前 MVP 不上传录音或学习数据。进度存储在浏览器 `localStorage` 中，用户可以在「我的」页面随时重置。接入云端和真实 AI 前，需要补充明确的隐私政策、数据保留期限和删除机制。
 
-## Learn More
+---
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+<p align="center">
+  <strong>IELTS Pass</strong><br />
+  Learn one scene. Build four skills.
+</p>

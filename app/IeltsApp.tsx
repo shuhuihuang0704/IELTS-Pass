@@ -52,14 +52,17 @@ export default function IeltsApp() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      setProgress(mergeStoredProgress(stored ? JSON.parse(stored) : null));
-    } catch {
-      setProgress(defaultProgress);
-    } finally {
-      setHydrated(true);
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem(storageKey);
+        setProgress(mergeStoredProgress(stored ? JSON.parse(stored) : null));
+      } catch {
+        setProgress(defaultProgress);
+      } finally {
+        setHydrated(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const updateProgress = (updater: (current: LearningProgress) => LearningProgress) => {
@@ -350,7 +353,19 @@ function VocabularyPractice({
         <button className="audio-control" onClick={() => speak(word.word, 0.72)}><span>▶</span>播放英式发音</button>
         <div className="word-meaning">{word.meaning}</div>
         <form className="typing-form" onSubmit={check}>
-          <input autoFocus value={value} onChange={(event) => setValue(event.target.value)} spellCheck={false} placeholder="输入英文单词…" aria-label="输入英文单词" />
+          <input
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                check();
+              }
+            }}
+            spellCheck={false}
+            placeholder="输入英文单词…"
+            aria-label="输入英文单词"
+          />
           <button type="submit">检查</button>
         </form>
         <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? (showHint ? word.hint : "先听发音，尽量不看提示。")}</div>
@@ -498,4 +513,3 @@ function ProfileView({ progress, percent, onReset }: { progress: LearningProgres
     </>
   );
 }
-
