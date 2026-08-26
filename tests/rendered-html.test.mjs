@@ -254,7 +254,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /提交本 Part 后，才会显示语音不足分析、针对性改进练习、话题模板/);
   assert.match(app, /const allQuestions = \[prompt\.examinerQuestion, \.\.\.prompt\.supportingQuestions\]/);
   assert.match(app, /questionIndex < allQuestions\.length - 1/);
-  assert.match(app, /playExaminerQuestion\(allQuestions\[nextQuestionIndex\]\)/);
+  assert.match(app, /buildAdaptiveSpeakingFollowUp/);
+  assert.match(app, /const nextQuestion = buildAdaptiveSpeakingFollowUp\(task\.id, transcript/);
+  assert.match(app, /playExaminerQuestion\(nextQuestion\)/);
+  assert.match(app, /ANSWER-AWARE FOLLOW-UP/);
+  assert.match(app, /根据你上一轮的回答追问/);
+  assert.match(app, /followUpMode: "answer-aware"/);
   assert.match(app, /提交本题，听下一问/);
   assert.match(app, /提交最后一题并生成反馈/);
   assert.match(app, /turnCount: String\(completedTurns\.length\)/);
@@ -265,6 +270,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.speaking-prep-panel/);
   assert.match(styles, /\.speaking-improvement-drills/);
   assert.match(styles, /\.speaking-question-progress/);
+  assert.match(styles, /\.speaking-adaptive-badge/);
   assert.match(styles, /\.official-speaking-material-lock/);
   assert.match(styles, /\.speaking-transcript-highlight mark\.is-good/);
   assert.match(app, /official-paper-frame/);

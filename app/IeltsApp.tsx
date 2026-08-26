@@ -1554,6 +1554,47 @@ function SpeakingTranscriptHighlight({ transcript }: { transcript: string }) {
   })}</p>;
 }
 
+function buildAdaptiveSpeakingFollowUp(
+  taskId: string,
+  transcript: string,
+  fallbackQuestion: string,
+  followUpIndex: number,
+) {
+  const stopWords = new Set(["about", "actually", "also", "because", "been", "being", "could", "from", "have", "just", "like", "more", "people", "really", "that", "their", "there", "these", "they", "thing", "think", "this", "very", "what", "when", "which", "with", "would"]);
+  const words = transcript.toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g) ?? [];
+  const candidates = words.filter((word) => word.length > 3 && !stopWords.has(word));
+  if (candidates.length < 1) return fallbackQuestion;
+  const counts = candidates.reduce((result, word) => ({ ...result, [word]: (result[word] ?? 0) + 1 }), {} as Record<string, number>);
+  const keyword = Object.entries(counts).sort((left, right) => (right[1] * 3 + right[0].length) - (left[1] * 3 + left[0].length))[0]?.[0];
+  if (!keyword) return fallbackQuestion;
+  const answerReference = `the idea of “${keyword}”`;
+
+  if (taskId === "part-1") {
+    const questions = [
+      `You mentioned ${answerReference}. How does that affect daily life in your home town?`,
+      `Thinking about ${answerReference}, what kind of work or opportunities are common there?`,
+      `Does ${answerReference} make your home town a good place for young people to live? Why or why not?`,
+      `Has your experience of ${answerReference} influenced the kind of accommodation you would like in the future?`,
+    ];
+    return questions[followUpIndex] ?? `You mentioned ${answerReference}. ${fallbackQuestion}`;
+  }
+  if (taskId === "part-2") {
+    const questions = [
+      `You mentioned ${answerReference}. Is its value mainly financial, emotional, or both?`,
+      `If you lost the item connected with ${answerReference}, what exactly would be hardest to replace?`,
+    ];
+    return questions[followUpIndex] ?? `You mentioned ${answerReference}. ${fallbackQuestion}`;
+  }
+  if (taskId === "part-3") {
+    const questions = [
+      `You connected status with ${answerReference}. Is that different from what gave people status in your parents' generation?`,
+      `How might advertising influence people's desire for things associated with ${answerReference}?`,
+    ];
+    return questions[followUpIndex] ?? `You mentioned ${answerReference}. ${fallbackQuestion}`;
+  }
+  return `You mentioned ${answerReference}. ${fallbackQuestion}`;
+}
+
 function OfficialSpeakingResponse({
   task,
   submitted,
@@ -1569,9 +1610,11 @@ function OfficialSpeakingResponse({
 }) {
   const prompt = task.speakingPrompt!;
   const allQuestions = [prompt.examinerQuestion, ...prompt.supportingQuestions];
+  const storedTurnQuestions = allQuestions.map((_, index) => storedResponses?.[`turn-${index + 1}-question`]).filter((question): question is string => Boolean(question));
   const [questionIndex, setQuestionIndex] = useState(submitted ? allQuestions.length - 1 : 0);
+  const [askedQuestions, setAskedQuestions] = useState<string[]>(submitted ? (storedTurnQuestions.length === allQuestions.length ? storedTurnQuestions : allQuestions) : [prompt.examinerQuestion]);
   const [turnResults, setTurnResults] = useState<SpeakingTurnResult[]>([]);
-  const currentQuestion = allQuestions[questionIndex];
+  const currentQuestion = askedQuestions[questionIndex] ?? allQuestions[questionIndex];
   const followUpTargetSeconds = task.id === "part-3" ? 50 : 30;
   const currentTargetSeconds = questionIndex === 0 ? prompt.targetSeconds : followUpTargetSeconds;
   const totalTargetSeconds = prompt.targetSeconds + prompt.supportingQuestions.length * followUpTargetSeconds;
@@ -1797,8 +1840,10 @@ function OfficialSpeakingResponse({
     const completedTurns = [...turnResults, currentTurn];
     if (questionIndex < allQuestions.length - 1) {
       const nextQuestionIndex = questionIndex + 1;
+      const nextQuestion = buildAdaptiveSpeakingFollowUp(task.id, transcript, prompt.supportingQuestions[questionIndex], questionIndex);
       setTurnResults(completedTurns);
       setQuestionIndex(nextQuestionIndex);
+      setAskedQuestions((current) => [...current, nextQuestion]);
       if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = "";
       setAudioUrl("");
@@ -1808,7 +1853,7 @@ function OfficialSpeakingResponse({
       setPauseCount(0);
       setAudioMetrics({ rms: 0, quietRatio: 0, clipRatio: 0 });
       setRecordingState("idle");
-      playExaminerQuestion(allQuestions[nextQuestionIndex]);
+      playExaminerQuestion(nextQuestion);
       return;
     }
     const totalDuration = completedTurns.reduce((sum, turn) => sum + turn.durationSeconds, 0);
@@ -1828,6 +1873,7 @@ function OfficialSpeakingResponse({
       quietRatio: String(aggregateMetrics.quietRatio),
       clipRatio: String(aggregateMetrics.clipRatio),
       turnCount: String(completedTurns.length),
+      followUpMode: "answer-aware",
     };
     completedTurns.forEach((turn, index) => {
       responses[`turn-${index + 1}-question`] = turn.question;
@@ -1848,6 +1894,7 @@ function OfficialSpeakingResponse({
     audioUrlRef.current = "";
     setAudioUrl("");
     setQuestionIndex(0);
+    setAskedQuestions([prompt.examinerQuestion]);
     setTurnResults([]);
     setPhase("idle");
     setRecordingState("idle");
@@ -1864,10 +1911,10 @@ function OfficialSpeakingResponse({
   return (
     <section className="official-speaking-response">
       <header><div><span>COMPUTER-DELIVERED SPEAKING PRACTICE</span><strong>{task.label} · 语音作答区</strong><small>每次提交后考官继续追问；全部回答后才生成反馈</small></div><b>{submitted ? "✓ 已提交" : recordingState === "recording" ? `● ${durationSeconds}s` : `${currentTargetSeconds}s 目标`}</b></header>
-      <div className="speaking-question-progress"><span>本 Part 问题进度</span><b>{submitted ? allQuestions.length : questionIndex + 1} / {allQuestions.length}</b><div>{allQuestions.map((question, index) => <i className={submitted || index < questionIndex ? "is-done" : index === questionIndex ? "is-current" : ""} title={question} key={question} />)}</div></div>
+      <div className="speaking-question-progress"><span>本 Part 问题进度</span><b>{submitted ? allQuestions.length : questionIndex + 1} / {allQuestions.length}</b><div>{allQuestions.map((_, index) => <i className={submitted || index < questionIndex ? "is-done" : index === questionIndex ? "is-current" : ""} title={askedQuestions[index] ?? "等待上一轮回答后生成"} key={`speaking-question-${index}`} />)}</div></div>
       <div className="speaking-examiner-card">
         <div className="speaking-examiner-avatar">EX</div>
-        <div><span>EXAMINER · QUESTION {questionIndex + 1}</span><p className={showSubtitles ? "" : "is-hidden"}>{showSubtitles ? currentQuestion : phase === "idle" ? "点击播放后，考官会用英语提问。" : phase === "asking" ? "🔊 考官问题正在播放 · 字幕已隐藏" : "考官问题已播放 · 字幕已隐藏"}</p></div>
+        <div><span>EXAMINER · {questionIndex > 0 ? "ANSWER-AWARE FOLLOW-UP" : `QUESTION ${questionIndex + 1}`}</span>{questionIndex > 0 && <small className="speaking-adaptive-badge">根据你上一轮的回答追问</small>}<p className={showSubtitles ? "" : "is-hidden"}>{showSubtitles ? currentQuestion : phase === "idle" ? "点击播放后，考官会用英语提问。" : phase === "asking" ? "🔊 考官问题正在播放 · 字幕已隐藏" : "考官问题已播放 · 字幕已隐藏"}</p></div>
         <div className="speaking-examiner-actions"><button type="button" disabled={submitted || recordingState === "recording" || recordingState === "paused"} onClick={() => playExaminerQuestion()}>{phase === "idle" ? "▶ 播放考官问题" : "↺ 重听当前问题"}</button><button type="button" disabled={examinerAudioState === "idle"} onClick={toggleExaminerAudio}>{examinerAudioState === "paused" ? "▶ 继续" : "Ⅱ 暂停"}</button><button type="button" onClick={() => setShowSubtitles((current) => !current)}>{showSubtitles ? "隐藏字幕" : "显示字幕"}</button></div>
       </div>
       {(phase === "preparing" || phase === "ready") && !submitted && <div className="speaking-prep-panel"><header><div><span>PREPARATION</span><strong>{phase === "ready" ? "准备结束" : "60 秒准备中"}</strong></div><b>{String(prepRemaining).padStart(2, "0")}<small>s</small></b></header><div><i style={{ width: `${prepRemaining / prompt.preparationSeconds * 100}%` }} /></div>{questionIndex === 0 && prompt.cuePoints && <ul>{prompt.cuePoints.map((point) => <li key={point}>{point}</li>)}</ul>}<textarea aria-label="Speaking preparation notes" placeholder="只记关键词，例如：camera · father · first trip · independence" value={prepNotes} onChange={(event) => setPrepNotes(event.target.value)} /><button type="button" onClick={startRecording}>{phase === "ready" ? "● 开始录音" : "准备好了，提前开始录音"}</button></div>}
@@ -1879,7 +1926,7 @@ function OfficialSpeakingResponse({
       {(recordingState === "finished" || submitted) && <div className="speaking-transcript-editor"><label htmlFor={`speaking-transcript-${task.id}`}>语音识别稿 <small>可修正浏览器识别错误；修改后再提交会让词汇与结构分析更准确</small></label><textarea id={`speaking-transcript-${task.id}`} disabled={submitted} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="浏览器未生成识别稿时，可以在回听后补充主要内容……" /></div>}
       {!submitted && recordingState === "finished" && <footer><span>{durationSeconds < 3 ? "录音过短，请至少说 3 秒。" : questionIndex < allQuestions.length - 1 ? `提交后考官会自动提出第 ${questionIndex + 2} 个问题，本 Part 暂时不会完成。` : "这是最后一个问题；提交后生成整组反馈与话题模板。"}</span><button type="button" disabled={!audioUrl || durationSeconds < 3} onClick={submitRecording}>{questionIndex < allQuestions.length - 1 ? "提交本题，听下一问" : "提交最后一题并生成反馈"}</button></footer>}
       {submitted && <section className="official-speaking-feedback"><header><div><span>PERSONALISED SPEAKING REVIEW</span><strong>回答完成后生成的语音不足与改进建议</strong></div><button type="button" onClick={restartPractice}>再做一次</button></header><div className="speaking-feedback-metrics">{feedback.metrics.map((metric) => <article key={metric.label}><span>{metric.label}</span><b>{metric.value}</b></article>)}</div><div className="speaking-feedback-columns"><article><strong>这次做得好</strong><ul>{feedback.strengths.map((item) => <li key={item}>{item}</li>)}</ul></article><article><strong>语音不足与下一轮改进</strong><ul>{feedback.priorities.map((item) => <li key={item}>{item}</li>)}</ul></article></div><section className="speaking-improvement-drills"><header><span>TARGETED VOICE PRACTICE</span><strong>根据本次回答安排的 3 个改进练习</strong></header><div>{improvementDrills.map((drill) => <article key={drill.title}><b>{drill.title}</b><p>{drill.reason}</p><strong>怎么练</strong><p>{drill.action}</p><blockquote>{drill.example}</blockquote></article>)}</div></section><div className="speaking-transcript-highlight"><header><b>识别稿荧光复盘</b><small><i className="good" /> 展开词 · <i className="watch" /> 填充词</small></header><SpeakingTranscriptHighlight transcript={transcript} /></div><p className="speaking-feedback-limit">本地分析会检查时长、语速、停顿区间、音量和语言结构，但不能可靠判断单个音素是否准确，也不冒充 IELTS 官方分数。请结合录音回听和官方示范录音复盘发音。</p></section>}
-      {submitted && <section className="speaking-topic-template"><header><div><span>TOPIC TEMPLATE · UNLOCKED</span><strong>{prompt.topicTemplate.title}</strong></div><small>整组问题完成后解锁；用于重做时组织观点</small></header><div>{prompt.topicTemplate.steps.map((step) => <article key={step.label}><b>{step.label}</b><p>{step.prompt}</p><blockquote>{step.example}</blockquote></article>)}</div><aside><b>可替换表达</b><p>{prompt.topicTemplate.usefulPhrases.join(" · ")}</p></aside><div className="speaking-follow-up"><b>本轮考官已经完成的问题</b>{allQuestions.map((question, index) => <p key={question}>{index + 1}. “{question}”</p>)}</div><p className="speaking-exam-note">{prompt.examNote}</p></section>}
+      {submitted && <section className="speaking-topic-template"><header><div><span>TOPIC TEMPLATE · UNLOCKED</span><strong>{prompt.topicTemplate.title}</strong></div><small>整组问题完成后解锁；用于重做时组织观点</small></header><div>{prompt.topicTemplate.steps.map((step) => <article key={step.label}><b>{step.label}</b><p>{step.prompt}</p><blockquote>{step.example}</blockquote></article>)}</div><aside><b>可替换表达</b><p>{prompt.topicTemplate.usefulPhrases.join(" · ")}</p></aside><div className="speaking-follow-up"><b>本轮考官实际提出的问题</b>{askedQuestions.map((question, index) => <p key={`${question}-${index}`}>{index + 1}. “{question}”{index > 0 ? <small>根据上一轮回答生成</small> : null}</p>)}</div><p className="speaking-exam-note">{prompt.examNote}</p></section>}
     </section>
   );
 }
