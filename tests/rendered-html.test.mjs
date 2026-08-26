@@ -51,6 +51,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /DailyStudyRecord/);
   assert.match(state, /dailyStudyHistory/);
   assert.match(state, /recordStudyActivity/);
+  assert.match(state, /calculateStudyStreak/);
+  assert.match(state, /streak: 0/);
+  assert.match(state, /streak: calculateStudyStreak\(dailyStudyHistory, today\)/);
+  assert.doesNotMatch(state, /streak: 6/);
   assert.match(state, /OfficialTaskResult/);
   assert.match(state, /officialTaskResults/);
   assert.match(state, /officialTaskAttemptHistory: Record<string, OfficialTaskResult\[\]>/);

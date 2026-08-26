@@ -89,6 +89,23 @@ export function dayKeyAfter(days: number, from = localDayKey()) {
   return localDayKey(date);
 }
 
+export function calculateStudyStreak(
+  history: Record<string, DailyStudyRecord>,
+  today = localDayKey(),
+) {
+  const activeDays = new Set(Object.entries(history)
+    .filter(([, record]) => record.minutes > 0 || record.activities.length > 0)
+    .map(([date]) => date));
+  let cursor = activeDays.has(today) ? today : dayKeyAfter(-1, today);
+  if (!activeDays.has(cursor)) return 0;
+  let streak = 0;
+  while (activeDays.has(cursor)) {
+    streak += 1;
+    cursor = dayKeyAfter(-1, cursor);
+  }
+  return streak;
+}
+
 export const defaultProgress: LearningProgress = {
   completed: { vocabulary: false, listening: false, speaking: false, reading: false },
   masteredWords: [],
@@ -115,7 +132,7 @@ export const defaultProgress: LearningProgress = {
   dailyStudyHistory: {},
   carryoverTasks: [],
   minutes: 12,
-  streak: 6,
+  streak: 0,
 };
 
 export function recordStudyActivity(
@@ -125,18 +142,20 @@ export function recordStudyActivity(
 ): LearningProgress {
   const currentRecord = progress.dailyStudyHistory[date] ?? { date, minutes: 0, activities: [] };
   if (currentRecord.activities.some((item) => item.id === activity.id)) return progress;
+  const dailyStudyHistory = {
+    ...progress.dailyStudyHistory,
+    [date]: {
+      date,
+      minutes: currentRecord.minutes + activity.minutes,
+      activities: [...currentRecord.activities, activity],
+    },
+  };
 
   return {
     ...progress,
     minutes: progress.minutes + activity.minutes,
-    dailyStudyHistory: {
-      ...progress.dailyStudyHistory,
-      [date]: {
-        date,
-        minutes: currentRecord.minutes + activity.minutes,
-        activities: [...currentRecord.activities, activity],
-      },
-    },
+    dailyStudyHistory,
+    streak: calculateStudyStreak(dailyStudyHistory),
   };
 }
 
@@ -225,6 +244,7 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     lastRating: "unfamiliar",
     lapses: 0,
   }])) as Record<string, ReviewScheduleItem>;
+  const dailyStudyHistory = stored.dailyStudyHistory && typeof stored.dailyStudyHistory === "object" ? stored.dailyStudyHistory : {};
   return {
     ...defaultProgress,
     ...stored,
@@ -257,7 +277,8 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     officialPracticeCompleted: Array.isArray(stored.officialPracticeCompleted) ? stored.officialPracticeCompleted : [],
     officialTaskResults: stored.officialTaskResults && typeof stored.officialTaskResults === "object" ? stored.officialTaskResults : {},
     officialTaskAttemptHistory: stored.officialTaskAttemptHistory && typeof stored.officialTaskAttemptHistory === "object" ? stored.officialTaskAttemptHistory : {},
-    dailyStudyHistory: stored.dailyStudyHistory && typeof stored.dailyStudyHistory === "object" ? stored.dailyStudyHistory : {},
+    dailyStudyHistory,
+    streak: calculateStudyStreak(dailyStudyHistory, today),
     carryoverTasks,
   };
 }
