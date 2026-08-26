@@ -42,7 +42,7 @@
 - **Listening Section 1 套题**：原创双人生活场景对话，包含表格填空、多选、匹配和单选，共 10 题；真实音频播放器支持拖动定位、暂停、继续和从头重播。
 - **口语 Part 3 模拟**：点击开始后考官才用语音提问，播放中可以暂停并从原位置继续，也可以从头重听；字幕默认隐藏，听不懂时可以显示；保留 4–5 分钟结构、短回答追问和展开提示。
 - **Academic Reading 套题**：原创长文配段落标题匹配、信息匹配、单选、判断和摘要填空，共 11 题。
-- **每周真题计划**：周二阅读、周四听力、周六 L/R/W 连续训练、周日口语与错题复盘。Reading 主训练使用 IELTS 官方 2024 Modified Large Print 完整样题（3 篇文章、Questions 1–40 连续编号），文章册与题册可分区切换，40 题统一提交并逐题判分；旧 Sample Tasks 仅保留为明确标注的题型专项。
+- **每周真题计划**：周二阅读、周四听力、周六 L/R/W 连续训练、周日口语与错题复盘。Reading 只使用 IELTS 官方 2024 Modified Large Print 完整样题（3 篇文章、Questions 1–40 连续编号），文章册与题册可分区切换，40 题统一提交并逐题判分；只有全部必做题提交后才由系统自动记录完成。
 - **进度激励**：今日完成度、连续学习、本周时长、各项完成状态。
 - **未完成任务回流**：日期变化后，昨天未完成的专项自动进入今天的待补做区并优先开始；同类任务不会无限叠加，只有完整完成专项后才会移除。
 - **严格完成判定**：专项必须完成全部必做内容后才打勾；词汇需同时完成每日 100 词与 80 词听写。
@@ -54,7 +54,7 @@
 >
 > 当前词库不是《雅思词汇真经》的电子化版本：该书只作为“3600+ 核心词、22 个主题”的产品规模参考，本项目没有其完整词表或再分发授权。APP 内每张卡片会标注来源层级；学术高频层依据 Academic Word List（AWL）的频率分层，中文释义与搭配由项目独立整理。
 >
-> 真题模块在 App 内加载 IELTS.org 官方原始材料。Reading 主套题使用 2024 Modified Large Print [文章册](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf)、[题册](https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf)及[答案表](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf)，共 3 篇、40 题；另加载官方 [Listening](https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf)、[Reading 题型专项](https://ielts.org/cdn/Sample-tests/ielts-academic-reading-sample-tasks-2023.pdf)、[Writing](https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf) 与 [Speaking](https://ielts.org/cdn/ielts-sample-tests/ielts-speaking-sample-tasks-2023.pdf) Sample Tasks。它们是官方公开样题，不标注成 Cambridge 历年真题；商业题库必须获得授权后才能内置。
+> 真题模块在 App 内加载 IELTS.org 官方原始材料。Reading 使用 2024 Modified Large Print [文章册](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf)、[题册](https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf)及[答案表](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf)，共 3 篇、40 题；另加载官方 [Listening](https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf)、[Writing](https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf) 与 [Speaking](https://ielts.org/cdn/ielts-sample-tests/ielts-speaking-sample-tasks-2023.pdf) Sample Tasks。它们是官方公开样题，不标注成 Cambridge 历年真题；商业题库必须获得授权后才能内置。
 
 词汇选取依据：
 

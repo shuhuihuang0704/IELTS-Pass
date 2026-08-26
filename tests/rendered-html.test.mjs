@@ -108,7 +108,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /modified-large-print-question-booklet\.pdf/);
   assert.match(app, /modified-large-print-text-booklet\.pdf/);
   assert.match(app, /modified-large-print-sample-test-answer-key\.pdf/);
-  assert.match(app, /题型专项（非整套）/);
+  assert.doesNotMatch(app, /readingQuestionTypeMaterial|ielts-academic-reading-sample-tasks-2023\.pdf/);
   const fullReadingBlock = app.match(/const readingMaterial:[\s\S]*?const writingMaterial:/)?.[0] ?? "";
   const fullReadingNumbers = [...fullReadingBlock.matchAll(/number: "(\d+)"/g)].map((match) => Number(match[1]));
   assert.deepEqual(fullReadingNumbers, Array.from({ length: 40 }, (_, index) => index + 1));
@@ -119,8 +119,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /questionPage/);
   assert.match(app, /answerPage/);
   assert.match(app, /查看答案/);
-  assert.match(app, /Questions 1–3/);
-  assert.match(app, /官方题型合集保留原始题号/);
+  assert.match(app, /Questions 1–40/);
+  assert.match(app, /officialPracticeRecordId/);
+  assert.match(app, /完成全部 \$\{requiredQuestionCount\} 题后自动记录/);
+  assert.doesNotMatch(app, /markComplete|完成整套后记录/);
   assert.match(app, /COMPUTER-DELIVERED ANSWER SHEET/);
   assert.match(app, /提交全部答案/);
   assert.match(app, /正确答案：/);

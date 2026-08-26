@@ -129,52 +129,6 @@ const listeningMaterial: OfficialTestMaterial = {
     ] },
   ],
 };
-const readingQuestionTypeMaterial: OfficialTestMaterial = {
-  id: "reading-question-types",
-  label: "Reading 题型专项（非整套）",
-  pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-reading-sample-tasks-2023.pdf",
-  tasks: [
-    { id: "true-false-not-given", label: "True / False / Not Given", questionLabel: "Questions 1–3", questionPage: 12, answerPage: 14, answers: [
-      { number: "1", accepted: ["FALSE"], displayAnswer: "FALSE", choices: ["TRUE", "FALSE", "NOT GIVEN"] }, { number: "2", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["TRUE", "FALSE", "NOT GIVEN"] }, { number: "3", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
-    ] },
-    { id: "flow-chart", label: "Flow-chart Completion", questionLabel: "Questions 1–3", questionPage: 9, answerPage: 11, answers: [
-      { number: "1", accepted: ["glucose"], displayAnswer: "glucose" }, { number: "2", accepted: ["free radicals"], displayAnswer: "free radicals" }, { number: "3", accepted: ["preservation"], displayAnswer: "preservation" },
-    ] },
-    { id: "matching-headings", label: "Matching Headings", questionLabel: "Questions 1–4", questionPage: 15, answerPage: 18, answers: [
-      { number: "1", accepted: ["iii"], displayAnswer: "iii", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] }, { number: "2", accepted: ["viii"], displayAnswer: "viii", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] }, { number: "3", accepted: ["v"], displayAnswer: "v", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] }, { number: "4", accepted: ["vii"], displayAnswer: "vii", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] },
-    ] },
-    { id: "sentence-endings", label: "Matching Sentence Endings", questionLabel: "Questions 1–3", questionPage: 19, answerPage: 22, answers: [
-      { number: "1", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "2", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "3", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
-    ] },
-    { id: "multiple-choice-many", label: "Multiple Choice · more than one answer", questionLabel: "Questions 1–4", questionPage: 23, answerPage: 26, answers: [
-      { number: "1", accepted: ["B", "G"], displayAnswer: "B / G（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "1-2" }, { number: "2", accepted: ["B", "G"], displayAnswer: "B / G（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "1-2" }, { number: "3", accepted: ["C", "E"], displayAnswer: "C / E（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "3-4" }, { number: "4", accepted: ["C", "E"], displayAnswer: "C / E（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "3-4" },
-    ] },
-    { id: "multiple-choice-one", label: "Multiple Choice · one answer", questionLabel: "Questions 1–4", questionPage: 27, answerPage: 29, answers: [
-      { number: "1", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D"] }, { number: "2", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] }, { number: "3", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D"] }, { number: "4", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
-    ] },
-    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 1–6", questionPage: 30, answerPage: 33, answers: [
-      { number: "1", accepted: ["thorium"], displayAnswer: "thorium" }, { number: "2", accepted: ["pitchblende"], displayAnswer: "pitchblende" }, { number: "3", accepted: ["radium"], displayAnswer: "radium" }, { number: "4", accepted: ["soldiers"], displayAnswer: "soldiers" }, { number: "5", accepted: ["illness"], displayAnswer: "illness" }, { number: "6", accepted: ["neutron"], displayAnswer: "neutron" },
-    ] },
-    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 1–5", questionPage: 34, answerPage: 37, answers: [
-      { number: "1", accepted: ["theropods"], displayAnswer: "theropods" }, { number: "2", accepted: ["collarbones"], displayAnswer: "collarbones" }, { number: "3", accepted: ["reptile"], displayAnswer: "reptile" }, { number: "4", accepted: ["similarities"], displayAnswer: "similarities" }, { number: "5", accepted: ["claw"], displayAnswer: "claw" },
-    ] },
-    { id: "summary-list", label: "Summary Completion · answer list", questionLabel: "Questions 1–4", questionPage: 38, answerPage: 40, answers: [
-      { number: "1", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E", "F", "G"] }, { number: "2", accepted: ["G"], displayAnswer: "G", choices: ["A", "B", "C", "D", "E", "F", "G"] }, { number: "3", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G"] }, { number: "4", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G"] },
-    ] },
-    { id: "summary-words", label: "Summary Completion · passage words", questionLabel: "Questions 1–5", questionPage: 41, answerPage: 43, answers: [
-      { number: "1", accepted: ["frustration"], displayAnswer: "frustration" }, { number: "2", accepted: ["first-time user", "first time user"], displayAnswer: "first-time user" }, { number: "3", accepted: ["essential"], displayAnswer: "essential" }, { number: "4", accepted: ["special knowledge"], displayAnswer: "special knowledge" }, { number: "5", accepted: ["legal formulations"], displayAnswer: "legal formulations" },
-    ] },
-    { id: "diagram-label", label: "Diagram Label Completion", questionLabel: "Questions 1–5", questionPage: 44, answerPage: 46, answers: [
-      { number: "1", accepted: ["hot dry air", "dry hot air"], displayAnswer: "hot dry air / dry hot air" }, { number: "2", accepted: ["cool moist air", "moist cool air"], displayAnswer: "cool moist air / moist cool air" }, { number: "3", accepted: ["infrared radiation", "infrared light"], displayAnswer: "infrared radiation / light" }, { number: "4", accepted: ["condenser", "a condenser", "the condenser"], displayAnswer: "(a/the) condenser" }, { number: "5", accepted: ["pure water", "distilled water", "pure distilled water"], displayAnswer: "pure / distilled water" },
-    ] },
-    { id: "matching-features", label: "Matching Features", questionLabel: "official Questions 7–10", questionPage: 3, answerPage: 5, answers: [
-      { number: "7", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D", "E"] }, { number: "8", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D", "E"] }, { number: "9", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E"] }, { number: "10", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E"] },
-    ] },
-    { id: "table-completion", label: "Table Completion", questionLabel: "official Questions 9–13", questionPage: 6, answerPage: 8, answers: [
-      { number: "9", accepted: ["temperate"], displayAnswer: "temperate" }, { number: "10", accepted: ["early spring"], displayAnswer: "early spring" }, { number: "11", accepted: ["two to five", "2-5", "2 to 5"], displayAnswer: "two to five / 2-5" }, { number: "12", accepted: ["sub-tropical", "subtropical"], displayAnswer: "sub-tropical" }, { number: "13", accepted: ["South African tunneling", "South African tunnelling"], displayAnswer: "South African tunneling / tunnelling" },
-    ] },
-  ],
-};
 const readingMaterial: OfficialTestMaterial = {
   id: "reading-full-40",
   label: "Academic Reading · Full Test 1–40",
@@ -255,11 +209,15 @@ const speakingMaterial: OfficialTestMaterial = {
 };
 
 const officialTestSchedule: OfficialTestSession[] = [
-  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Full Sample Test 2024", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方完整样题", setCode: "IELTS-OFFICIAL-AR-MLP-2024-01", description: "完整 3 篇 Academic Reading，题号从 1 连续到 40；另附题型专项材料，但不与整套试卷混排。", materials: [readingMaterial, readingQuestionTypeMaterial] },
+  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Full Sample Test 2024", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方完整样题", setCode: "IELTS-OFFICIAL-AR-MLP-2024-01", description: "完整 3 篇 Academic Reading，题号从 1 连续到 40；全部填写并提交后自动记录完成。", materials: [readingMaterial] },
   { id: "listening", isoDay: 4, dayLabel: "周四", time: "20:00", title: "Official Listening Sample Tasks 2023", duration: "40 分钟", durationMinutes: 40, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-L-2023-01", description: "内置官方题目 PDF 与 8 段对应录音，覆盖填空、单选、简答、匹配和地图题。", materials: [listeningMaterial] },
   { id: "full-mock", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Official L/R/W Sample Bundle 2023", duration: "150 分钟", durationMinutes: 150, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-LRW-2023-01", description: "在同一套题运行器中切换 Listening、Reading 与 Writing 官方样题，连续计时训练。", materials: [listeningMaterial, readingMaterial, writingMaterial] },
   { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Official Speaking Sample Tasks 2023", duration: "55 分钟", durationMinutes: 55, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-S-2023-01", description: "内置官方 Speaking Part 1–3 题目与示范录音，完成后复盘本周错题。", materials: [speakingMaterial] },
 ];
+
+function officialPracticeRecordId(session: OfficialTestSession, weekKey = localWeekKey()) {
+  return `${weekKey}:${session.id}:${session.setCode}`;
+}
 
 function speak(text: string, rate = 0.9) {
   if (!("speechSynthesis" in window)) return false;
@@ -479,10 +437,10 @@ function TodayView({
   const todaySeenCount = progress.dailyVocabularyKnown.filter((word) => todayWordSet.has(word)).length;
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
   const weekKey = localWeekKey();
-  const completedOfficialSessions = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`));
+  const completedOfficialSessions = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)));
   const todayIsoDay = ((new Date().getDay() + 6) % 7) + 1;
-  const nextOfficialSession = officialTestSchedule.find((session) => session.isoDay >= todayIsoDay && !progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`))
-    ?? officialTestSchedule.find((session) => !progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`))
+  const nextOfficialSession = officialTestSchedule.find((session) => session.isoDay >= todayIsoDay && !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
+    ?? officialTestSchedule.find((session) => !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
     ?? officialTestSchedule[0];
   return (
     <>
@@ -579,7 +537,7 @@ function OfficialPracticePlan({
   onOpenOfficialTest: (sessionId: string) => void;
 }) {
   const weekKey = localWeekKey();
-  const completedCount = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`)).length;
+  const completedCount = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey))).length;
 
   return (
     <section className="official-practice-plan">
@@ -587,10 +545,10 @@ function OfficialPracticePlan({
         <div><span>AUTHENTIC TEST WEEK</span><h2>真题训练计划</h2><p>每周 4 次 · 共约 5 小时 · 独立于每日基础训练</p></div>
         <strong>{completedCount}<small>/4</small></strong>
       </header>
-      <div className="official-source-note"><b>内容来源说明</b><p>Reading 主训练使用 IELTS.org 官方 2024 完整 Academic Reading Sample Test（3 篇、1–40 题）；2023 Sample Tasks 仅作为题型专项，已明确标注“非整套”。其他官方材料也不冒充 Cambridge 历年真题。</p></div>
+      <div className="official-source-note"><b>内容来源说明</b><p>Reading 只保留 IELTS.org 官方 2024 完整 Academic Reading Sample Test（3 篇、1–40 题），不再混入重复编号的题型合集。其他官方材料也不冒充 Cambridge 历年真题。</p></div>
       <div className="official-session-list">
         {officialTestSchedule.map((session, index) => {
-          const recordId = `${weekKey}:${session.id}`;
+          const recordId = officialPracticeRecordId(session, weekKey);
           const completed = progress.officialPracticeCompleted.includes(recordId);
           return (
             <article className={completed ? "official-session is-complete" : "official-session"} key={session.id}>
@@ -645,7 +603,12 @@ function OfficialTestRunner({
   const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
   const taskSubmitted = submittedTasks[taskKey] ?? false;
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
-  const recordId = `${localWeekKey()}:${session.id}`;
+  const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
+    .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0)
+    .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: sessionTask.answers?.length ?? 0 })));
+  const requiredQuestionCount = requiredTasks.reduce((total, requiredTask) => total + requiredTask.questionCount, 0);
+  const submittedRequiredTaskCount = requiredTasks.filter((requiredTask) => submittedTasks[requiredTask.key]).length;
+  const recordId = officialPracticeRecordId(session);
   const completed = progress.officialPracticeCompleted.includes(recordId);
 
   useEffect(() => {
@@ -673,13 +636,17 @@ function OfficialTestRunner({
     setRemainingSeconds(session.durationMinutes * 60);
     setTimerState("idle");
   };
-  const markComplete = () => {
-    updateProgress((current) => ({
-      ...current,
-      officialPracticeCompleted: current.officialPracticeCompleted.includes(recordId)
-        ? current.officialPracticeCompleted
-        : [...current.officialPracticeCompleted, recordId],
-    }));
+  const submitCurrentTask = () => {
+    const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
+    setSubmittedTasks(nextSubmittedTasks);
+    if (requiredTasks.length > 0 && requiredTasks.every((requiredTask) => nextSubmittedTasks[requiredTask.key])) {
+      updateProgress((current) => ({
+        ...current,
+        officialPracticeCompleted: current.officialPracticeCompleted.includes(recordId)
+          ? current.officialPracticeCompleted
+          : [...current.officialPracticeCompleted, recordId],
+      }));
+    }
   };
   const changeMaterial = (index: number) => {
     const nextMaterial = session.materials[index];
@@ -714,7 +681,7 @@ function OfficialTestRunner({
           <button className="runner-timer-reset" onClick={resetTimer}>重新计时</button>
           <div className="runner-material-index"><span>本套材料</span>{session.materials.map((item, index) => <button className={materialIndex === index ? "is-active" : ""} onClick={() => changeMaterial(index)} key={item.id}>{index + 1}. {item.label}</button>)}</div>
           <div className="official-runner-rights"><b>IELTS 官方公开样题</b><p>题目与录音由 IELTS.org 提供。本 App 仅在学习界面中加载原始官方文件并保存你的进度。</p></div>
-          <button className={completed ? "runner-complete is-complete" : "runner-complete"} onClick={markComplete}>{completed ? "✓ 本套已完成" : "完成整套后记录"}</button>
+          <div className={completed ? "runner-completion-status is-complete" : "runner-completion-status"}><b>{completed ? "✓ 本套已完成" : "等待完整提交"}</b><p>{completed ? `全部 ${requiredQuestionCount} 题已提交，系统已自动记录。` : requiredTasks.length > 0 ? `${submittedRequiredTaskCount}/${requiredTasks.length} 个必做 Task 已提交；完成全部 ${requiredQuestionCount} 题后自动记录。` : "本套没有可自动判定的客观题，当前不会记录为完成。"}</p></div>
         </aside>
         <section className="official-paper-panel">
           <header><div><span>{material.label}</span><strong>{task.label} · {task.questionLabel}</strong></div><small>官方原始题号 · 当前显示 P{displayPage}</small></header>
@@ -725,13 +692,13 @@ function OfficialTestRunner({
               {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={Boolean(material.answerPdfUrl && !taskSubmitted)} onClick={() => setPaperMode("answers")}>{material.answerPdfUrl && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
             </div>
           </div>
-          <p className="official-task-note">{material.passagePdfUrl ? "这是一份完整的官方 Academic Reading Sample Test：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交。Modified Large Print 仅改变排版，不改变题目与评分。" : "官方题型合集保留原始题号；目录按独立 Task 切分，仅用于题型专项，不把它标记为完整套题。"}</p>
+          <p className="official-task-note">{material.passagePdfUrl ? "这是一份完整的官方 Academic Reading Sample Test：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交。Modified Large Print 仅改变排版，不改变题目与评分。" : "官方 Sample Tasks 保留各自的原始题号；它们按独立 Task 使用，不与完整套题混排。"}</p>
           <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : "official-standard-paper-body"}>
           {taskAnswers.length > 0 ? (
             <form className="official-answer-sheet" onSubmit={(event) => {
               event.preventDefault();
               if (!allAnswersFilled) return;
-              setSubmittedTasks((current) => ({ ...current, [taskKey]: true }));
+              submitCurrentTask();
             }}>
               <header>
                 <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>按官方题号填写，提交前不会显示答案</small></div>
