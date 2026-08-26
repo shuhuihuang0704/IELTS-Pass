@@ -229,6 +229,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /提交本 Task/);
   assert.doesNotMatch(app, /materials: \[listeningMaterial, readingMaterial, writingMaterial\]/);
   assert.match(app, /ielts-speaking-part-3-sample-recording\.mp3/);
+  assert.match(app, /id: "speaking-review"[\s\S]*?duration: "25 分钟", durationMinutes: 25/);
+  assert.doesNotMatch(app, /duration: "55 分钟", durationMinutes: 55/);
   const speakingBlock = app.match(/const speakingMaterial:[\s\S]*?const officialTestSchedule:/)?.[0] ?? "";
   assert.equal((speakingBlock.match(/speakingPrompt: \{/g) ?? []).length, 3);
   assert.match(speakingBlock, /What kind of place is it\?/);
