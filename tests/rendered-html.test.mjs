@@ -103,7 +103,15 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /不冒充 Cambridge 历年真题/);
   assert.match(app, /开始本套/);
   assert.match(app, /OfficialTestRunner/);
-  assert.match(app, /IELTS-OFFICIAL-AR-2023-01/);
+  assert.match(app, /IELTS-OFFICIAL-AR-MLP-2024-01/);
+  assert.match(app, /Questions 1–40 · 3 Passages/);
+  assert.match(app, /modified-large-print-question-booklet\.pdf/);
+  assert.match(app, /modified-large-print-text-booklet\.pdf/);
+  assert.match(app, /modified-large-print-sample-test-answer-key\.pdf/);
+  assert.match(app, /题型专项（非整套）/);
+  const fullReadingBlock = app.match(/const readingMaterial:[\s\S]*?const writingMaterial:/)?.[0] ?? "";
+  const fullReadingNumbers = [...fullReadingBlock.matchAll(/number: "(\d+)"/g)].map((match) => Number(match[1]));
+  assert.deepEqual(fullReadingNumbers, Array.from({ length: 40 }, (_, index) => index + 1));
   assert.match(app, /ielts-listening-sample-tasks-2023\.pdf/);
   assert.match(app, /ielts-speaking-part-3-sample-recording\.mp3/);
   assert.match(app, /official-paper-frame/);
@@ -112,7 +120,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /answerPage/);
   assert.match(app, /查看答案/);
   assert.match(app, /Questions 1–3/);
-  assert.match(app, /官方合集保留原始题号/);
+  assert.match(app, /官方题型合集保留原始题号/);
   assert.match(app, /COMPUTER-DELIVERED ANSWER SHEET/);
   assert.match(app, /提交全部答案/);
   assert.match(app, /正确答案：/);

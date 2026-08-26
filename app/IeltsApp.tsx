@@ -62,7 +62,15 @@ type OfficialTaskSegment = {
   answerLabel?: string;
   answers?: OfficialAnswer[];
 };
-type OfficialTestMaterial = { id: string; label: string; pdfUrl: string; tasks: OfficialTaskSegment[]; audioTracks?: OfficialAudioTrack[] };
+type OfficialTestMaterial = {
+  id: string;
+  label: string;
+  pdfUrl: string;
+  passagePdfUrl?: string;
+  answerPdfUrl?: string;
+  tasks: OfficialTaskSegment[];
+  audioTracks?: OfficialAudioTrack[];
+};
 
 const listeningMaterial: OfficialTestMaterial = {
   id: "listening",
@@ -121,9 +129,9 @@ const listeningMaterial: OfficialTestMaterial = {
     ] },
   ],
 };
-const readingMaterial: OfficialTestMaterial = {
-  id: "reading",
-  label: "Academic Reading",
+const readingQuestionTypeMaterial: OfficialTestMaterial = {
+  id: "reading-question-types",
+  label: "Reading 题型专项（非整套）",
   pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-reading-sample-tasks-2023.pdf",
   tasks: [
     { id: "true-false-not-given", label: "True / False / Not Given", questionLabel: "Questions 1–3", questionPage: 12, answerPage: 14, answers: [
@@ -167,6 +175,57 @@ const readingMaterial: OfficialTestMaterial = {
     ] },
   ],
 };
+const readingMaterial: OfficialTestMaterial = {
+  id: "reading-full-40",
+  label: "Academic Reading · Full Test 1–40",
+  pdfUrl: "https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf",
+  passagePdfUrl: "https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf",
+  answerPdfUrl: "https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf",
+  tasks: [
+    { id: "full-reading-test", label: "完整 Academic Reading Sample Test", questionLabel: "Questions 1–40 · 3 Passages", questionPage: 4, answerPage: 1, answers: [
+      { number: "1", accepted: ["FALSE"], displayAnswer: "FALSE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "2", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "3", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "4", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "5", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "6", accepted: ["FALSE"], displayAnswer: "FALSE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "7", accepted: ["light"], displayAnswer: "light" },
+      { number: "8", accepted: ["shells"], displayAnswer: "shells" },
+      { number: "9", accepted: ["mineralisation", "mineralization"], displayAnswer: "mineralisation / mineralization" },
+      { number: "10", accepted: ["histidine"], displayAnswer: "histidine" },
+      { number: "11", accepted: ["gills"], displayAnswer: "gills" },
+      { number: "12", accepted: ["fangs"], displayAnswer: "fangs" },
+      { number: "13", accepted: ["aircraft"], displayAnswer: "aircraft" },
+      { number: "14", accepted: ["YES"], displayAnswer: "YES", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "15", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "16", accepted: ["NO"], displayAnswer: "NO", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "17", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "18", accepted: ["NO"], displayAnswer: "NO", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "19", accepted: ["D", "E"], displayAnswer: "D / E（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "19-20" },
+      { number: "20", accepted: ["D", "E"], displayAnswer: "D / E（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "19-20" },
+      { number: "21", accepted: ["C", "D"], displayAnswer: "C / D（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "21-22" },
+      { number: "22", accepted: ["C", "D"], displayAnswer: "C / D（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "21-22" },
+      { number: "23", accepted: ["oral histories"], displayAnswer: "oral histories" },
+      { number: "24", accepted: ["humanistic study", "historical discipline"], displayAnswer: "humanistic study / historical discipline（顺序不限）", group: "24-25" },
+      { number: "25", accepted: ["humanistic study", "historical discipline"], displayAnswer: "humanistic study / historical discipline（顺序不限）", group: "24-25" },
+      { number: "26", accepted: ["scientist"], displayAnswer: "scientist" },
+      { number: "27", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
+      { number: "28", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
+      { number: "29", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D"] },
+      { number: "30", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] },
+      { number: "31", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D"] },
+      { number: "32", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D"] },
+      { number: "33", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] },
+      { number: "34", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "35", accepted: ["G"], displayAnswer: "G", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "36", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "37", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "38", accepted: ["B", "C"], displayAnswer: "B / C（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "38-39" },
+      { number: "39", accepted: ["B", "C"], displayAnswer: "B / C（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "38-39" },
+      { number: "40", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] },
+    ] },
+  ],
+};
 const writingMaterial: OfficialTestMaterial = {
   id: "writing",
   label: "Academic Writing",
@@ -196,7 +255,7 @@ const speakingMaterial: OfficialTestMaterial = {
 };
 
 const officialTestSchedule: OfficialTestSession[] = [
-  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Sample Tasks 2023", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-AR-2023-01", description: "App 内直接显示官方 Academic Reading 样题合集，并进行 60 分钟计时。", materials: [readingMaterial] },
+  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Full Sample Test 2024", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方完整样题", setCode: "IELTS-OFFICIAL-AR-MLP-2024-01", description: "完整 3 篇 Academic Reading，题号从 1 连续到 40；另附题型专项材料，但不与整套试卷混排。", materials: [readingMaterial, readingQuestionTypeMaterial] },
   { id: "listening", isoDay: 4, dayLabel: "周四", time: "20:00", title: "Official Listening Sample Tasks 2023", duration: "40 分钟", durationMinutes: 40, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-L-2023-01", description: "内置官方题目 PDF 与 8 段对应录音，覆盖填空、单选、简答、匹配和地图题。", materials: [listeningMaterial] },
   { id: "full-mock", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Official L/R/W Sample Bundle 2023", duration: "150 分钟", durationMinutes: 150, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-LRW-2023-01", description: "在同一套题运行器中切换 Listening、Reading 与 Writing 官方样题，连续计时训练。", materials: [listeningMaterial, readingMaterial, writingMaterial] },
   { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Official Speaking Sample Tasks 2023", duration: "55 分钟", durationMinutes: 55, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-S-2023-01", description: "内置官方 Speaking Part 1–3 题目与示范录音，完成后复盘本周错题。", materials: [speakingMaterial] },
@@ -528,7 +587,7 @@ function OfficialPracticePlan({
         <div><span>AUTHENTIC TEST WEEK</span><h2>真题训练计划</h2><p>每周 4 次 · 共约 5 小时 · 独立于每日基础训练</p></div>
         <strong>{completedCount}<small>/4</small></strong>
       </header>
-      <div className="official-source-note"><b>内容来源说明</b><p>官方题目、对应录音和套题编号会直接显示在 App 内，不再跳转官网。当前内置的是 IELTS.org 公开的 2023 Sample Tasks，不冒充 Cambridge 历年真题。</p></div>
+      <div className="official-source-note"><b>内容来源说明</b><p>Reading 主训练使用 IELTS.org 官方 2024 完整 Academic Reading Sample Test（3 篇、1–40 题）；2023 Sample Tasks 仅作为题型专项，已明确标注“非整套”。其他官方材料也不冒充 Cambridge 历年真题。</p></div>
       <div className="official-session-list">
         {officialTestSchedule.map((session, index) => {
           const recordId = `${weekKey}:${session.id}`;
@@ -563,6 +622,8 @@ function OfficialTestRunner({
   const [taskIndex, setTaskIndex] = useState(0);
   const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
   const [audioTrackIndex, setAudioTrackIndex] = useState(0);
+  const [readingBookletView, setReadingBookletView] = useState<"passage" | "questions">("passage");
+  const [readingSectionIndex, setReadingSectionIndex] = useState(0);
   const [officialResponses, setOfficialResponses] = useState<Record<string, string>>({});
   const [submittedTasks, setSubmittedTasks] = useState<Record<string, boolean>>({});
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
@@ -571,6 +632,13 @@ function OfficialTestRunner({
   const task = material.tasks[taskIndex];
   const audioTrack = material.audioTracks?.[audioTrackIndex];
   const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
+  const displayPdfUrl = paperMode === "answers" && material.answerPdfUrl ? material.answerPdfUrl : material.pdfUrl;
+  const fullReadingSections = [
+    { label: "Passage 1", range: "Q1–13", passagePage: 2, questionPage: 4 },
+    { label: "Passage 2", range: "Q14–26", passagePage: 5, questionPage: 7 },
+    { label: "Passage 3", range: "Q27–40", passagePage: 9, questionPage: 11 },
+  ];
+  const readingSection = fullReadingSections[readingSectionIndex];
   const taskKey = `${material.id}:${task.id}`;
   const taskAnswers = task.answers ?? [];
   const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
@@ -618,12 +686,16 @@ function OfficialTestRunner({
     setMaterialIndex(index);
     setTaskIndex(0);
     setPaperMode("questions");
+    setReadingBookletView("passage");
+    setReadingSectionIndex(0);
     setAudioTrackIndex(nextMaterial.tasks[0].audioTrackIndex ?? 0);
   };
   const changeTask = (index: number) => {
     const nextTask = material.tasks[index];
     setTaskIndex(index);
     setPaperMode("questions");
+    setReadingBookletView("passage");
+    setReadingSectionIndex(0);
     setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
   };
 
@@ -650,10 +722,11 @@ function OfficialTestRunner({
             <label>本材料任务<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>
             <div className="official-paper-switch" aria-label="题目与答案切换">
               <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{task.questionPage}</button>
-              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} onClick={() => setPaperMode("answers")}>{task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
+              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={Boolean(material.answerPdfUrl && !taskSubmitted)} onClick={() => setPaperMode("answers")}>{material.answerPdfUrl && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
             </div>
           </div>
-          <p className="official-task-note">官方合集保留原始题号；本目录已按独立 Task 切分。默认从 Questions 1 开始，少数题型原本从后续题号开始时会明确标注。</p>
+          <p className="official-task-note">{material.passagePdfUrl ? "这是一份完整的官方 Academic Reading Sample Test：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交。Modified Large Print 仅改变排版，不改变题目与评分。" : "官方题型合集保留原始题号；目录按独立 Task 切分，仅用于题型专项，不把它标记为完整套题。"}</p>
+          <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : "official-standard-paper-body"}>
           {taskAnswers.length > 0 ? (
             <form className="official-answer-sheet" onSubmit={(event) => {
               event.preventDefault();
@@ -699,7 +772,18 @@ function OfficialTestRunner({
               <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
             </div>
           )}
-          <iframe key={`${material.id}-${task.id}-${paperMode}`} className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${material.pdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&view=FitH`} />
+          {material.passagePdfUrl && paperMode === "questions" ? (
+            <div className="official-reading-booklet">
+              <header>
+                <div className="official-reading-sections" aria-label="阅读文章分段">{fullReadingSections.map((section, index) => <button className={readingSectionIndex === index ? "is-active" : ""} onClick={() => setReadingSectionIndex(index)} type="button" key={section.label}>{section.label}<small>{section.range}</small></button>)}</div>
+                <div className="official-booklet-switch" aria-label="文章册与题册切换"><button className={readingBookletView === "passage" ? "is-active" : ""} onClick={() => setReadingBookletView("passage")} type="button">文章册</button><button className={readingBookletView === "questions" ? "is-active" : ""} onClick={() => setReadingBookletView("questions")} type="button">题册</button></div>
+              </header>
+              <iframe key={`${readingBookletView}-${readingSectionIndex}`} className="official-paper-frame" title={`${readingSection.label} · ${readingBookletView === "passage" ? "文章册" : "题册"}`} src={`${readingBookletView === "passage" ? material.passagePdfUrl : material.pdfUrl}#page=${readingBookletView === "passage" ? readingSection.passagePage : readingSection.questionPage}&toolbar=1&navpanes=0&view=FitH`} />
+            </div>
+          ) : (
+            <iframe key={`${material.id}-${task.id}-${paperMode}`} className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${displayPdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&view=FitH`} />
+          )}
+          </div>
         </section>
       </div>
     </>

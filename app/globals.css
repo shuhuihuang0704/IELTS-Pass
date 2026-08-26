@@ -233,7 +233,17 @@ button { cursor: pointer; }
 .official-paper-switch { display:flex; gap:6px; }
 .official-paper-switch button { min-height:36px; padding:0 11px; border:0; border-radius:9px; color:#645e67; background:#e8e3df; font-size:9px; white-space:nowrap; }
 .official-paper-switch button.is-active { color:white; background:var(--violet); }
+.official-paper-switch button:disabled { color:#9b949c; background:#e8e4e8; cursor:not-allowed; }
 .official-task-note { margin:9px 2px 0; color:#766f77; font-size:9px; line-height:1.55; }
+.official-full-reading-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:12px; align-items:start; }
+.official-full-reading-body>.official-answer-sheet { grid-column:2; grid-row:1; max-height:760px; overflow:auto; position:sticky; top:12px; }
+.official-reading-booklet { min-width:0; grid-column:1; grid-row:1; margin-top:13px; }
+.official-reading-booklet>header { padding:9px; display:flex; align-items:center; justify-content:space-between; gap:8px; border-radius:13px; background:#f4f1ed; }
+.official-reading-sections,.official-booklet-switch { display:flex; gap:5px; }
+.official-reading-sections button,.official-booklet-switch button { min-height:35px; padding:0 9px; border:0; border-radius:8px; color:#6e6770; background:#e8e3df; font-size:8px; }
+.official-reading-sections button small { display:block; margin-top:2px; color:inherit; font-size:7px; }
+.official-reading-sections button.is-active,.official-booklet-switch button.is-active { color:white; background:var(--violet); }
+.official-reading-booklet>.official-paper-frame { margin-top:8px; }
 .official-answer-sheet { margin-top:13px; padding:15px; border:1px solid #e5dfe9; border-radius:16px; background:#faf9fb; }
 .official-answer-sheet>header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .official-answer-sheet>header span,.official-answer-sheet>header strong,.official-answer-sheet>header small { display:block; }
@@ -533,6 +543,12 @@ button { cursor: pointer; }
   .official-answer-grid { grid-template-columns:1fr; }
   .official-answer-sheet>footer { align-items:stretch; flex-direction:column; }
   .official-answer-sheet>footer button { width:100%; }
+  .official-full-reading-body { grid-template-columns:1fr; }
+  .official-full-reading-body>.official-answer-sheet { grid-column:1; grid-row:2; max-height:none; position:static; }
+  .official-reading-booklet { grid-column:1; grid-row:1; }
+  .official-reading-booklet>header { align-items:stretch; flex-direction:column; }
+  .official-reading-sections button { flex:1; }
+  .official-booklet-switch button { flex:1; }
   .official-audio-dock { grid-template-columns:1fr; }
   .official-paper-frame { height:640px; border-radius:11px; }
   .scene-tabs { grid-template-columns:repeat(4,1fr); padding:5px; }
