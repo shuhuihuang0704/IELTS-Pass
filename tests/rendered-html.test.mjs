@@ -107,6 +107,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /ielts-listening-sample-tasks-2023\.pdf/);
   assert.match(app, /ielts-speaking-part-3-sample-recording\.mp3/);
   assert.match(app, /official-paper-frame/);
+  assert.match(app, /#page=\$\{displayPage\}/);
+  assert.match(app, /questionPage/);
+  assert.match(app, /answerPage/);
+  assert.match(app, /查看答案/);
+  assert.match(app, /Questions 1–3/);
+  assert.match(app, /官方合集保留原始题号/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);
   assert.match(app, /昨日未完成/);
   assert.match(app, /carryoverTasks\.filter/);

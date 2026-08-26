@@ -227,6 +227,13 @@ button { cursor: pointer; }
 .official-paper-panel>header span { color:var(--violet); font-size:9px; letter-spacing:.5px; }
 .official-paper-panel>header strong { margin-top:4px; font-size:13px; }
 .official-paper-panel>header>small { color:var(--muted); font-size:9px; }
+.official-task-controls { margin-top:14px; padding:12px; display:grid; grid-template-columns:minmax(240px,1fr) auto; align-items:end; gap:12px; border-radius:14px; background:#f4f1ed; }
+.official-task-controls label { color:#6f6870; font-size:8px; }
+.official-task-controls select { width:100%; height:36px; margin-top:5px; padding:0 9px; border:1px solid #d9d3db; border-radius:9px; color:var(--ink); background:white; font:inherit; font-size:9px; }
+.official-paper-switch { display:flex; gap:6px; }
+.official-paper-switch button { min-height:36px; padding:0 11px; border:0; border-radius:9px; color:#645e67; background:#e8e3df; font-size:9px; white-space:nowrap; }
+.official-paper-switch button.is-active { color:white; background:var(--violet); }
+.official-task-note { margin:9px 2px 0; color:#766f77; font-size:9px; line-height:1.55; }
 .official-audio-dock { margin-top:14px; padding:12px; display:grid; grid-template-columns:minmax(180px,.8fr) minmax(260px,1.2fr); align-items:end; gap:12px; border-radius:14px; background:#f4f1ed; }
 .official-audio-dock label { color:#6f6870; font-size:8px; }
 .official-audio-dock select { width:100%; height:34px; margin-top:5px; padding:0 9px; border:1px solid #d9d3db; border-radius:9px; color:var(--ink); background:white; font:inherit; font-size:9px; }
@@ -495,6 +502,9 @@ button { cursor: pointer; }
   .official-set-badge { align-self:start; }
   .official-paper-panel { padding:12px; border-radius:19px; }
   .official-paper-panel>header { align-items:flex-start; flex-direction:column; }
+  .official-task-controls { grid-template-columns:1fr; }
+  .official-paper-switch { display:grid; grid-template-columns:1fr 1fr; }
+  .official-paper-switch button { padding:0 8px; white-space:normal; }
   .official-audio-dock { grid-template-columns:1fr; }
   .official-paper-frame { height:640px; border-radius:11px; }
   .scene-tabs { grid-template-columns:repeat(4,1fr); padding:5px; }

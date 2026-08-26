@@ -45,7 +45,16 @@ type OfficialTestSession = {
 };
 
 type OfficialAudioTrack = { label: string; url: string };
-type OfficialTestMaterial = { id: string; label: string; pdfUrl: string; audioTracks?: OfficialAudioTrack[] };
+type OfficialTaskSegment = {
+  id: string;
+  label: string;
+  questionLabel: string;
+  questionPage: number;
+  answerPage?: number;
+  audioTrackIndex?: number;
+  answerLabel?: string;
+};
+type OfficialTestMaterial = { id: string; label: string; pdfUrl: string; tasks: OfficialTaskSegment[]; audioTracks?: OfficialAudioTrack[] };
 
 const listeningMaterial: OfficialTestMaterial = {
   id: "listening",
@@ -61,9 +70,49 @@ const listeningMaterial: OfficialTestMaterial = {
     { label: "Task 7 · Map Labelling", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-7-plan-map-diagram-labelling.mp3" },
     { label: "Task 8 · Note Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
   ],
+  tasks: [
+    { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, answerPage: 7, audioTrackIndex: 0 },
+    { id: "multiple-choice", label: "Multiple Choice", questionLabel: "Questions 9–10", questionPage: 8, answerPage: 10, audioTrackIndex: 1 },
+    { id: "short-answer", label: "Short-answer Questions", questionLabel: "Questions 11–16", questionPage: 11, answerPage: 13, audioTrackIndex: 2 },
+    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 27–30", questionPage: 14, answerPage: 17, audioTrackIndex: 3 },
+    { id: "matching-one", label: "Matching 1", questionLabel: "Questions 21–25", questionPage: 18, answerPage: 21, audioTrackIndex: 4 },
+    { id: "matching-two", label: "Matching 2", questionLabel: "Questions 1–4", questionPage: 22, answerPage: 25, audioTrackIndex: 5 },
+    { id: "map-labelling", label: "Map Labelling", questionLabel: "Questions 11–15", questionPage: 26, answerPage: 28, audioTrackIndex: 6 },
+    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 11–20", questionPage: 29, answerPage: 33, audioTrackIndex: 7 },
+  ],
 };
-const readingMaterial: OfficialTestMaterial = { id: "reading", label: "Academic Reading", pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-reading-sample-tasks-2023.pdf" };
-const writingMaterial: OfficialTestMaterial = { id: "writing", label: "Academic Writing", pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf" };
+const readingMaterial: OfficialTestMaterial = {
+  id: "reading",
+  label: "Academic Reading",
+  pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-reading-sample-tasks-2023.pdf",
+  tasks: [
+    { id: "true-false-not-given", label: "True / False / Not Given", questionLabel: "Questions 1–3", questionPage: 12, answerPage: 14 },
+    { id: "flow-chart", label: "Flow-chart Completion", questionLabel: "Questions 1–3", questionPage: 9, answerPage: 11 },
+    { id: "matching-headings", label: "Matching Headings", questionLabel: "starts at Question 1", questionPage: 15, answerPage: 18 },
+    { id: "sentence-endings", label: "Matching Sentence Endings", questionLabel: "Questions 1–3", questionPage: 19, answerPage: 22 },
+    { id: "multiple-choice-many", label: "Multiple Choice · more than one answer", questionLabel: "Questions 1–2", questionPage: 23, answerPage: 26 },
+    { id: "multiple-choice-one", label: "Multiple Choice · one answer", questionLabel: "Questions 1–4", questionPage: 27, answerPage: 29 },
+    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 1–6", questionPage: 30, answerPage: 33 },
+    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 1–5", questionPage: 34, answerPage: 37 },
+    { id: "summary-list", label: "Summary Completion · answer list", questionLabel: "Questions 1–4", questionPage: 38, answerPage: 40 },
+    { id: "summary-words", label: "Summary Completion · passage words", questionLabel: "Questions 1–5", questionPage: 41, answerPage: 43 },
+    { id: "diagram-label", label: "Diagram Label Completion", questionLabel: "Questions 1–5", questionPage: 44, answerPage: 46 },
+    { id: "matching-features", label: "Matching Features", questionLabel: "official Questions 7–10", questionPage: 3, answerPage: 5 },
+    { id: "table-completion", label: "Table Completion", questionLabel: "official Questions 9–13", questionPage: 6, answerPage: 8 },
+  ],
+};
+const writingMaterial: OfficialTestMaterial = {
+  id: "writing",
+  label: "Academic Writing",
+  pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf",
+  tasks: [
+    { id: "task-1a", label: "Writing Task 1A", questionLabel: "Task 1", questionPage: 3, answerPage: 9, answerLabel: "查看范文与考官评语" },
+    { id: "task-1b", label: "Writing Task 1B", questionLabel: "Task 1", questionPage: 4, answerPage: 11, answerLabel: "查看范文与考官评语" },
+    { id: "task-1c", label: "Writing Task 1C", questionLabel: "Task 1", questionPage: 5, answerPage: 13, answerLabel: "查看范文与考官评语" },
+    { id: "task-2a", label: "Writing Task 2A", questionLabel: "Task 2", questionPage: 6, answerPage: 18, answerLabel: "查看范文与考官评语" },
+    { id: "task-2b", label: "Writing Task 2B", questionLabel: "Task 2", questionPage: 7, answerPage: 23, answerLabel: "查看范文与考官评语" },
+  ],
+};
 const speakingMaterial: OfficialTestMaterial = {
   id: "speaking",
   label: "Speaking",
@@ -72,6 +121,11 @@ const speakingMaterial: OfficialTestMaterial = {
     { label: "Part 1 · Introduction and interview", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking/ielts-speaking-part-1-sample-recording.mp3" },
     { label: "Part 2 · Long turn", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking/ielts-speaking-part-2-sample-recording.mp3" },
     { label: "Part 3 · Two-way discussion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking/ielts-speaking-part-3-sample-recording.mp3" },
+  ],
+  tasks: [
+    { id: "part-1", label: "Part 1 · Introduction and interview", questionLabel: "Part 1", questionPage: 3, audioTrackIndex: 0 },
+    { id: "part-2", label: "Part 2 · Long turn", questionLabel: "Part 2", questionPage: 5, audioTrackIndex: 1 },
+    { id: "part-3", label: "Part 3 · Two-way discussion", questionLabel: "Part 3", questionPage: 6, audioTrackIndex: 2 },
   ],
 };
 
@@ -418,11 +472,15 @@ function OfficialTestRunner({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const [materialIndex, setMaterialIndex] = useState(0);
+  const [taskIndex, setTaskIndex] = useState(0);
+  const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
   const [audioTrackIndex, setAudioTrackIndex] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
   const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
   const material = session.materials[materialIndex];
+  const task = material.tasks[taskIndex];
   const audioTrack = material.audioTracks?.[audioTrackIndex];
+  const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
   const recordId = `${localWeekKey()}:${session.id}`;
   const completed = progress.officialPracticeCompleted.includes(recordId);
 
@@ -460,8 +518,17 @@ function OfficialTestRunner({
     }));
   };
   const changeMaterial = (index: number) => {
+    const nextMaterial = session.materials[index];
     setMaterialIndex(index);
-    setAudioTrackIndex(0);
+    setTaskIndex(0);
+    setPaperMode("questions");
+    setAudioTrackIndex(nextMaterial.tasks[0].audioTrackIndex ?? 0);
+  };
+  const changeTask = (index: number) => {
+    const nextTask = material.tasks[index];
+    setTaskIndex(index);
+    setPaperMode("questions");
+    setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
   };
 
   return (
@@ -482,7 +549,15 @@ function OfficialTestRunner({
           <button className={completed ? "runner-complete is-complete" : "runner-complete"} onClick={markComplete}>{completed ? "✓ 本套已完成" : "完成整套后记录"}</button>
         </aside>
         <section className="official-paper-panel">
-          <header><div><span>{material.label}</span><strong>{session.setCode}</strong></div><small>官方原始题目 · 可在下方直接滚动查看</small></header>
+          <header><div><span>{material.label}</span><strong>{task.label} · {task.questionLabel}</strong></div><small>官方原始题号 · 当前显示 P{displayPage}</small></header>
+          <div className="official-task-controls">
+            <label>本材料任务<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>
+            <div className="official-paper-switch" aria-label="题目与答案切换">
+              <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{task.questionPage}</button>
+              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} onClick={() => setPaperMode("answers")}>{task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
+            </div>
+          </div>
+          <p className="official-task-note">官方合集保留原始题号；本目录已按独立 Task 切分。默认从 Questions 1 开始，少数题型原本从后续题号开始时会明确标注。</p>
           {material.audioTracks && audioTrack && (
             <div className="official-audio-dock">
               <label>选择官方录音<select value={audioTrackIndex} onChange={(event) => setAudioTrackIndex(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
@@ -490,7 +565,7 @@ function OfficialTestRunner({
               <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
             </div>
           )}
-          <iframe className="official-paper-frame" title={`${session.title} · ${material.label}`} src={`${material.pdfUrl}#toolbar=1&navpanes=0&view=FitH`} />
+          <iframe key={`${material.id}-${task.id}-${paperMode}`} className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${material.pdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&view=FitH`} />
         </section>
       </div>
     </>
