@@ -281,6 +281,18 @@ button { cursor: pointer; }
 .official-answer-sheet>footer span { color:#6f6870; font-size:9px; }
 .official-answer-sheet>footer button { min-height:36px; padding:0 14px; border:0; border-radius:9px; color:white; background:var(--ink); font-size:9px; white-space:nowrap; }
 .official-answer-sheet>footer button:disabled { color:#9a949c; background:#e8e4e8; cursor:not-allowed; }
+.official-attempt-history { margin:0 15px 15px; padding-top:12px; border-top:1px solid #e6e0e8; }
+.official-attempt-history>button { min-height:34px; padding:0 12px; border:1px solid #d7d0df; border-radius:9px; color:#51478f; background:#f3f0fa; font-size:9px; }
+.official-attempt-history>div { margin-top:10px; display:grid; gap:10px; }
+.official-attempt-history article { padding:12px; border:1px solid #e1dbe5; border-radius:12px; background:white; }
+.official-attempt-history article>header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.official-attempt-history article>header b { font-size:10px; }
+.official-attempt-history article>header span { color:var(--muted); font-size:8px; }
+.official-attempt-history article>div { margin-top:9px; display:grid; gap:6px; }
+.official-attempt-history p { margin:0; padding:8px; display:grid; grid-template-columns:32px 1fr 1fr; gap:8px; border-radius:8px; background:#f6f4f6; font-size:8px; }
+.official-attempt-history p.is-correct { background:#eef8f2; }
+.official-attempt-history p.is-wrong { background:#fff1f1; }
+.official-attempt-history p span,.official-attempt-history p em { font-style:normal; overflow-wrap:anywhere; }
 .official-writing-response { margin-top:13px; padding:15px; border:1px solid #e5dfe9; border-radius:16px; background:#faf9fb; }
 .official-writing-response>header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .official-writing-response>header span,.official-writing-response>header strong,.official-writing-response>header small { display:block; }
@@ -647,6 +659,9 @@ button { cursor: pointer; }
   .official-answer-grid { grid-template-columns:1fr; }
   .official-answer-sheet>footer { align-items:stretch; flex-direction:column; }
   .official-answer-sheet>footer button { width:100%; }
+  .official-attempt-history>button { width:100%; }
+  .official-attempt-history p { grid-template-columns:28px 1fr; }
+  .official-attempt-history p em { grid-column:2; }
   .official-writing-response>header,.official-writing-response>footer { align-items:stretch; flex-direction:column; }
   .official-writing-response>footer button { width:100%; }
   .official-writing-response textarea { min-height:360px; }

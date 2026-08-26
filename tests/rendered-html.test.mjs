@@ -49,6 +49,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /officialPracticeCompleted/);
   assert.match(state, /OfficialTaskResult/);
   assert.match(state, /officialTaskResults/);
+  assert.match(state, /officialTaskAttemptHistory: Record<string, OfficialTaskResult\[\]>/);
   assert.match(state, /carryoverTasks/);
   assert.match(state, /newlyMissedTasks/);
   assert.match(state, /dailyVocabularyCompleted/);
@@ -157,6 +158,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /每个 Task 独立保存答案、得分、完成状态和原文解锁/);
   assert.match(app, /officialTaskRecordId/);
   assert.match(app, /officialTaskResults/);
+  assert.match(app, /redoCurrentTask/);
+  assert.match(app, /officialTaskAttemptHistory/);
+  assert.match(app, /再做一次/);
+  assert.match(app, /查看历史答案/);
+  assert.match(app, /第 \{attemptIndex \+ 1\} 次作答/);
+  assert.doesNotMatch(app, />修改答案</);
   assert.match(app, /当前独立 Task 的官方录音/);
   assert.match(app, /Official Academic Writing Sample Test 2023/);
   assert.match(app, /IELTS-OFFICIAL-AW-2023-01/);

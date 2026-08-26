@@ -619,6 +619,7 @@ function OfficialTestRunner({
   ]))));
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
   const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
+  const [showAttemptHistory, setShowAttemptHistory] = useState(false);
   const task = material.tasks[taskIndex];
   const taskUnitLabel = material.passagePdfUrl ? "Passage" : "Task";
   const audioTrack = material.audioTracks?.[audioTrackIndex];
@@ -626,6 +627,7 @@ function OfficialTestRunner({
   const displayPdfUrl = paperMode === "answers" && material.answerPdfUrl ? material.answerPdfUrl : material.pdfUrl;
   const taskKey = `${material.id}:${task.id}`;
   const taskRecordKey = officialTaskRecordId(session, material, task);
+  const taskAttemptHistory = progress.officialTaskAttemptHistory[taskRecordKey] ?? [];
   const taskAnswers = task.answers ?? [];
   const openResponseKey = `${taskKey}:open-response`;
   const openResponse = officialResponses[openResponseKey] ?? "";
@@ -718,9 +720,10 @@ function OfficialTestRunner({
     const nextTask = material.tasks[index];
     setTaskIndex(index);
     setPaperMode("questions");
+    setShowAttemptHistory(false);
     setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
   };
-  const reopenCurrentTask = () => {
+  const continueEditingCurrentTask = () => {
     setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
     setPaperMode("questions");
     updateProgress((current) => ({
@@ -728,6 +731,24 @@ function OfficialTestRunner({
       officialTaskResults: Object.fromEntries(Object.entries(current.officialTaskResults).filter(([key]) => key !== taskRecordKey)),
       officialPracticeCompleted: current.officialPracticeCompleted.filter((item) => item !== recordId),
     }));
+  };
+  const redoCurrentTask = () => {
+    setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
+    setPaperMode("questions");
+    setShowAttemptHistory(false);
+    setOfficialResponses((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${taskKey}:`))));
+    updateProgress((current) => {
+      const previousResult = current.officialTaskResults[taskRecordKey];
+      return {
+        ...current,
+        officialTaskResults: Object.fromEntries(Object.entries(current.officialTaskResults).filter(([key]) => key !== taskRecordKey)),
+        officialTaskAttemptHistory: previousResult ? {
+          ...current.officialTaskAttemptHistory,
+          [taskRecordKey]: [...(current.officialTaskAttemptHistory[taskRecordKey] ?? []), previousResult],
+        } : current.officialTaskAttemptHistory,
+        officialPracticeCompleted: current.officialPracticeCompleted.filter((item) => item !== recordId),
+      };
+    });
   };
 
   return (
@@ -811,8 +832,24 @@ function OfficialTestRunner({
               </div>
               <footer>
                 <span>{taskSubmitted ? `本 ${taskUnitLabel} 得分 ${correctAnswerCount}/${taskAnswers.length}；每题旁已显示官方答案。` : allAnswersFilled ? "答案已全部填写，可以提交判分。" : `还需完成 ${taskAnswers.length - answeredCount} 题后才能提交。`}</span>
-                {taskSubmitted ? <button type="button" onClick={reopenCurrentTask}>修改答案</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
+                {taskSubmitted ? <button type="button" onClick={redoCurrentTask}>再做一次</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
               </footer>
+              {taskAttemptHistory.length > 0 && (
+                <section className="official-attempt-history">
+                  <button type="button" onClick={() => setShowAttemptHistory((current) => !current)}>{showAttemptHistory ? "收起历史答案" : `查看历史答案（${taskAttemptHistory.length}）`}</button>
+                  {showAttemptHistory && <div>{taskAttemptHistory.map((attempt, attemptIndex) => {
+                    const historicalResponses = Object.fromEntries(Object.entries(attempt.responses).map(([number, value]) => [`${taskKey}:${number}`, value]));
+                    return <article key={`${attempt.completedAt}-${attemptIndex}`}>
+                      <header><b>第 {attemptIndex + 1} 次作答</b><span>{attempt.completedAt.replace("T", " ").slice(0, 16)} · {attempt.score ?? 0}/{attempt.total}</span></header>
+                      <div>{taskAnswers.map((answer) => {
+                        const response = attempt.responses[answer.number] || "未作答";
+                        const correct = officialAnswerIsCorrect(answer, taskAnswers, historicalResponses, taskKey);
+                        return <p className={correct ? "is-correct" : "is-wrong"} key={answer.number}><b>Q{answer.number}</b><span>我的答案：{response}</span><em>正确答案：{answer.displayAnswer}</em></p>;
+                      })}</div>
+                    </article>;
+                  })}</div>}
+                </section>
+              )}
             </form>
           ) : task.minimumWords ? (
             <form className="official-writing-response" onSubmit={(event) => {
@@ -822,7 +859,7 @@ function OfficialTestRunner({
             }}>
               <header><div><span>COMPUTER-DELIVERED WRITING</span><strong>{task.label} 作答区</strong><small>最低要求 {task.minimumWords} 词；提交后解锁官方范文与考官评语</small></div><b>{openResponseWordCount}<small> words</small></b></header>
               <textarea aria-label={`${task.label} answer`} disabled={taskSubmitted} placeholder="在这里输入你的英文答案……" value={openResponse} onChange={(event) => setOfficialResponses((current) => ({ ...current, [openResponseKey]: event.target.value }))} />
-              <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词，可以查看官方范文进行复盘。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={reopenCurrentTask}>继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
+              <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词，可以查看官方范文进行复盘。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={continueEditingCurrentTask}>继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
             </form>
           ) : (
             <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
