@@ -72,6 +72,7 @@ type OfficialTaskSegment = {
   passagePages?: number[];
   answerPage?: number;
   transcriptPage?: number;
+  transcriptPages?: number[];
   audioTrackIndex?: number;
   answerLabel?: string;
   minimumWords?: number;
@@ -102,7 +103,7 @@ const listeningMaterial: OfficialTestMaterial = {
     { label: "Task 8 · Note Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
   ],
   tasks: [
-    { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, transcriptPage: 4, answerPage: 7, audioTrackIndex: 0, answers: [
+    { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, questionPages: [3], transcriptPage: 4, transcriptPages: [4, 5, 6], answerPage: 7, audioTrackIndex: 0, answers: [
       { number: "1", accepted: ["Mkere"], displayAnswer: "Mkere" },
       { number: "2", accepted: ["Westall"], displayAnswer: "Westall" },
       { number: "3", accepted: ["BS8 9PU"], displayAnswer: "BS8 9PU" },
@@ -112,11 +113,11 @@ const listeningMaterial: OfficialTestMaterial = {
       { number: "7", accepted: ["books", "toys"], displayAnswer: "books / toys（顺序不限）", group: "6-7" },
       { number: "8", accepted: ["1,700", "1700"], displayAnswer: "1,700" },
     ] },
-    { id: "multiple-choice", label: "Multiple Choice", questionLabel: "Questions 9–10", questionPage: 8, transcriptPage: 9, answerPage: 10, audioTrackIndex: 1, answers: [
+    { id: "multiple-choice", label: "Multiple Choice", questionLabel: "Questions 9–10", questionPage: 8, questionPages: [8], transcriptPage: 9, transcriptPages: [9], answerPage: 10, audioTrackIndex: 1, answers: [
       { number: "9", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] },
       { number: "10", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C"] },
     ] },
-    { id: "short-answer", label: "Short-answer Questions", questionLabel: "Questions 11–16", questionPage: 11, transcriptPage: 12, answerPage: 13, audioTrackIndex: 2, answers: [
+    { id: "short-answer", label: "Short-answer Questions", questionLabel: "Questions 11–16", questionPage: 11, questionPages: [11], transcriptPage: 12, transcriptPages: [12], answerPage: 13, audioTrackIndex: 2, answers: [
       { number: "11", accepted: ["language", "customs"], displayAnswer: "language / customs（顺序不限）", group: "11-12" },
       { number: "12", accepted: ["language", "customs"], displayAnswer: "language / customs（顺序不限）", group: "11-12" },
       { number: "13", accepted: ["music", "music groups", "local history", "local history groups"], displayAnswer: "music (groups) / local history (groups)（顺序不限）", group: "13-14" },
@@ -124,22 +125,22 @@ const listeningMaterial: OfficialTestMaterial = {
       { number: "15", accepted: ["library", "libraries", "public library", "public libraries", "town hall"], displayAnswer: "(public) library / town hall（顺序不限）", group: "15-16" },
       { number: "16", accepted: ["library", "libraries", "public library", "public libraries", "town hall"], displayAnswer: "(public) library / town hall（顺序不限）", group: "15-16" },
     ] },
-    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 27–30", questionPage: 14, transcriptPage: 15, answerPage: 17, audioTrackIndex: 3, answers: [
+    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 27–30", questionPage: 14, questionPages: [14], transcriptPage: 15, transcriptPages: [15, 16], answerPage: 17, audioTrackIndex: 3, answers: [
       { number: "27", accepted: ["motivation"], displayAnswer: "motivation" },
       { number: "28", accepted: ["time management", "time-management"], displayAnswer: "time-management" },
       { number: "29", accepted: ["modules"], displayAnswer: "modules" },
       { number: "30", accepted: ["summer school", "summer schools"], displayAnswer: "summer school(s)" },
     ] },
-    { id: "matching-one", label: "Matching 1", questionLabel: "Questions 21–25", questionPage: 18, transcriptPage: 19, answerPage: 21, audioTrackIndex: 4, answers: [
+    { id: "matching-one", label: "Matching 1", questionLabel: "Questions 21–25", questionPage: 18, questionPages: [18], transcriptPage: 19, transcriptPages: [19, 20], answerPage: 21, audioTrackIndex: 4, answers: [
       { number: "21", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] }, { number: "22", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C"] }, { number: "23", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C"] }, { number: "24", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C"] }, { number: "25", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] },
     ] },
-    { id: "matching-two", label: "Matching 2", questionLabel: "Questions 1–4", questionPage: 22, transcriptPage: 23, answerPage: 25, audioTrackIndex: 5, answers: [
+    { id: "matching-two", label: "Matching 2", questionLabel: "Questions 1–4", questionPage: 22, questionPages: [22], transcriptPage: 23, transcriptPages: [23, 24], answerPage: 25, audioTrackIndex: 5, answers: [
       { number: "1", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E"] }, { number: "2", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E"] }, { number: "3", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D", "E"] }, { number: "4", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D", "E"] },
     ] },
-    { id: "map-labelling", label: "Map Labelling", questionLabel: "Questions 11–15", questionPage: 26, transcriptPage: 27, answerPage: 28, audioTrackIndex: 6, answers: [
+    { id: "map-labelling", label: "Map Labelling", questionLabel: "Questions 11–15", questionPage: 26, questionPages: [26], transcriptPage: 27, transcriptPages: [27], answerPage: 28, audioTrackIndex: 6, answers: [
       { number: "11", accepted: ["H"], displayAnswer: "H", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "12", accepted: ["G"], displayAnswer: "G", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "13", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "14", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "15", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
     ] },
-    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 11–20", questionPage: 29, transcriptPage: 31, answerPage: 33, audioTrackIndex: 7, answers: [
+    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 11–20", questionPage: 29, questionPages: [29, 30], transcriptPage: 31, transcriptPages: [31, 32], answerPage: 33, audioTrackIndex: 7, answers: [
       { number: "11", accepted: ["classical music", "classical music concerts", "music concerts", "concerts"], displayAnswer: "classical music (concerts)" }, { number: "12", accepted: ["bookshop", "bookstore", "a bookshop", "a bookstore"], displayAnswer: "(a) bookshop / bookstore" }, { number: "13", accepted: ["planned"], displayAnswer: "planned" }, { number: "14", accepted: ["1983", "1980s", "the 1980s"], displayAnswer: "1983 / (the) 1980s" }, { number: "15", accepted: ["city council", "the city council"], displayAnswer: "(the) City Council" }, { number: "16", accepted: ["363"], displayAnswer: "363" }, { number: "17", accepted: ["garden hall", "the garden hall"], displayAnswer: "(the) Garden Hall" }, { number: "18", accepted: ["three lives"], displayAnswer: "Three Lives" }, { number: "19", accepted: ["£4.50", "4.50"], displayAnswer: "£4.50" }, { number: "20", accepted: ["faces of china"], displayAnswer: "Faces of China" },
     ] },
   ],
@@ -632,7 +633,10 @@ function OfficialTestRunner({
   const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
   const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
   const taskSubmitted = submittedTasks[taskKey] ?? false;
-  const lockOfficialListeningPaper = Boolean(material.audioTracks && task.transcriptPage && !taskSubmitted && paperMode === "questions");
+  const isolateOfficialListeningPages = Boolean(material.audioTracks && task.transcriptPage);
+  const officialListeningPaperPages = paperMode === "answers" && task.answerPage
+    ? [task.answerPage]
+    : task.questionPages ?? [task.questionPage];
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
     .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords))
@@ -840,25 +844,25 @@ function OfficialTestRunner({
               </section>
             </div>
           ) : (
-            <section className={lockOfficialListeningPaper ? "official-source-document is-page-locked" : "official-source-document"}>
-              <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>{lockOfficialListeningPaper ? `仅显示题目页 P${displayPage}` : `PDF P${displayPage}`}</small></header>
-              <div className={lockOfficialListeningPaper ? "official-pdf-page-lock" : ""}>
-                <iframe
-                  key={`${material.id}-${task.id}-${paperMode}-${taskSubmitted ? "submitted" : "locked"}`}
-                  className="official-paper-frame"
-                  tabIndex={lockOfficialListeningPaper ? -1 : undefined}
-                  title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`}
-                  src={`${displayPdfUrl}#page=${displayPage}&toolbar=${lockOfficialListeningPaper ? 0 : 1}&navpanes=0&scrollbar=${lockOfficialListeningPaper ? 0 : 1}&view=${lockOfficialListeningPaper ? "Fit" : "FitH"}`}
-                />
-                {lockOfficialListeningPaper && <div className="official-page-lock-badge"><span>🔒 当前仅开放题目页</span><small>提交本 Task 后才会显示听力原文</small></div>}
-              </div>
+            <section className={isolateOfficialListeningPages ? "official-source-document is-page-locked" : "official-source-document"}>
+              <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>{isolateOfficialListeningPages ? `仅显示当前 Task · P${officialListeningPaperPages.join("–")}` : `PDF P${displayPage}`}</small></header>
+              {isolateOfficialListeningPages ? (
+                <div className="official-listening-page-stack">
+                  {officialListeningPaperPages.map((page, index) => <div className="official-pdf-page-lock" key={`${paperMode}-${page}`}>
+                    <iframe className="official-paper-frame" tabIndex={-1} title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"} · P${page}`} src={`${displayPdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />
+                    {index === 0 && paperMode === "questions" && !taskSubmitted && <div className="official-page-lock-badge"><span>🔒 当前 Task 独立显示</span><small>提交后只解锁本 Task 的听力原文</small></div>}
+                  </div>)}
+                </div>
+              ) : (
+                <iframe className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${displayPdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&scrollbar=1&view=FitH`} />
+              )}
             </section>
           )}
           {task.transcriptPage && !taskSubmitted && <div className="official-transcript-lock-note"><b>🔒 听力原文尚未开放</b><span>请先填写当前 Task 的全部答案并提交判分。</span></div>}
           {task.transcriptPage && taskSubmitted && (
             <section className="official-listening-transcript is-unlocked">
-              <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>已解锁 · 官方 PDF P{task.transcriptPage}</small></header>
-              <iframe className="official-paper-frame" title={`${task.label} · 听力原文`} src={`${material.pdfUrl}#page=${task.transcriptPage}&toolbar=1&navpanes=0&view=FitH`} />
+              <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>仅解锁当前 Task · P{(task.transcriptPages ?? [task.transcriptPage]).join("–")}</small></header>
+              <div className="official-listening-page-stack">{(task.transcriptPages ?? [task.transcriptPage]).map((page) => <div className="official-pdf-page-lock" key={`transcript-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 听力原文 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
             </section>
           )}
           </div>

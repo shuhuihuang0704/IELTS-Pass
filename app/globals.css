@@ -340,6 +340,7 @@ button { cursor: pointer; }
 .official-source-document>div>.official-paper-frame { margin-top:0; }
 .official-pdf-page-lock { position:relative; overflow:hidden; aspect-ratio:595.32 / 841.92; border-radius:15px; background:#e8e4e9; }
 .official-pdf-page-lock>.official-paper-frame { height:100%; pointer-events:none; }
+.official-listening-page-stack { display:grid; gap:10px; }
 .official-page-lock-badge { position:absolute; right:12px; bottom:12px; padding:9px 11px; border:1px solid rgba(255,255,255,.7); border-radius:10px; color:white; background:rgba(35,29,40,.86); box-shadow:0 6px 20px rgba(22,18,25,.2); backdrop-filter:blur(10px); }
 .official-page-lock-badge span,.official-page-lock-badge small { display:block; }
 .official-page-lock-badge span { font-size:9px; font-weight:700; }
