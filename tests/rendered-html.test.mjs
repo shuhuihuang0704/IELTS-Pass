@@ -113,6 +113,15 @@ test("ships all four learning modes and persistent progress", async () => {
   const fullReadingNumbers = [...fullReadingBlock.matchAll(/number: "(\d+)"/g)].map((match) => Number(match[1]));
   assert.deepEqual(fullReadingNumbers, Array.from({ length: 40 }, (_, index) => index + 1));
   assert.match(app, /ielts-listening-sample-tasks-2023\.pdf/);
+  const listeningBlock = app.match(/const listeningMaterial:[\s\S]*?const readingMaterial:/)?.[0] ?? "";
+  assert.equal([...listeningBlock.matchAll(/number: "\d+"/g)].length, 44);
+  assert.deepEqual([...listeningBlock.matchAll(/transcriptPage: (\d+)/g)].map((match) => Number(match[1])), [4, 9, 12, 15, 19, 23, 27, 31]);
+  assert.match(app, /8 个独立官方样题 · 共 \{materialQuestionCount\} 个作答位/);
+  assert.match(app, /提交当前 Task 后解锁/);
+  assert.match(app, /原文暂未显示/);
+  assert.match(app, /taskSubmitted \? <iframe className="official-paper-frame" title=\{`\$\{task\.label\} · 听力原文`\}/);
+  assert.match(app, /disabled=\{taskAnswers\.length > 0 && !taskSubmitted\}/);
+  assert.match(app, /选择 Task 与官方录音/);
   assert.match(app, /ielts-speaking-part-3-sample-recording\.mp3/);
   assert.match(app, /official-paper-frame/);
   assert.match(app, /#page=\$\{displayPage\}/);

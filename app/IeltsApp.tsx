@@ -58,6 +58,7 @@ type OfficialTaskSegment = {
   questionLabel: string;
   questionPage: number;
   answerPage?: number;
+  transcriptPage?: number;
   audioTrackIndex?: number;
   answerLabel?: string;
   answers?: OfficialAnswer[];
@@ -87,7 +88,7 @@ const listeningMaterial: OfficialTestMaterial = {
     { label: "Task 8 · Note Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
   ],
   tasks: [
-    { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, answerPage: 7, audioTrackIndex: 0, answers: [
+    { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, transcriptPage: 4, answerPage: 7, audioTrackIndex: 0, answers: [
       { number: "1", accepted: ["Mkere"], displayAnswer: "Mkere" },
       { number: "2", accepted: ["Westall"], displayAnswer: "Westall" },
       { number: "3", accepted: ["BS8 9PU"], displayAnswer: "BS8 9PU" },
@@ -97,11 +98,11 @@ const listeningMaterial: OfficialTestMaterial = {
       { number: "7", accepted: ["books", "toys"], displayAnswer: "books / toys（顺序不限）", group: "6-7" },
       { number: "8", accepted: ["1,700", "1700"], displayAnswer: "1,700" },
     ] },
-    { id: "multiple-choice", label: "Multiple Choice", questionLabel: "Questions 9–10", questionPage: 8, answerPage: 10, audioTrackIndex: 1, answers: [
+    { id: "multiple-choice", label: "Multiple Choice", questionLabel: "Questions 9–10", questionPage: 8, transcriptPage: 9, answerPage: 10, audioTrackIndex: 1, answers: [
       { number: "9", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] },
       { number: "10", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C"] },
     ] },
-    { id: "short-answer", label: "Short-answer Questions", questionLabel: "Questions 11–16", questionPage: 11, answerPage: 13, audioTrackIndex: 2, answers: [
+    { id: "short-answer", label: "Short-answer Questions", questionLabel: "Questions 11–16", questionPage: 11, transcriptPage: 12, answerPage: 13, audioTrackIndex: 2, answers: [
       { number: "11", accepted: ["language", "customs"], displayAnswer: "language / customs（顺序不限）", group: "11-12" },
       { number: "12", accepted: ["language", "customs"], displayAnswer: "language / customs（顺序不限）", group: "11-12" },
       { number: "13", accepted: ["music", "music groups", "local history", "local history groups"], displayAnswer: "music (groups) / local history (groups)（顺序不限）", group: "13-14" },
@@ -109,22 +110,22 @@ const listeningMaterial: OfficialTestMaterial = {
       { number: "15", accepted: ["library", "libraries", "public library", "public libraries", "town hall"], displayAnswer: "(public) library / town hall（顺序不限）", group: "15-16" },
       { number: "16", accepted: ["library", "libraries", "public library", "public libraries", "town hall"], displayAnswer: "(public) library / town hall（顺序不限）", group: "15-16" },
     ] },
-    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 27–30", questionPage: 14, answerPage: 17, audioTrackIndex: 3, answers: [
+    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 27–30", questionPage: 14, transcriptPage: 15, answerPage: 17, audioTrackIndex: 3, answers: [
       { number: "27", accepted: ["motivation"], displayAnswer: "motivation" },
       { number: "28", accepted: ["time management", "time-management"], displayAnswer: "time-management" },
       { number: "29", accepted: ["modules"], displayAnswer: "modules" },
       { number: "30", accepted: ["summer school", "summer schools"], displayAnswer: "summer school(s)" },
     ] },
-    { id: "matching-one", label: "Matching 1", questionLabel: "Questions 21–25", questionPage: 18, answerPage: 21, audioTrackIndex: 4, answers: [
+    { id: "matching-one", label: "Matching 1", questionLabel: "Questions 21–25", questionPage: 18, transcriptPage: 19, answerPage: 21, audioTrackIndex: 4, answers: [
       { number: "21", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] }, { number: "22", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C"] }, { number: "23", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C"] }, { number: "24", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C"] }, { number: "25", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] },
     ] },
-    { id: "matching-two", label: "Matching 2", questionLabel: "Questions 1–4", questionPage: 22, answerPage: 25, audioTrackIndex: 5, answers: [
+    { id: "matching-two", label: "Matching 2", questionLabel: "Questions 1–4", questionPage: 22, transcriptPage: 23, answerPage: 25, audioTrackIndex: 5, answers: [
       { number: "1", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E"] }, { number: "2", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E"] }, { number: "3", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D", "E"] }, { number: "4", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D", "E"] },
     ] },
-    { id: "map-labelling", label: "Map Labelling", questionLabel: "Questions 11–15", questionPage: 26, answerPage: 28, audioTrackIndex: 6, answers: [
+    { id: "map-labelling", label: "Map Labelling", questionLabel: "Questions 11–15", questionPage: 26, transcriptPage: 27, answerPage: 28, audioTrackIndex: 6, answers: [
       { number: "11", accepted: ["H"], displayAnswer: "H", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "12", accepted: ["G"], displayAnswer: "G", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "13", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "14", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "15", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
     ] },
-    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 11–20", questionPage: 29, answerPage: 33, audioTrackIndex: 7, answers: [
+    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 11–20", questionPage: 29, transcriptPage: 31, answerPage: 33, audioTrackIndex: 7, answers: [
       { number: "11", accepted: ["classical music", "classical music concerts", "music concerts", "concerts"], displayAnswer: "classical music (concerts)" }, { number: "12", accepted: ["bookshop", "bookstore", "a bookshop", "a bookstore"], displayAnswer: "(a) bookshop / bookstore" }, { number: "13", accepted: ["planned"], displayAnswer: "planned" }, { number: "14", accepted: ["1983", "1980s", "the 1980s"], displayAnswer: "1983 / (the) 1980s" }, { number: "15", accepted: ["city council", "the city council"], displayAnswer: "(the) City Council" }, { number: "16", accepted: ["363"], displayAnswer: "363" }, { number: "17", accepted: ["garden hall", "the garden hall"], displayAnswer: "(the) Garden Hall" }, { number: "18", accepted: ["three lives"], displayAnswer: "Three Lives" }, { number: "19", accepted: ["£4.50", "4.50"], displayAnswer: "£4.50" }, { number: "20", accepted: ["faces of china"], displayAnswer: "Faces of China" },
     ] },
   ],
@@ -607,6 +608,9 @@ function OfficialTestRunner({
     .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: sessionTask.answers?.length ?? 0 })));
   const requiredQuestionCount = requiredTasks.reduce((total, requiredTask) => total + requiredTask.questionCount, 0);
   const submittedRequiredTaskCount = requiredTasks.filter((requiredTask) => submittedTasks[requiredTask.key]).length;
+  const materialAnswerTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0);
+  const materialQuestionCount = materialAnswerTasks.reduce((total, materialTask) => total + (materialTask.answers?.length ?? 0), 0);
+  const submittedMaterialTaskCount = materialAnswerTasks.filter((materialTask) => submittedTasks[`${material.id}:${materialTask.id}`]).length;
   const recordId = officialPracticeRecordId(session);
   const completed = progress.officialPracticeCompleted.includes(recordId);
 
@@ -686,10 +690,20 @@ function OfficialTestRunner({
             <label>本材料任务<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>
             <div className="official-paper-switch" aria-label="题目与答案切换">
               <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{task.questionPage}</button>
-              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={Boolean(material.answerPdfUrl && !taskSubmitted)} onClick={() => setPaperMode("answers")}>{material.answerPdfUrl && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
+              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskAnswers.length > 0 && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskAnswers.length > 0 && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
             </div>
           </div>
           <p className="official-task-note">{material.passagePdfUrl ? "这是 IELTS 官方 Modified Large Print 无障碍样题：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交；App 将原文与对应题目连续展示。" : "官方 Sample Tasks 保留各自的原始题号；它们按独立 Task 使用，不与完整套题混排。"}</p>
+          {material.audioTracks && (
+            <section className="official-listening-task-map" aria-label="听力样题任务导航">
+              <header><div><span>LISTENING TASK MAP</span><b>8 个独立官方样题 · 共 {materialQuestionCount} 个作答位</b><small>题号来自不同 Sample Task，会重复；请选择 Task 逐个完成。</small></div><strong>{submittedMaterialTaskCount}/{materialAnswerTasks.length}</strong></header>
+              <div>{material.tasks.map((materialTask, index) => {
+                const materialTaskKey = `${material.id}:${materialTask.id}`;
+                const materialTaskSubmitted = submittedTasks[materialTaskKey] ?? false;
+                return <button className={taskIndex === index ? "is-active" : materialTaskSubmitted ? "is-complete" : ""} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>Task {index + 1}</span><b>{materialTask.label}</b><small>{materialTask.answers?.length ?? 0} 题 {materialTaskSubmitted ? "· 已提交" : ""}</small></button>;
+              })}</div>
+            </section>
+          )}
           <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : "official-standard-paper-body"}>
           {taskAnswers.length > 0 ? (
             <form className="official-answer-sheet" onSubmit={(event) => {
@@ -723,7 +737,7 @@ function OfficialTestRunner({
               </div>
               <footer>
                 <span>{taskSubmitted ? `本 Task 得分 ${correctAnswerCount}/${taskAnswers.length}；每题旁已显示官方答案。` : allAnswersFilled ? "答案已全部填写，可以提交判分。" : `还需完成 ${taskAnswers.length - answeredCount} 题后才能提交。`}</span>
-                {taskSubmitted ? <button type="button" onClick={() => setSubmittedTasks((current) => ({ ...current, [taskKey]: false }))}>修改答案</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
+                {taskSubmitted ? <button type="button" onClick={() => { setSubmittedTasks((current) => ({ ...current, [taskKey]: false })); setPaperMode("questions"); }}>修改答案</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
               </footer>
             </form>
           ) : (
@@ -731,10 +745,16 @@ function OfficialTestRunner({
           )}
           {material.audioTracks && audioTrack && (
             <div className="official-audio-dock">
-              <label>选择官方录音<select value={audioTrackIndex} onChange={(event) => setAudioTrackIndex(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
+              <label>选择 Task 与官方录音<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
               {/* eslint-disable-next-line jsx-a11y/media-has-caption -- The official transcript is included in the embedded source PDF. */}
               <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
             </div>
+          )}
+          {task.transcriptPage && (
+            <section className={taskSubmitted ? "official-listening-transcript is-unlocked" : "official-listening-transcript"}>
+              <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>{taskSubmitted ? `已解锁 · 官方 PDF P${task.transcriptPage}` : "提交当前 Task 后解锁"}</small></header>
+              {taskSubmitted ? <iframe className="official-paper-frame" title={`${task.label} · 听力原文`} src={`${material.pdfUrl}#page=${task.transcriptPage}&toolbar=1&navpanes=0&view=FitH`} /> : <div><b>原文暂未显示</b><p>请先听完录音、填写当前 Task 的全部答案并提交；判分后这里会自动出现官方 Tapescript。</p></div>}
+            </section>
           )}
           {material.passagePdfUrl && paperMode === "questions" ? (
             <div className="official-reading-booklet">
