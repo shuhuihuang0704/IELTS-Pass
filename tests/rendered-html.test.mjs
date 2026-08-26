@@ -120,8 +120,15 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /提交当前 Task 后解锁/);
   assert.match(app, /原文暂未显示/);
   assert.match(app, /taskSubmitted \? <iframe className="official-paper-frame" title=\{`\$\{task\.label\} · 听力原文`\}/);
-  assert.match(app, /disabled=\{taskAnswers\.length > 0 && !taskSubmitted\}/);
+  assert.match(app, /disabled=\{taskRequiresSubmission && !taskSubmitted\}/);
   assert.match(app, /选择 Task 与官方录音/);
+  assert.match(app, /Official Academic Writing Sample Test 2023/);
+  assert.match(app, /IELTS-OFFICIAL-AW-2023-01/);
+  assert.match(app, /minimumWords: 150/);
+  assert.match(app, /minimumWords: 250/);
+  assert.match(app, /COMPUTER-DELIVERED WRITING/);
+  assert.match(app, /提交本 Task/);
+  assert.doesNotMatch(app, /materials: \[listeningMaterial, readingMaterial, writingMaterial\]/);
   assert.match(app, /ielts-speaking-part-3-sample-recording\.mp3/);
   assert.match(app, /official-paper-frame/);
   assert.match(app, /#page=\$\{displayPage\}/);

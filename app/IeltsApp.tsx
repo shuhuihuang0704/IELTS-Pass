@@ -61,6 +61,7 @@ type OfficialTaskSegment = {
   transcriptPage?: number;
   audioTrackIndex?: number;
   answerLabel?: string;
+  minimumWords?: number;
   answers?: OfficialAnswer[];
 };
 type OfficialTestMaterial = {
@@ -183,14 +184,11 @@ const readingMaterial: OfficialTestMaterial = {
 };
 const writingMaterial: OfficialTestMaterial = {
   id: "writing",
-  label: "Academic Writing",
+  label: "Academic Writing · Task 1 + Task 2",
   pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf",
   tasks: [
-    { id: "task-1a", label: "Writing Task 1A", questionLabel: "Task 1", questionPage: 3, answerPage: 9, answerLabel: "查看范文与考官评语" },
-    { id: "task-1b", label: "Writing Task 1B", questionLabel: "Task 1", questionPage: 4, answerPage: 11, answerLabel: "查看范文与考官评语" },
-    { id: "task-1c", label: "Writing Task 1C", questionLabel: "Task 1", questionPage: 5, answerPage: 13, answerLabel: "查看范文与考官评语" },
-    { id: "task-2a", label: "Writing Task 2A", questionLabel: "Task 2", questionPage: 6, answerPage: 18, answerLabel: "查看范文与考官评语" },
-    { id: "task-2b", label: "Writing Task 2B", questionLabel: "Task 2", questionPage: 7, answerPage: 23, answerLabel: "查看范文与考官评语" },
+    { id: "task-1a", label: "Writing Task 1", questionLabel: "Task 1 · Visual information", questionPage: 3, answerPage: 9, answerLabel: "查看范文与考官评语", minimumWords: 150 },
+    { id: "task-2a", label: "Writing Task 2", questionLabel: "Task 2 · Essay", questionPage: 6, answerPage: 18, answerLabel: "查看范文与考官评语", minimumWords: 250 },
   ],
 };
 const speakingMaterial: OfficialTestMaterial = {
@@ -212,7 +210,7 @@ const speakingMaterial: OfficialTestMaterial = {
 const officialTestSchedule: OfficialTestSession[] = [
   { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Full Sample Test", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方完整样题", setCode: "IELTS-OFFICIAL-AR-MLP-01", description: "完整 3 篇 Academic Reading，题号从 1 连续到 40；全部填写并提交后自动记录完成。", materials: [readingMaterial] },
   { id: "listening", isoDay: 4, dayLabel: "周四", time: "20:00", title: "Official Listening Sample Tasks 2023", duration: "40 分钟", durationMinutes: 40, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-L-2023-01", description: "内置官方题目 PDF 与 8 段对应录音，覆盖填空、单选、简答、匹配和地图题。", materials: [listeningMaterial] },
-  { id: "full-mock", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Official L/R/W Sample Bundle 2023", duration: "150 分钟", durationMinutes: 150, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-LRW-2023-01", description: "在同一套题运行器中切换 Listening、Reading 与 Writing 官方样题，连续计时训练。", materials: [listeningMaterial, readingMaterial, writingMaterial] },
+  { id: "writing", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Official Academic Writing Sample Test 2023", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-AW-2023-01", description: "独立 Writing 训练：完成 Task 1（至少 150 词）与 Task 2（至少 250 词），不再重复周二 Reading 或周四 Listening。", materials: [writingMaterial] },
   { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Official Speaking Sample Tasks 2023", duration: "55 分钟", durationMinutes: 55, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-S-2023-01", description: "内置官方 Speaking Part 1–3 题目与示范录音，完成后复盘本周错题。", materials: [speakingMaterial] },
 ];
 
@@ -543,7 +541,7 @@ function OfficialPracticePlan({
   return (
     <section className="official-practice-plan">
       <header className="official-practice-heading">
-        <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>每周 4 次 · 共约 5 小时 · 独立于每日基础训练</p></div>
+        <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>每周 4 次 · 共约 3.5 小时 · 独立于每日基础训练</p></div>
         <strong>{completedCount}<small>/4</small></strong>
       </header>
       <div className="official-source-note"><b>内容来源说明</b><p>Reading 使用 IELTS.org 官方完整 Academic Reading Sample Test（3 篇、1–40 题）。这是官方样题，不等同于已正式考过的 Cambridge 历年原卷；App 不会把两者混淆。</p></div>
@@ -599,13 +597,17 @@ function OfficialTestRunner({
   const readingSection = fullReadingSections[readingSectionIndex];
   const taskKey = `${material.id}:${task.id}`;
   const taskAnswers = task.answers ?? [];
+  const openResponseKey = `${taskKey}:open-response`;
+  const openResponse = officialResponses[openResponseKey] ?? "";
+  const openResponseWordCount = openResponse.trim() ? openResponse.trim().split(/\s+/).length : 0;
+  const taskRequiresSubmission = taskAnswers.length > 0 || Boolean(task.minimumWords);
   const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
   const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
   const taskSubmitted = submittedTasks[taskKey] ?? false;
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
-    .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0)
-    .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: sessionTask.answers?.length ?? 0 })));
+    .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords))
+    .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: (sessionTask.answers?.length ?? 0) || 1 })));
   const requiredQuestionCount = requiredTasks.reduce((total, requiredTask) => total + requiredTask.questionCount, 0);
   const submittedRequiredTaskCount = requiredTasks.filter((requiredTask) => submittedTasks[requiredTask.key]).length;
   const materialAnswerTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0);
@@ -690,7 +692,7 @@ function OfficialTestRunner({
             <label>本材料任务<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>
             <div className="official-paper-switch" aria-label="题目与答案切换">
               <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{task.questionPage}</button>
-              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskAnswers.length > 0 && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskAnswers.length > 0 && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
+              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
             </div>
           </div>
           <p className="official-task-note">{material.passagePdfUrl ? "这是 IELTS 官方 Modified Large Print 无障碍样题：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交；App 将原文与对应题目连续展示。" : "官方 Sample Tasks 保留各自的原始题号；它们按独立 Task 使用，不与完整套题混排。"}</p>
@@ -739,6 +741,16 @@ function OfficialTestRunner({
                 <span>{taskSubmitted ? `本 Task 得分 ${correctAnswerCount}/${taskAnswers.length}；每题旁已显示官方答案。` : allAnswersFilled ? "答案已全部填写，可以提交判分。" : `还需完成 ${taskAnswers.length - answeredCount} 题后才能提交。`}</span>
                 {taskSubmitted ? <button type="button" onClick={() => { setSubmittedTasks((current) => ({ ...current, [taskKey]: false })); setPaperMode("questions"); }}>修改答案</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
               </footer>
+            </form>
+          ) : task.minimumWords ? (
+            <form className="official-writing-response" onSubmit={(event) => {
+              event.preventDefault();
+              if (openResponseWordCount < task.minimumWords!) return;
+              submitCurrentTask();
+            }}>
+              <header><div><span>COMPUTER-DELIVERED WRITING</span><strong>{task.label} 作答区</strong><small>最低要求 {task.minimumWords} 词；提交后解锁官方范文与考官评语</small></div><b>{openResponseWordCount}<small> words</small></b></header>
+              <textarea aria-label={`${task.label} answer`} disabled={taskSubmitted} placeholder="在这里输入你的英文答案……" value={openResponse} onChange={(event) => setOfficialResponses((current) => ({ ...current, [openResponseKey]: event.target.value }))} />
+              <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词，可以查看官方范文进行复盘。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={() => { setSubmittedTasks((current) => ({ ...current, [taskKey]: false })); setPaperMode("questions"); }}>继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
             </form>
           ) : (
             <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
