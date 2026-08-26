@@ -60,6 +60,7 @@ type OfficialAnswer = {
   number: string;
   accepted: string[];
   displayAnswer: string;
+  explanation?: string;
   choices?: string[];
   group?: string;
 };
@@ -154,50 +155,50 @@ const readingMaterial: OfficialTestMaterial = {
   answerPdfUrl: "https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf",
   tasks: [
     { id: "reading-passage-1", label: "Reading Passage 1", questionLabel: "Passage 1 · Questions 1–13", questionPage: 4, questionPages: [4, 5, 6], passagePages: [2, 3, 4], answers: [
-      { number: "1", accepted: ["FALSE"], displayAnswer: "FALSE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
-      { number: "2", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
-      { number: "3", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
-      { number: "4", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
-      { number: "5", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
-      { number: "6", accepted: ["FALSE"], displayAnswer: "FALSE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
-      { number: "7", accepted: ["light"], displayAnswer: "light" },
-      { number: "8", accepted: ["shells"], displayAnswer: "shells" },
-      { number: "9", accepted: ["mineralisation", "mineralization"], displayAnswer: "mineralisation / mineralization" },
-      { number: "10", accepted: ["histidine"], displayAnswer: "histidine" },
-      { number: "11", accepted: ["gills"], displayAnswer: "gills" },
-      { number: "12", accepted: ["fangs"], displayAnswer: "fangs" },
-      { number: "13", accepted: ["aircraft"], displayAnswer: "aircraft" },
+      { number: "1", accepted: ["FALSE"], displayAnswer: "FALSE", explanation: "首段说动物界很少会首先进入工程师的考虑范围，与题干的 often the first place 相反。", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "2", accepted: ["TRUE"], displayAnswer: "TRUE", explanation: "首段明确举例：蜘蛛丝比钢更强，并已用于防弹衣，对应 specialist clothing。", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "3", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", explanation: "原文只说渔民知道沙蚕会咬人，没有比较北大西洋沙蚕数量是否增加。", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "4", accepted: ["TRUE"], displayAnswer: "TRUE", explanation: "原文称 jaws 是 otherwise squishy animal 唯一坚硬的部分，因此身体其余部分柔软。", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "5", accepted: ["TRUE"], displayAnswer: "TRUE", explanation: "原文说沙蚕颚的硬度 exceeds the hardness of many synthetic plastics。", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "6", accepted: ["FALSE"], displayAnswer: "FALSE", explanation: "洁净水域中的沙蚕颚也含有相近数量的锌，并不是更少。", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+      { number: "7", accepted: ["light"], displayAnswer: "light", explanation: "研究发现这种材料 as strong as aluminium and impressively light；题目要求原文一个词。" },
+      { number: "8", accepted: ["shells"], displayAnswer: "shells", explanation: "原文以 shells 为其他高度矿化的坚硬生物结构示例。" },
+      { number: "9", accepted: ["mineralisation", "mineralization"], displayAnswer: "mineralisation / mineralization", explanation: "X-ray 检测 found no sign of mineralisation at all，对应 no … had taken place。" },
+      { number: "10", accepted: ["histidine"], displayAnswer: "histidine", explanation: "原文指出蛋白质中大量存在的氨基酸叫 histidine。" },
+      { number: "11", accepted: ["gills"], displayAnswer: "gills", explanation: "沙蚕靠身体两侧像腿一样工作的微小结构移动，而这些结构实际上是 gills。" },
+      { number: "12", accepted: ["fangs"], displayAnswer: "fangs", explanation: "原文说头部前方的 curved fangs 用来捕捉并撕碎猎物。" },
+      { number: "13", accepted: ["aircraft"], displayAnswer: "aircraft", explanation: "这种轻而坚固的材料尤其适合 aircraft，研究因此被交给 NASA 继续开发。" },
     ] },
     { id: "reading-passage-2", label: "Reading Passage 2", questionLabel: "Passage 2 · Questions 14–26", questionPage: 7, questionPages: [7, 8, 9, 10], passagePages: [5, 6, 7, 8], answers: [
-      { number: "14", accepted: ["YES"], displayAnswer: "YES", choices: ["YES", "NO", "NOT GIVEN"] },
-      { number: "15", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["YES", "NO", "NOT GIVEN"] },
-      { number: "16", accepted: ["NO"], displayAnswer: "NO", choices: ["YES", "NO", "NOT GIVEN"] },
-      { number: "17", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["YES", "NO", "NOT GIVEN"] },
-      { number: "18", accepted: ["NO"], displayAnswer: "NO", choices: ["YES", "NO", "NOT GIVEN"] },
-      { number: "19", accepted: ["D", "E"], displayAnswer: "D / E（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "19-20" },
-      { number: "20", accepted: ["D", "E"], displayAnswer: "D / E（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "19-20" },
-      { number: "21", accepted: ["C", "D"], displayAnswer: "C / D（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "21-22" },
-      { number: "22", accepted: ["C", "D"], displayAnswer: "C / D（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "21-22" },
-      { number: "23", accepted: ["oral histories"], displayAnswer: "oral histories" },
-      { number: "24", accepted: ["humanistic study", "historical discipline"], displayAnswer: "humanistic study / historical discipline（顺序不限）", group: "24-25" },
-      { number: "25", accepted: ["humanistic study", "historical discipline"], displayAnswer: "humanistic study / historical discipline（顺序不限）", group: "24-25" },
-      { number: "26", accepted: ["scientist"], displayAnswer: "scientist" },
+      { number: "14", accepted: ["YES"], displayAnswer: "YES", explanation: "开篇把考古学描述为科学分析工作，也包括 creative imagination，完全支持题干。", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "15", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", explanation: "文章讨论考古工作的范围，但没有说考古学家必须翻译古代语言。", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "16", accepted: ["NO"], displayAnswer: "NO", explanation: "作者说影视中的考古形象 may be far from reality，因此并非真实写照。", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "17", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", explanation: "文章解释考古学与人类学的关系，没有比较哪一门更困难。", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "18", accepted: ["NO"], displayAnswer: "NO", explanation: "约公元前 3000 年开始的是西亚的书面记录；世界其他多数地区更晚，题干把范围扩大了。", choices: ["YES", "NO", "NOT GIVEN"] },
+      { number: "19", accepted: ["D", "E"], displayAnswer: "D / E（顺序不限）", explanation: "D：人类学因范围广而被分成三个分支；E：体质人类学研究人类身体特征及其演化。", choices: ["A", "B", "C", "D", "E"], group: "19-20" },
+      { number: "20", accepted: ["D", "E"], displayAnswer: "D / E（顺序不限）", explanation: "本题与 Q19 为双选组合，D 和 E 都在原文中被明确陈述，顺序不限且不能重复。", choices: ["A", "B", "C", "D", "E"], group: "19-20" },
+      { number: "21", accepted: ["C", "D"], displayAnswer: "C / D（顺序不限）", explanation: "C 对应研究住宅为何有圆形或方形；D 对应研究社会如何制作和使用物质文化。", choices: ["A", "B", "C", "D", "E"], group: "21-22" },
+      { number: "22", accepted: ["C", "D"], displayAnswer: "C / D（顺序不限）", explanation: "本题与 Q21 为双选组合；原文只直接提到 C、D 两项任务，顺序不限且不能重复。", choices: ["A", "B", "C", "D", "E"], group: "21-22" },
+      { number: "23", accepted: ["oral histories"], displayAnswer: "oral histories", explanation: "原文说书面记录之外，oral histories 也包含有用信息；题目要求不超过两个词。" },
+      { number: "24", accepted: ["humanistic study", "historical discipline"], displayAnswer: "humanistic study / historical discipline（顺序不限）", explanation: "末段把考古学同时定义为 a humanistic study 和 a historical discipline。", group: "24-25" },
+      { number: "25", accepted: ["humanistic study", "historical discipline"], displayAnswer: "humanistic study / historical discipline（顺序不限）", explanation: "本题与 Q24 为成组填空，两个原文短语可以交换顺序，但不能重复。", group: "24-25" },
+      { number: "26", accepted: ["scientist"], displayAnswer: "scientist", explanation: "作者将考古学家的工作方式比作收集数据、检验假设并建立模型的 scientist。" },
     ] },
     { id: "reading-passage-3", label: "Reading Passage 3", questionLabel: "Passage 3 · Questions 27–40", questionPage: 11, questionPages: [11, 12, 13, 14], passagePages: [9, 10, 11, 12], answers: [
-      { number: "27", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
-      { number: "28", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
-      { number: "29", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D"] },
-      { number: "30", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] },
-      { number: "31", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D"] },
-      { number: "32", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D"] },
-      { number: "33", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] },
-      { number: "34", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
-      { number: "35", accepted: ["G"], displayAnswer: "G", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
-      { number: "36", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
-      { number: "37", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
-      { number: "38", accepted: ["B", "C"], displayAnswer: "B / C（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "38-39" },
-      { number: "39", accepted: ["B", "C"], displayAnswer: "B / C（顺序不限）", choices: ["A", "B", "C", "D", "E"], group: "38-39" },
-      { number: "40", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] },
+      { number: "27", accepted: ["B"], displayAnswer: "B", explanation: "Jocelyn Penna 强调既要设定具体目标，也要考虑通往目标的一系列较小成功。", choices: ["A", "B", "C", "D"] },
+      { number: "28", accepted: ["B"], displayAnswer: "B", explanation: "Penna 建议在挑战前告诉自己已经计划并尽了最大努力，对应充分准备带来成功。", choices: ["A", "B", "C", "D"] },
+      { number: "29", accepted: ["A"], displayAnswer: "A", explanation: "Gavin Freeman 把人分为 motivated to succeed 与 motivated to avoid failure 两类。", choices: ["A", "B", "C", "D"] },
+      { number: "30", accepted: ["C"], displayAnswer: "C", explanation: "Clark Perry 认为人要训练自己不害怕失败，直接对应面对对失败的恐惧。", choices: ["A", "B", "C", "D"] },
+      { number: "31", accepted: ["A"], displayAnswer: "A", explanation: "Freeman 说逃避失败的人会选择没有挑战、保证成功的情境。", choices: ["A", "B", "C", "D"] },
+      { number: "32", accepted: ["D"], displayAnswer: "D", explanation: "Jeff Bond 说高成就者会主动创造机会，并接触能帮助自己发挥潜力的训练、人员和材料。", choices: ["A", "B", "C", "D"] },
+      { number: "33", accepted: ["C"], displayAnswer: "C", explanation: "Perry 的 centred breathing 要求人专注当前时刻，而不是接下来要做什么。", choices: ["A", "B", "C", "D"] },
+      { number: "34", accepted: ["B"], displayAnswer: "B", explanation: "B 段用滑雪运动员 Alisa Camplin 膝伤后积极调整训练的经历说明这一点。", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "35", accepted: ["G"], displayAnswer: "G", explanation: "G 段直接出现 losing streaks，并解释它指连续不顺的时期。", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "36", accepted: ["E"], displayAnswer: "E", explanation: "E 段依次给出识别内心对话、找出触发情境、设计提示词或动作三个步骤。", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "37", accepted: ["F"], displayAnswer: "F", explanation: "F 段列举求职面试、绩效评估和第一次约会造成的紧张生理反应。", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+      { number: "38", accepted: ["B", "C"], displayAnswer: "B / C（顺序不限）", explanation: "B：长期保持动力非常困难；C：属于追求成功或逃避失败的类型会深刻影响成功机会。", choices: ["A", "B", "C", "D", "E"], group: "38-39" },
+      { number: "39", accepted: ["B", "C"], displayAnswer: "B / C（顺序不限）", explanation: "本题与 Q38 为双选组合；Gavin Freeman 明确表达的是 B、C，顺序不限且不能重复。", choices: ["A", "B", "C", "D", "E"], group: "38-39" },
+      { number: "40", accepted: ["C"], displayAnswer: "C", explanation: "全文由多位运动心理学家说明普通人能从顶尖运动员的思维中学到什么，C 最能概括主旨。", choices: ["A", "B", "C", "D"] },
     ] },
   ],
 };
@@ -825,7 +826,7 @@ function OfficialTestRunner({
                           source: `${session.title} · ${session.setCode}`,
                         }))}
                       >{savedToNotebook ? "★ 已加入" : taskSubmitted && !correct ? "☆ 加入错题本" : "☆ 标记"}</button>
-                      {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em></small>}
+                      {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <p><strong>解析</strong><span>{answer.explanation}</span></p>}</small>}
                     </div>
                   );
                 })}

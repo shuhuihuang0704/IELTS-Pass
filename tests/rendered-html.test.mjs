@@ -27,10 +27,11 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
 });
 
 test("ships all four learning modes and persistent progress", async () => {
-  const [app, data, state] = await Promise.all([
+  const [app, data, state, styles] = await Promise.all([
     readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-state.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   for (const feature of ["VocabularyPractice", "ListeningPractice", "SpeakingPractice", "ReadingPractice", "ReviewView"]) {
     assert.match(app, new RegExp(feature));
@@ -129,6 +130,7 @@ test("ships all four learning modes and persistent progress", async () => {
   const fullReadingBlock = app.match(/const readingMaterial:[\s\S]*?const writingMaterial:/)?.[0] ?? "";
   const fullReadingNumbers = [...fullReadingBlock.matchAll(/number: "(\d+)"/g)].map((match) => Number(match[1]));
   assert.deepEqual(fullReadingNumbers, Array.from({ length: 40 }, (_, index) => index + 1));
+  assert.equal((fullReadingBlock.match(/explanation: "/g) ?? []).length, 40);
   assert.equal((fullReadingBlock.match(/id: "reading-passage-/g) ?? []).length, 3);
   assert.match(fullReadingBlock, /questionPages: \[4, 5, 6\], passagePages: \[2, 3, 4\]/);
   assert.match(fullReadingBlock, /questionPages: \[11, 12, 13, 14\], passagePages: \[9, 10, 11, 12\]/);
@@ -193,6 +195,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /COMPUTER-DELIVERED ANSWER SHEET/);
   assert.match(app, /提交全部答案/);
   assert.match(app, /正确答案：/);
+  assert.match(app, /answer\.explanation/);
+  assert.match(app, />解析</);
+  assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet \{ max-height:none; overflow:visible; position:static; \}/);
   assert.match(app, /仅显示当前 Passage/);
   assert.match(app, /只包含本 Passage 的题目页/);
   assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
