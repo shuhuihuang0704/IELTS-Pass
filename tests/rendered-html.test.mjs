@@ -56,6 +56,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /dailyVocabularyRatings/);
   assert.match(state, /dailyVocabularyAttempts/);
   assert.match(state, /reviewSchedule/);
+  assert.match(state, /NotebookEntry/);
+  assert.match(state, /notebook: NotebookEntry\[\]/);
   assert.match(state, /reviewIntervals = \[1, 3, 7, 14, 30, 60\]/);
   assert.match(state, /scheduleWordForReview/);
   assert.match(state, /rateReviewWord/);
@@ -95,6 +97,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /核对后很快再现/);
   assert.match(app, /repeatGap/);
   assert.match(app, /今日到期复习/);
+  assert.match(app, /我的笔记/);
+  assert.match(app, /加入错题本/);
+  assert.match(app, /加入笔记/);
+  assert.match(app, /toggleNotebookEntry/);
+  assert.match(app, /PERSONAL KNOWLEDGE BASE/);
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
   assert.match(app, /answeredCount < totalQuestions/);

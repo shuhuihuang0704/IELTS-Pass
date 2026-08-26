@@ -22,13 +22,24 @@ import {
   reviewIntervals,
   scheduleWordForReview,
   type LearningProgress,
+  type NotebookEntry,
   type WordRating,
 } from "./learning-state";
 
 type View = "today" | "practice" | "official-test" | "scene" | "review" | "profile";
 type Feedback = { tone: "success" | "error" | "neutral"; text: string } | null;
+type NotebookDraft = Omit<NotebookEntry, "createdAt" | "note">;
 
 const storageKey = "ielts-ai-learning-progress-v1";
+
+function toggleNotebookEntry(progress: LearningProgress, draft: NotebookDraft): LearningProgress {
+  const existing = progress.notebook.find((entry) => entry.id === draft.id);
+  if (existing) return { ...progress, notebook: progress.notebook.filter((entry) => entry.id !== draft.id) };
+  return {
+    ...progress,
+    notebook: [{ ...draft, note: "", createdAt: new Date().toISOString() }, ...progress.notebook],
+  };
+}
 
 type OfficialTestSession = {
   id: string;
@@ -356,7 +367,7 @@ function Sidebar({
     { id: "today", label: "今天" },
     { id: "practice", label: "专项练习" },
     { id: "scene", label: "AI 场景" },
-    { id: "review", label: "复习" },
+    { id: "review", label: "笔记与复习" },
     { id: "profile", label: "我的" },
   ];
   const weeklyPercent = Math.min(100, Math.round((progress.minutes / 260) * 100));
@@ -386,7 +397,7 @@ function MobileNavigation({ view, onNavigate }: { view: View; onNavigate: (view:
     { id: "today", label: "今天" },
     { id: "practice", label: "专项" },
     { id: "scene", label: "AI" },
-    { id: "review", label: "复习" },
+    { id: "review", label: "笔记" },
     { id: "profile", label: "我的" },
   ];
   return (
@@ -487,7 +498,7 @@ function TodayView({
           </button>
           <div className="streak-row"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟</small></span></div>
           <button className="memory-row" onClick={() => onNavigate("review")}>
-            <span><strong>记忆回流</strong><small>{dueReviewCount} 个今日到期 · {progress.reviewWords.length} 个已安排</small></span><b>→</b>
+            <span><strong>笔记与复习</strong><small>{progress.notebook.length} 条笔记 · {dueReviewCount} 个今日到期</small></span><b>→</b>
           </button>
         </aside>
       </div>
@@ -643,14 +654,22 @@ function OfficialTestRunner({
   const submitCurrentTask = () => {
     const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
     setSubmittedTasks(nextSubmittedTasks);
-    if (requiredTasks.length > 0 && requiredTasks.every((requiredTask) => nextSubmittedTasks[requiredTask.key])) {
-      updateProgress((current) => ({
+    updateProgress((current) => {
+      const notebook = current.notebook.map((entry) => {
+        const answer = taskAnswers.find((item) => entry.id === `question:${session.setCode}:${task.id}:${item.number}`);
+        if (!answer) return entry;
+        const response = officialResponses[`${taskKey}:${answer.number}`] || "未作答";
+        return { ...entry, detail: `我的答案：${response}\n正确答案：${answer.displayAnswer}` };
+      });
+      const allRequiredSubmitted = requiredTasks.length > 0 && requiredTasks.every((requiredTask) => nextSubmittedTasks[requiredTask.key]);
+      return {
         ...current,
-        officialPracticeCompleted: current.officialPracticeCompleted.includes(recordId)
-          ? current.officialPracticeCompleted
-          : [...current.officialPracticeCompleted, recordId],
-      }));
-    }
+        notebook,
+        officialPracticeCompleted: allRequiredSubmitted && !current.officialPracticeCompleted.includes(recordId)
+          ? [...current.officialPracticeCompleted, recordId]
+          : current.officialPracticeCompleted,
+      };
+    });
   };
   const changeTask = (index: number) => {
     const nextTask = material.tasks[index];
@@ -710,8 +729,10 @@ function OfficialTestRunner({
                 {taskAnswers.map((answer) => {
                   const responseKey = `${taskKey}:${answer.number}`;
                   const correct = taskSubmitted && officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey);
+                  const noteId = `question:${session.setCode}:${task.id}:${answer.number}`;
+                  const savedToNotebook = progress.notebook.some((entry) => entry.id === noteId);
                   return (
-                    <label className={taskSubmitted ? correct ? "is-correct" : "is-wrong" : ""} key={answer.number}>
+                    <div className={`official-answer-item ${taskSubmitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={answer.number}>
                       <span>Q{answer.number}</span>
                       {answer.choices ? (
                         <select aria-label={`Question ${answer.number}`} disabled={taskSubmitted} value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))}>
@@ -721,8 +742,19 @@ function OfficialTestRunner({
                       ) : (
                         <input aria-label={`Question ${answer.number}`} autoComplete="off" disabled={taskSubmitted} placeholder="输入答案" value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))} />
                       )}
+                      <button
+                        className={savedToNotebook ? "question-note-button is-saved" : "question-note-button"}
+                        type="button"
+                        onClick={() => updateProgress((current) => toggleNotebookEntry(current, {
+                          id: noteId,
+                          kind: "question",
+                          title: `Q${answer.number} · ${task.label}`,
+                          detail: taskSubmitted ? `我的答案：${officialResponses[responseKey] || "未作答"}\n正确答案：${answer.displayAnswer}` : "已标记，提交后会自动补充你的答案和正确答案。",
+                          source: `${session.title} · ${session.setCode}`,
+                        }))}
+                      >{savedToNotebook ? "★ 已加入" : taskSubmitted && !correct ? "☆ 加入错题本" : "☆ 标记"}</button>
                       {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em></small>}
-                    </label>
+                    </div>
                   );
                 })}
               </div>
@@ -929,7 +961,7 @@ function VocabularyPractice({
           <button type="submit">检查</button>
         </form>
         <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? "先听发音再输入；检查后才会显示答案。"}</div>
-        {feedback && <div className="dictation-reveal"><span>正确拼写</span><strong>{word.word}</strong><p>{word.meaning}</p></div>}
+        {feedback && <div className="dictation-reveal"><span>正确拼写</span><strong>{word.word}</strong><p>{word.meaning}</p><button className={progress.notebook.some((entry) => entry.id === `word:${word.word.toLowerCase()}`) ? "inline-note-button is-saved" : "inline-note-button"} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${word.word.toLowerCase()}`, kind: "word", title: word.word, detail: `${word.meaning}\n${word.example}`, source: "场景听写" }))}>{progress.notebook.some((entry) => entry.id === `word:${word.word.toLowerCase()}`) ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div>}
         <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === vocabulary.length - 1 ? "完成听写" : "下一个"} →</button></div>
       </div>
       <aside className="exercise-context">
@@ -993,7 +1025,7 @@ function ConnectedSpeechPractice({
         <div className="phrase-audio-actions"><button className="audio-control" onClick={() => speak(phrase.phrase, .98)}><span>▶</span>自然语速</button><button className="audio-control" onClick={() => speak(phrase.phrase, .62)}>慢速拆听</button></div>
         <form className="typing-form" onSubmit={check}><input value={value} onChange={(event) => setValue(event.target.value)} spellCheck={false} placeholder="输入听到的完整词组…" aria-label="输入听到的完整词组" /><button type="submit">检查</button></form>
         <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? "检查后显示完整词组、中文和语流现象。"}</div>
-        {feedback && <div className="dictation-reveal phrase-reveal"><span>{phrase.feature}</span><strong>{phrase.phrase}</strong><p>{phrase.meaning}</p><small>{phrase.note}</small></div>}
+        {feedback && <div className="dictation-reveal phrase-reveal"><span>{phrase.feature}</span><strong>{phrase.phrase}</strong><p>{phrase.meaning}</p><small>{phrase.note}</small><button className={progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "inline-note-button is-saved" : "inline-note-button"} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${phrase.phrase.toLowerCase()}`, kind: "word", title: phrase.phrase, detail: `${phrase.meaning}\n${phrase.note}`, source: `吞音词组 · ${phrase.feature}` }))}>{progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div>}
         <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === connectedSpeechPhrases.length - 1 ? "完成加练" : "下一个"} →</button></div>
       </div>
       <aside className="exercise-context"><span>听音重点</span><p>{feedback ? phrase.note : "不要尝试把每个词切开听。先抓重读词，再从弱读、连读和辅音变化中还原完整词组。"}</p><div className="context-stat"><strong>{connectedSpeechPhrases.length}</strong><span>真实场景高频词组</span></div></aside>
@@ -1018,6 +1050,8 @@ function DailyVocabularySprint({
   const knownCount = progress.dailyVocabularyKnown.filter((item) => dailyWordSet.has(item)).length;
   const finished = queue.length === 0;
   const word = queue[0];
+  const wordNoteId = `word:${word?.word.toLowerCase()}`;
+  const wordSaved = Boolean(word && progress.notebook.some((entry) => entry.id === wordNoteId));
   const fuzzyCount = dailyWords.filter((item) => progress.dailyVocabularyRatings[item.word] === "fuzzy").length;
   const unfamiliarCount = dailyWords.filter((item) => progress.dailyVocabularyRatings[item.word] === "unfamiliar").length;
 
@@ -1077,7 +1111,7 @@ function DailyVocabularySprint({
           })}
         </div>
         <section className={`daily-word-card ${pendingRating ? "is-revealed" : ""}`}>
-          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><button onClick={() => speak(word.word, .76)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button></div>
+          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => speak(word.word, .76)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
           <h2>{word.word}</h2>
           <p className="word-collocation">{pendingRating ? word.collocation : "看到单词后，凭第一反应选择熟悉程度"}</p>
           <div className="daily-word-answer" aria-live="polite">
@@ -1479,9 +1513,12 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
 }
 
 function ReviewView({ progress, updateProgress }: { progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
+  const [mode, setMode] = useState<"notebook" | "review">("notebook");
   const today = localDayKey();
   const reviewItems = progress.reviewWords.filter((item) => (progress.reviewSchedule[item]?.dueDate ?? today) <= today);
   const scheduledCount = progress.reviewWords.length - reviewItems.length;
+  const wordNotes = progress.notebook.filter((entry) => entry.kind === "word").length;
+  const questionNotes = progress.notebook.length - wordNotes;
   const rateItem = (item: string, rating: WordRating) => {
     updateProgress((current) => {
       const rated = rateReviewWord(current, item, rating);
@@ -1492,9 +1529,33 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
   };
   return (
     <>
-      <PageHeader eyebrow="MEMORY LOOP" title="把错误，变成" accent="长期记忆。" />
-      <section className="review-hero"><div><span>今日到期复习</span><strong>{reviewItems.length}</strong><p>{scheduledCount} 个词已安排在未来出现 · 间隔按 1、3、7、14、30、60 天递增</p></div><span className="review-loop" aria-hidden="true">↺</span></section>
-      <div className="review-list">
+      <PageHeader eyebrow="MY NOTEBOOK" title="把不会的，留在" accent="自己的笔记里。" />
+      <div className="review-mode-tabs" role="tablist" aria-label="笔记与复习">
+        <button role="tab" aria-selected={mode === "notebook"} className={mode === "notebook" ? "is-active" : ""} onClick={() => setMode("notebook")}>我的笔记 <span>{progress.notebook.length}</span></button>
+        <button role="tab" aria-selected={mode === "review"} className={mode === "review" ? "is-active" : ""} onClick={() => setMode("review")}>到期复习 <span>{reviewItems.length}</span></button>
+      </div>
+      {mode === "notebook" ? (
+        <section className="notebook-section">
+          <header className="notebook-summary"><div><span>PERSONAL KNOWLEDGE BASE</span><strong>{progress.notebook.length} 条笔记</strong><p>{wordNotes} 个词汇 · {questionNotes} 道题目</p></div><span className="notebook-mark" aria-hidden="true">✦</span></header>
+          <div className="notebook-list">
+            {progress.notebook.length === 0 ? (
+              <div className="empty-state"><strong>笔记本还是空的</strong><p>在单词卡点击“加入笔记”，或在真题答题卡点击“标记”，内容就会保存在这里。</p></div>
+            ) : progress.notebook.map((entry) => (
+              <article className="notebook-entry" key={entry.id}>
+                <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "错题"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
+                <div className="notebook-entry-body"><div><h2>{entry.title}</h2><p>{entry.detail}</p></div>{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .78)} aria-label={`播放 ${entry.title}`}>▶</button>}</div>
+                <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
+                  const note = event.target.value;
+                  updateProgress((current) => ({ ...current, notebook: current.notebook.map((item) => item.id === entry.id ? { ...item, note } : item) }));
+                }} /></label>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <>
+          <section className="review-hero"><div><span>今日到期复习</span><strong>{reviewItems.length}</strong><p>{scheduledCount} 个词已安排在未来出现 · 间隔按 1、3、7、14、30、60 天递增</p></div><span className="review-loop" aria-hidden="true">↺</span></section>
+          <div className="review-list">
         {reviewItems.length === 0 ? <div className="empty-state"><strong>今天没有到期内容</strong><p>{scheduledCount > 0 ? `${scheduledCount} 个词已按记忆间隔排到后续日期。` : "模糊、不熟悉和拼错的内容会自动进入这里。"}</p></div> : reviewItems.map((item) => {
           const word = vocabulary.find((entry) => entry.word === item) ?? dailyVocabulary.find((entry) => entry.word === item);
           const phrase = connectedSpeechPhrases.find((entry) => entry.phrase === item);
@@ -1506,7 +1567,9 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
             <div className="review-rating-actions"><button onClick={() => rateItem(item, "known")}>认识</button><button onClick={() => rateItem(item, "fuzzy")}>模糊</button><button onClick={() => rateItem(item, "unfamiliar")}>不熟悉</button></div>
           </article>;
         })}
-      </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -1517,6 +1580,7 @@ function ProfileView({ progress, percent, onReset }: { progress: LearningProgres
     ["今日词汇", `${progress.dailyVocabularyKnown.length} / 100`],
     ["累计学习", `${progress.minutes} 分钟`],
     ["待强化词汇", `${progress.reviewWords.length}`],
+    ["我的笔记", `${progress.notebook.length}`],
     ["连续学习", `${progress.streak} 天`],
   ], [percent, progress]);
   return (

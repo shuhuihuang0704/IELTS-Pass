@@ -9,11 +9,22 @@ export type ReviewScheduleItem = {
   lapses: number;
 };
 
+export type NotebookEntry = {
+  id: string;
+  kind: "word" | "question";
+  title: string;
+  detail: string;
+  source: string;
+  note: string;
+  createdAt: string;
+};
+
 export type LearningProgress = {
   completed: Record<Skill, boolean>;
   masteredWords: string[];
   reviewWords: string[];
   reviewSchedule: Record<string, ReviewScheduleItem>;
+  notebook: NotebookEntry[];
   dailyVocabularyDate: string;
   dailyVocabularySeen: string[];
   dailyVocabularyKnown: string[];
@@ -61,6 +72,7 @@ export const defaultProgress: LearningProgress = {
   masteredWords: [],
   reviewWords: [],
   reviewSchedule: {},
+  notebook: [],
   dailyVocabularyDate: localDayKey(),
   dailyVocabularySeen: [],
   dailyVocabularyKnown: [],
@@ -173,6 +185,14 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     masteredWords: Array.isArray(stored.masteredWords) ? stored.masteredWords : [],
     reviewWords,
     reviewSchedule,
+    notebook: Array.isArray(stored.notebook)
+      ? stored.notebook.filter((entry): entry is NotebookEntry => Boolean(
+        entry
+        && typeof entry === "object"
+        && typeof (entry as NotebookEntry).id === "string"
+        && ((entry as NotebookEntry).kind === "word" || (entry as NotebookEntry).kind === "question"),
+      ))
+      : [],
     dailyVocabularyDate: today,
     dailyVocabularySeen: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularySeen) ? stored.dailyVocabularySeen : [],
     dailyVocabularyKnown: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularyKnown) ? stored.dailyVocabularyKnown : [],
