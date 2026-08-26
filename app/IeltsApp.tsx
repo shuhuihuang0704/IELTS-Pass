@@ -1391,7 +1391,7 @@ function OfficialTestRunner({
           ) : (
             <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
           )}
-          {material.audioTracks && audioTrack && (
+          {material.audioTracks && audioTrack && (!speakingTaskMode || taskSubmitted) && (
             <div className="official-audio-dock">
               <label>{speakingTaskMode ? "当前 Part 的官方示范录音" : "当前独立 Task 的官方录音"}<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
               {/* eslint-disable-next-line jsx-a11y/media-has-caption -- The official transcript is included in the embedded source PDF. */}
@@ -1420,6 +1420,12 @@ function OfficialTestRunner({
                 <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
               </section>
             </div>
+          ) : task.speakingPrompt && !taskSubmitted ? (
+            <section className="official-speaking-material-lock">
+              <span>REVIEW MATERIAL LOCKED</span>
+              <strong>先完成自己的回答</strong>
+              <p>当前只通过考官语音接收题目。提交本 Part 后，才会显示语音不足分析、针对性改进练习、话题模板、官方样题页与示范录音，避免提前照着答案说。</p>
+            </section>
           ) : (
             <section className={isolateOfficialTaskPages ? "official-source-document is-page-locked" : "official-source-document"}>
               <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>{isolateOfficialTaskPages ? `仅显示当前 Task · P${officialTaskPaperPages.join("–")}` : `PDF P${displayPage}`}</small></header>
@@ -1491,6 +1497,43 @@ function analyzeOfficialSpeakingResponse(
     strengths: strengths.length ? strengths.slice(0, 3) : ["录音已完整保存于当前页面，可以通过回听进行自我复盘。"],
     priorities: priorities.length ? priorities.slice(0, 4) : ["下一轮尝试加入一个更具体的个人例子，并让结尾句明确回扣问题。"],
   };
+}
+
+function buildSpeakingImprovementDrills(
+  transcript: string,
+  durationSeconds: number,
+  pauseCount: number,
+  audioMetrics: SpeakingAudioMetrics,
+  targetSeconds: number,
+  template: SpeakingTopicTemplate,
+) {
+  const words = transcript.match(/[a-z]+(?:'[a-z]+)?/gi) ?? [];
+  const fillerCount = (transcript.match(/\b(?:um|uh|er|you know|basically|actually)\b/gi) ?? []).length;
+  const wordsPerMinute = durationSeconds > 0 ? Math.round(words.length / durationSeconds * 60) : 0;
+  const modelSentence = template.steps[0]?.example ?? template.usefulPhrases[0];
+  const chunkedModel = modelSentence.split(/\s+/).reduce((groups, word, index) => {
+    const groupIndex = Math.floor(index / 4);
+    groups[groupIndex] = groups[groupIndex] ? `${groups[groupIndex]} ${word}` : word;
+    return groups;
+  }, [] as string[]).join(" / ");
+  const drills: { title: string; reason: string; action: string; example: string }[] = [];
+
+  if ((audioMetrics.quietRatio > .38) || (audioMetrics.rms > 0 && audioMetrics.rms < .025)) {
+    drills.push({ title: "音量与句尾清晰度", reason: "本次录音的低音量区间偏多，句尾可能不够清楚。", action: "麦克风保持一拳距离，把每句最后一个关键词说完整；先慢读两遍，再按正常速度录一遍。", example: modelSentence });
+  } else {
+    drills.push({ title: "重音与自然节奏", reason: "音量基本稳定，下一步把重点从“每个词都一样重”改为突出内容词。", action: "朗读例句三遍，每次只重读名词、动词和形容词，功能词保持轻短。", example: modelSentence });
+  }
+  if (fillerCount > 2 || pauseCount > 2 || (wordsPerMinute > 0 && (wordsPerMinute < 90 || wordsPerMinute > 175))) {
+    drills.push({ title: "停顿与意群训练", reason: `本次检测到 ${fillerCount} 个明显填充词、${pauseCount} 次手动暂停，估算语速 ${wordsPerMinute || 0} wpm。`, action: "按照斜线分意群朗读；每个意群一口气说完，斜线处安静停半秒，不用 um 填空。", example: chunkedModel });
+  } else {
+    drills.push({ title: "连续表达训练", reason: "语速和明显停顿处于可控范围，可以进一步提高答案连贯度。", action: "不看完整稿，只看 4 个关键词，连续说两遍；第二遍增加一个 because 和一个具体例子。", example: `${template.usefulPhrases.slice(0, 3).join(" → ")}` });
+  }
+  if (durationSeconds < targetSeconds * .75) {
+    drills.push({ title: "答案展开训练", reason: `本次回答 ${durationSeconds} 秒，距离 ${targetSeconds} 秒目标仍有空间。`, action: "用模板的前三步各说 1–2 句，最后补充一个真实细节；不要重复同一句观点。", example: template.steps.slice(0, 3).map((step) => step.label.replace(/^\d+ · /, "")).join(" → ") });
+  } else {
+    drills.push({ title: "结尾回扣训练", reason: "回答长度已经接近目标，重点应转向结尾是否明确回应问题。", action: "保留原答案主体，只重录最后两句：先总结判断，再说明它为什么重要或可能怎样变化。", example: "Overall, I would say… / The main reason is that…" });
+  }
+  return drills;
 }
 
 function SpeakingTranscriptHighlight({ transcript }: { transcript: string }) {
@@ -1732,6 +1775,7 @@ function OfficialSpeakingResponse({
   };
 
   const feedback = analyzeOfficialSpeakingResponse(transcript, durationSeconds, pauseCount, audioMetrics, prompt.targetSeconds);
+  const improvementDrills = buildSpeakingImprovementDrills(transcript, durationSeconds, pauseCount, audioMetrics, prompt.targetSeconds, prompt.topicTemplate);
   const submitRecording = () => {
     if (!audioUrl || durationSeconds < 3) return;
     onSubmit({
@@ -1778,8 +1822,8 @@ function OfficialSpeakingResponse({
       <div className="speaking-recording-status" aria-live="polite">{status}</div>
       {(recordingState === "finished" || submitted) && <div className="speaking-transcript-editor"><label htmlFor={`speaking-transcript-${task.id}`}>语音识别稿 <small>可修正浏览器识别错误；修改后再提交会让词汇与结构分析更准确</small></label><textarea id={`speaking-transcript-${task.id}`} disabled={submitted} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="浏览器未生成识别稿时，可以在回听后补充主要内容……" /></div>}
       {!submitted && recordingState === "finished" && <footer><span>{durationSeconds < 3 ? "录音过短，请至少说 3 秒。" : "请回听并核对识别稿；提交后才计为本 Part 完成。"}</span><button type="button" disabled={!audioUrl || durationSeconds < 3} onClick={submitRecording}>提交语音并生成反馈</button></footer>}
-      {submitted && <section className="official-speaking-feedback"><header><div><span>PERSONALISED SPEAKING REVIEW</span><strong>根据本次录音与识别稿生成的改进建议</strong></div><button type="button" onClick={restartPractice}>再做一次</button></header><div className="speaking-feedback-metrics">{feedback.metrics.map((metric) => <article key={metric.label}><span>{metric.label}</span><b>{metric.value}</b></article>)}</div><div className="speaking-feedback-columns"><article><strong>这次做得好</strong><ul>{feedback.strengths.map((item) => <li key={item}>{item}</li>)}</ul></article><article><strong>下一轮优先改进</strong><ul>{feedback.priorities.map((item) => <li key={item}>{item}</li>)}</ul></article></div><div className="speaking-transcript-highlight"><header><b>识别稿荧光复盘</b><small><i className="good" /> 展开词 · <i className="watch" /> 填充词</small></header><SpeakingTranscriptHighlight transcript={transcript} /></div><p className="speaking-feedback-limit">本地分析会检查时长、语速、停顿区间、音量和语言结构，但不能可靠判断单个音素是否准确，也不冒充 IELTS 官方分数。请结合录音回听和官方示范录音复盘发音。</p></section>}
-      <section className="speaking-topic-template"><header><div><span>TOPIC TEMPLATE</span><strong>{prompt.topicTemplate.title}</strong></div><small>模板用于组织观点，不要背成固定答案</small></header><div>{prompt.topicTemplate.steps.map((step) => <article key={step.label}><b>{step.label}</b><p>{step.prompt}</p><blockquote>{step.example}</blockquote></article>)}</div><aside><b>可替换表达</b><p>{prompt.topicTemplate.usefulPhrases.join(" · ")}</p></aside>{submitted && <div className="speaking-follow-up"><b>继续模拟时，考官可能追问</b>{prompt.supportingQuestions.map((question) => <p key={question}>“{question}”</p>)}</div>}<p className="speaking-exam-note">{prompt.examNote}</p></section>
+      {submitted && <section className="official-speaking-feedback"><header><div><span>PERSONALISED SPEAKING REVIEW</span><strong>回答完成后生成的语音不足与改进建议</strong></div><button type="button" onClick={restartPractice}>再做一次</button></header><div className="speaking-feedback-metrics">{feedback.metrics.map((metric) => <article key={metric.label}><span>{metric.label}</span><b>{metric.value}</b></article>)}</div><div className="speaking-feedback-columns"><article><strong>这次做得好</strong><ul>{feedback.strengths.map((item) => <li key={item}>{item}</li>)}</ul></article><article><strong>语音不足与下一轮改进</strong><ul>{feedback.priorities.map((item) => <li key={item}>{item}</li>)}</ul></article></div><section className="speaking-improvement-drills"><header><span>TARGETED VOICE PRACTICE</span><strong>根据本次回答安排的 3 个改进练习</strong></header><div>{improvementDrills.map((drill) => <article key={drill.title}><b>{drill.title}</b><p>{drill.reason}</p><strong>怎么练</strong><p>{drill.action}</p><blockquote>{drill.example}</blockquote></article>)}</div></section><div className="speaking-transcript-highlight"><header><b>识别稿荧光复盘</b><small><i className="good" /> 展开词 · <i className="watch" /> 填充词</small></header><SpeakingTranscriptHighlight transcript={transcript} /></div><p className="speaking-feedback-limit">本地分析会检查时长、语速、停顿区间、音量和语言结构，但不能可靠判断单个音素是否准确，也不冒充 IELTS 官方分数。请结合录音回听和官方示范录音复盘发音。</p></section>}
+      {submitted && <section className="speaking-topic-template"><header><div><span>TOPIC TEMPLATE · UNLOCKED</span><strong>{prompt.topicTemplate.title}</strong></div><small>回答提交后解锁；用于重做时组织观点</small></header><div>{prompt.topicTemplate.steps.map((step) => <article key={step.label}><b>{step.label}</b><p>{step.prompt}</p><blockquote>{step.example}</blockquote></article>)}</div><aside><b>可替换表达</b><p>{prompt.topicTemplate.usefulPhrases.join(" · ")}</p></aside><div className="speaking-follow-up"><b>继续模拟时，考官可能追问</b>{prompt.supportingQuestions.map((question) => <p key={question}>“{question}”</p>)}</div><p className="speaking-exam-note">{prompt.examNote}</p></section>}
     </section>
   );
 }

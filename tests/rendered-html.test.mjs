@@ -246,10 +246,18 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /new AudioContext\(\)/);
   assert.match(app, /PERSONALISED SPEAKING REVIEW/);
   assert.match(app, /TOPIC TEMPLATE/);
+  assert.match(app, /TARGETED VOICE PRACTICE/);
+  assert.match(app, /回答完成后生成的语音不足与改进建议/);
+  assert.match(app, /submitted && <section className="speaking-topic-template"/);
+  assert.match(app, /!speakingTaskMode \|\| taskSubmitted/);
+  assert.match(app, /REVIEW MATERIAL LOCKED/);
+  assert.match(app, /提交本 Part 后，才会显示语音不足分析、针对性改进练习、话题模板/);
   assert.match(app, /不能可靠判断单个音素是否准确/);
   assert.match(app, /正式 Part 2 会给 1 分钟准备/);
   assert.match(styles, /\.official-speaking-response/);
   assert.match(styles, /\.speaking-prep-panel/);
+  assert.match(styles, /\.speaking-improvement-drills/);
+  assert.match(styles, /\.official-speaking-material-lock/);
   assert.match(styles, /\.speaking-transcript-highlight mark\.is-good/);
   assert.match(app, /official-paper-frame/);
   assert.match(app, /#page=\$\{displayPage\}/);
