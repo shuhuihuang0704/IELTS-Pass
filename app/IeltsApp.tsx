@@ -45,6 +45,13 @@ type OfficialTestSession = {
 };
 
 type OfficialAudioTrack = { label: string; url: string };
+type OfficialAnswer = {
+  number: string;
+  accepted: string[];
+  displayAnswer: string;
+  choices?: string[];
+  group?: string;
+};
 type OfficialTaskSegment = {
   id: string;
   label: string;
@@ -53,6 +60,7 @@ type OfficialTaskSegment = {
   answerPage?: number;
   audioTrackIndex?: number;
   answerLabel?: string;
+  answers?: OfficialAnswer[];
 };
 type OfficialTestMaterial = { id: string; label: string; pdfUrl: string; tasks: OfficialTaskSegment[]; audioTracks?: OfficialAudioTrack[] };
 
@@ -71,14 +79,46 @@ const listeningMaterial: OfficialTestMaterial = {
     { label: "Task 8 · Note Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
   ],
   tasks: [
-    { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, answerPage: 7, audioTrackIndex: 0 },
-    { id: "multiple-choice", label: "Multiple Choice", questionLabel: "Questions 9–10", questionPage: 8, answerPage: 10, audioTrackIndex: 1 },
-    { id: "short-answer", label: "Short-answer Questions", questionLabel: "Questions 11–16", questionPage: 11, answerPage: 13, audioTrackIndex: 2 },
-    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 27–30", questionPage: 14, answerPage: 17, audioTrackIndex: 3 },
-    { id: "matching-one", label: "Matching 1", questionLabel: "Questions 21–25", questionPage: 18, answerPage: 21, audioTrackIndex: 4 },
-    { id: "matching-two", label: "Matching 2", questionLabel: "Questions 1–4", questionPage: 22, answerPage: 25, audioTrackIndex: 5 },
-    { id: "map-labelling", label: "Map Labelling", questionLabel: "Questions 11–15", questionPage: 26, answerPage: 28, audioTrackIndex: 6 },
-    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 11–20", questionPage: 29, answerPage: 33, audioTrackIndex: 7 },
+    { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, answerPage: 7, audioTrackIndex: 0, answers: [
+      { number: "1", accepted: ["Mkere"], displayAnswer: "Mkere" },
+      { number: "2", accepted: ["Westall"], displayAnswer: "Westall" },
+      { number: "3", accepted: ["BS8 9PU"], displayAnswer: "BS8 9PU" },
+      { number: "4", accepted: ["0.75 m", "0.75 metre", "0.75 metres", "0.75 meter", "0.75 meters", "three quarters of a metre", "three quarters of a meter", "75 cm", "75 cms"], displayAnswer: "0.75 m / 75 cm" },
+      { number: "5", accepted: ["0.5 m", "0.5 metre", "0.5 metres", "0.5 meter", "0.5 meters", "half a metre", "half a meter", "50 cm", "50 cms"], displayAnswer: "0.5 m / 50 cm" },
+      { number: "6", accepted: ["books", "toys"], displayAnswer: "books / toys（顺序不限）", group: "6-7" },
+      { number: "7", accepted: ["books", "toys"], displayAnswer: "books / toys（顺序不限）", group: "6-7" },
+      { number: "8", accepted: ["1,700", "1700"], displayAnswer: "1,700" },
+    ] },
+    { id: "multiple-choice", label: "Multiple Choice", questionLabel: "Questions 9–10", questionPage: 8, answerPage: 10, audioTrackIndex: 1, answers: [
+      { number: "9", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] },
+      { number: "10", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C"] },
+    ] },
+    { id: "short-answer", label: "Short-answer Questions", questionLabel: "Questions 11–16", questionPage: 11, answerPage: 13, audioTrackIndex: 2, answers: [
+      { number: "11", accepted: ["language", "customs"], displayAnswer: "language / customs（顺序不限）", group: "11-12" },
+      { number: "12", accepted: ["language", "customs"], displayAnswer: "language / customs（顺序不限）", group: "11-12" },
+      { number: "13", accepted: ["music", "music groups", "local history", "local history groups"], displayAnswer: "music (groups) / local history (groups)（顺序不限）", group: "13-14" },
+      { number: "14", accepted: ["music", "music groups", "local history", "local history groups"], displayAnswer: "music (groups) / local history (groups)（顺序不限）", group: "13-14" },
+      { number: "15", accepted: ["library", "libraries", "public library", "public libraries", "town hall"], displayAnswer: "(public) library / town hall（顺序不限）", group: "15-16" },
+      { number: "16", accepted: ["library", "libraries", "public library", "public libraries", "town hall"], displayAnswer: "(public) library / town hall（顺序不限）", group: "15-16" },
+    ] },
+    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 27–30", questionPage: 14, answerPage: 17, audioTrackIndex: 3, answers: [
+      { number: "27", accepted: ["motivation"], displayAnswer: "motivation" },
+      { number: "28", accepted: ["time management", "time-management"], displayAnswer: "time-management" },
+      { number: "29", accepted: ["modules"], displayAnswer: "modules" },
+      { number: "30", accepted: ["summer school", "summer schools"], displayAnswer: "summer school(s)" },
+    ] },
+    { id: "matching-one", label: "Matching 1", questionLabel: "Questions 21–25", questionPage: 18, answerPage: 21, audioTrackIndex: 4, answers: [
+      { number: "21", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] }, { number: "22", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C"] }, { number: "23", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C"] }, { number: "24", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C"] }, { number: "25", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C"] },
+    ] },
+    { id: "matching-two", label: "Matching 2", questionLabel: "Questions 1–4", questionPage: 22, answerPage: 25, audioTrackIndex: 5, answers: [
+      { number: "1", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E"] }, { number: "2", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E"] }, { number: "3", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D", "E"] }, { number: "4", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D", "E"] },
+    ] },
+    { id: "map-labelling", label: "Map Labelling", questionLabel: "Questions 11–15", questionPage: 26, answerPage: 28, audioTrackIndex: 6, answers: [
+      { number: "11", accepted: ["H"], displayAnswer: "H", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "12", accepted: ["G"], displayAnswer: "G", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "13", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "14", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "15", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+    ] },
+    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 11–20", questionPage: 29, answerPage: 33, audioTrackIndex: 7, answers: [
+      { number: "11", accepted: ["classical music", "classical music concerts", "music concerts", "concerts"], displayAnswer: "classical music (concerts)" }, { number: "12", accepted: ["bookshop", "bookstore", "a bookshop", "a bookstore"], displayAnswer: "(a) bookshop / bookstore" }, { number: "13", accepted: ["planned"], displayAnswer: "planned" }, { number: "14", accepted: ["1983", "1980s", "the 1980s"], displayAnswer: "1983 / (the) 1980s" }, { number: "15", accepted: ["city council", "the city council"], displayAnswer: "(the) City Council" }, { number: "16", accepted: ["363"], displayAnswer: "363" }, { number: "17", accepted: ["garden hall", "the garden hall"], displayAnswer: "(the) Garden Hall" }, { number: "18", accepted: ["three lives"], displayAnswer: "Three Lives" }, { number: "19", accepted: ["£4.50", "4.50"], displayAnswer: "£4.50" }, { number: "20", accepted: ["faces of china"], displayAnswer: "Faces of China" },
+    ] },
   ],
 };
 const readingMaterial: OfficialTestMaterial = {
@@ -86,19 +126,45 @@ const readingMaterial: OfficialTestMaterial = {
   label: "Academic Reading",
   pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-reading-sample-tasks-2023.pdf",
   tasks: [
-    { id: "true-false-not-given", label: "True / False / Not Given", questionLabel: "Questions 1–3", questionPage: 12, answerPage: 14 },
-    { id: "flow-chart", label: "Flow-chart Completion", questionLabel: "Questions 1–3", questionPage: 9, answerPage: 11 },
-    { id: "matching-headings", label: "Matching Headings", questionLabel: "starts at Question 1", questionPage: 15, answerPage: 18 },
-    { id: "sentence-endings", label: "Matching Sentence Endings", questionLabel: "Questions 1–3", questionPage: 19, answerPage: 22 },
-    { id: "multiple-choice-many", label: "Multiple Choice · more than one answer", questionLabel: "Questions 1–2", questionPage: 23, answerPage: 26 },
-    { id: "multiple-choice-one", label: "Multiple Choice · one answer", questionLabel: "Questions 1–4", questionPage: 27, answerPage: 29 },
-    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 1–6", questionPage: 30, answerPage: 33 },
-    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 1–5", questionPage: 34, answerPage: 37 },
-    { id: "summary-list", label: "Summary Completion · answer list", questionLabel: "Questions 1–4", questionPage: 38, answerPage: 40 },
-    { id: "summary-words", label: "Summary Completion · passage words", questionLabel: "Questions 1–5", questionPage: 41, answerPage: 43 },
-    { id: "diagram-label", label: "Diagram Label Completion", questionLabel: "Questions 1–5", questionPage: 44, answerPage: 46 },
-    { id: "matching-features", label: "Matching Features", questionLabel: "official Questions 7–10", questionPage: 3, answerPage: 5 },
-    { id: "table-completion", label: "Table Completion", questionLabel: "official Questions 9–13", questionPage: 6, answerPage: 8 },
+    { id: "true-false-not-given", label: "True / False / Not Given", questionLabel: "Questions 1–3", questionPage: 12, answerPage: 14, answers: [
+      { number: "1", accepted: ["FALSE"], displayAnswer: "FALSE", choices: ["TRUE", "FALSE", "NOT GIVEN"] }, { number: "2", accepted: ["NOT GIVEN"], displayAnswer: "NOT GIVEN", choices: ["TRUE", "FALSE", "NOT GIVEN"] }, { number: "3", accepted: ["TRUE"], displayAnswer: "TRUE", choices: ["TRUE", "FALSE", "NOT GIVEN"] },
+    ] },
+    { id: "flow-chart", label: "Flow-chart Completion", questionLabel: "Questions 1–3", questionPage: 9, answerPage: 11, answers: [
+      { number: "1", accepted: ["glucose"], displayAnswer: "glucose" }, { number: "2", accepted: ["free radicals"], displayAnswer: "free radicals" }, { number: "3", accepted: ["preservation"], displayAnswer: "preservation" },
+    ] },
+    { id: "matching-headings", label: "Matching Headings", questionLabel: "Questions 1–4", questionPage: 15, answerPage: 18, answers: [
+      { number: "1", accepted: ["iii"], displayAnswer: "iii", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] }, { number: "2", accepted: ["viii"], displayAnswer: "viii", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] }, { number: "3", accepted: ["v"], displayAnswer: "v", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] }, { number: "4", accepted: ["vii"], displayAnswer: "vii", choices: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"] },
+    ] },
+    { id: "sentence-endings", label: "Matching Sentence Endings", questionLabel: "Questions 1–3", questionPage: 19, answerPage: 22, answers: [
+      { number: "1", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "2", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] }, { number: "3", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G", "H"] },
+    ] },
+    { id: "multiple-choice-many", label: "Multiple Choice · more than one answer", questionLabel: "Questions 1–4", questionPage: 23, answerPage: 26, answers: [
+      { number: "1", accepted: ["B", "G"], displayAnswer: "B / G（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "1-2" }, { number: "2", accepted: ["B", "G"], displayAnswer: "B / G（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "1-2" }, { number: "3", accepted: ["C", "E"], displayAnswer: "C / E（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "3-4" }, { number: "4", accepted: ["C", "E"], displayAnswer: "C / E（顺序不限）", choices: ["A", "B", "C", "D", "E", "F", "G"], group: "3-4" },
+    ] },
+    { id: "multiple-choice-one", label: "Multiple Choice · one answer", questionLabel: "Questions 1–4", questionPage: 27, answerPage: 29, answers: [
+      { number: "1", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D"] }, { number: "2", accepted: ["C"], displayAnswer: "C", choices: ["A", "B", "C", "D"] }, { number: "3", accepted: ["D"], displayAnswer: "D", choices: ["A", "B", "C", "D"] }, { number: "4", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
+    ] },
+    { id: "note-completion", label: "Note Completion", questionLabel: "Questions 1–6", questionPage: 30, answerPage: 33, answers: [
+      { number: "1", accepted: ["thorium"], displayAnswer: "thorium" }, { number: "2", accepted: ["pitchblende"], displayAnswer: "pitchblende" }, { number: "3", accepted: ["radium"], displayAnswer: "radium" }, { number: "4", accepted: ["soldiers"], displayAnswer: "soldiers" }, { number: "5", accepted: ["illness"], displayAnswer: "illness" }, { number: "6", accepted: ["neutron"], displayAnswer: "neutron" },
+    ] },
+    { id: "sentence-completion", label: "Sentence Completion", questionLabel: "Questions 1–5", questionPage: 34, answerPage: 37, answers: [
+      { number: "1", accepted: ["theropods"], displayAnswer: "theropods" }, { number: "2", accepted: ["collarbones"], displayAnswer: "collarbones" }, { number: "3", accepted: ["reptile"], displayAnswer: "reptile" }, { number: "4", accepted: ["similarities"], displayAnswer: "similarities" }, { number: "5", accepted: ["claw"], displayAnswer: "claw" },
+    ] },
+    { id: "summary-list", label: "Summary Completion · answer list", questionLabel: "Questions 1–4", questionPage: 38, answerPage: 40, answers: [
+      { number: "1", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E", "F", "G"] }, { number: "2", accepted: ["G"], displayAnswer: "G", choices: ["A", "B", "C", "D", "E", "F", "G"] }, { number: "3", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E", "F", "G"] }, { number: "4", accepted: ["F"], displayAnswer: "F", choices: ["A", "B", "C", "D", "E", "F", "G"] },
+    ] },
+    { id: "summary-words", label: "Summary Completion · passage words", questionLabel: "Questions 1–5", questionPage: 41, answerPage: 43, answers: [
+      { number: "1", accepted: ["frustration"], displayAnswer: "frustration" }, { number: "2", accepted: ["first-time user", "first time user"], displayAnswer: "first-time user" }, { number: "3", accepted: ["essential"], displayAnswer: "essential" }, { number: "4", accepted: ["special knowledge"], displayAnswer: "special knowledge" }, { number: "5", accepted: ["legal formulations"], displayAnswer: "legal formulations" },
+    ] },
+    { id: "diagram-label", label: "Diagram Label Completion", questionLabel: "Questions 1–5", questionPage: 44, answerPage: 46, answers: [
+      { number: "1", accepted: ["hot dry air", "dry hot air"], displayAnswer: "hot dry air / dry hot air" }, { number: "2", accepted: ["cool moist air", "moist cool air"], displayAnswer: "cool moist air / moist cool air" }, { number: "3", accepted: ["infrared radiation", "infrared light"], displayAnswer: "infrared radiation / light" }, { number: "4", accepted: ["condenser", "a condenser", "the condenser"], displayAnswer: "(a/the) condenser" }, { number: "5", accepted: ["pure water", "distilled water", "pure distilled water"], displayAnswer: "pure / distilled water" },
+    ] },
+    { id: "matching-features", label: "Matching Features", questionLabel: "official Questions 7–10", questionPage: 3, answerPage: 5, answers: [
+      { number: "7", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D", "E"] }, { number: "8", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D", "E"] }, { number: "9", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D", "E"] }, { number: "10", accepted: ["E"], displayAnswer: "E", choices: ["A", "B", "C", "D", "E"] },
+    ] },
+    { id: "table-completion", label: "Table Completion", questionLabel: "official Questions 9–13", questionPage: 6, answerPage: 8, answers: [
+      { number: "9", accepted: ["temperate"], displayAnswer: "temperate" }, { number: "10", accepted: ["early spring"], displayAnswer: "early spring" }, { number: "11", accepted: ["two to five", "2-5", "2 to 5"], displayAnswer: "two to five / 2-5" }, { number: "12", accepted: ["sub-tropical", "subtropical"], displayAnswer: "sub-tropical" }, { number: "13", accepted: ["South African tunneling", "South African tunnelling"], displayAnswer: "South African tunneling / tunnelling" },
+    ] },
   ],
 };
 const writingMaterial: OfficialTestMaterial = {
@@ -144,6 +210,28 @@ function speak(text: string, rate = 0.9) {
   utterance.rate = rate;
   window.speechSynthesis.speak(utterance);
   return true;
+}
+
+function normalizeOfficialAnswer(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .trim()
+    .replace(/^(some|the|an|a)\s+/, "")
+    .replace(/\s+(wide|high|deep)$/, "")
+    .replaceAll("¾", "0.75")
+    .replaceAll("½", "0.5")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function officialAnswerIsCorrect(answer: OfficialAnswer, taskAnswers: OfficialAnswer[], responses: Record<string, string>, taskKey: string) {
+  const responseFor = (item: OfficialAnswer) => normalizeOfficialAnswer(responses[`${taskKey}:${item.number}`] ?? "");
+  const acceptedFor = (item: OfficialAnswer) => item.accepted.map(normalizeOfficialAnswer);
+  if (!answer.group) return acceptedFor(answer).includes(responseFor(answer));
+  const groupAnswers = taskAnswers.filter((item) => item.group === answer.group);
+  const groupResponses = groupAnswers.map(responseFor);
+  return groupResponses.every((response, index) => response && acceptedFor(groupAnswers[index]).includes(response))
+    && new Set(groupResponses).size === groupResponses.length;
 }
 
 export default function IeltsApp() {
@@ -475,12 +563,20 @@ function OfficialTestRunner({
   const [taskIndex, setTaskIndex] = useState(0);
   const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
   const [audioTrackIndex, setAudioTrackIndex] = useState(0);
+  const [officialResponses, setOfficialResponses] = useState<Record<string, string>>({});
+  const [submittedTasks, setSubmittedTasks] = useState<Record<string, boolean>>({});
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
   const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
   const material = session.materials[materialIndex];
   const task = material.tasks[taskIndex];
   const audioTrack = material.audioTracks?.[audioTrackIndex];
   const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
+  const taskKey = `${material.id}:${task.id}`;
+  const taskAnswers = task.answers ?? [];
+  const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
+  const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
+  const taskSubmitted = submittedTasks[taskKey] ?? false;
+  const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const recordId = `${localWeekKey()}:${session.id}`;
   const completed = progress.officialPracticeCompleted.includes(recordId);
 
@@ -558,6 +654,44 @@ function OfficialTestRunner({
             </div>
           </div>
           <p className="official-task-note">官方合集保留原始题号；本目录已按独立 Task 切分。默认从 Questions 1 开始，少数题型原本从后续题号开始时会明确标注。</p>
+          {taskAnswers.length > 0 ? (
+            <form className="official-answer-sheet" onSubmit={(event) => {
+              event.preventDefault();
+              if (!allAnswersFilled) return;
+              setSubmittedTasks((current) => ({ ...current, [taskKey]: true }));
+            }}>
+              <header>
+                <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>按官方题号填写，提交前不会显示答案</small></div>
+                <b className={taskSubmitted ? "is-scored" : ""}>{taskSubmitted ? `${correctAnswerCount} / ${taskAnswers.length}` : `${answeredCount} / ${taskAnswers.length}`}</b>
+              </header>
+              <div className="official-answer-grid">
+                {taskAnswers.map((answer) => {
+                  const responseKey = `${taskKey}:${answer.number}`;
+                  const correct = taskSubmitted && officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey);
+                  return (
+                    <label className={taskSubmitted ? correct ? "is-correct" : "is-wrong" : ""} key={answer.number}>
+                      <span>Q{answer.number}</span>
+                      {answer.choices ? (
+                        <select aria-label={`Question ${answer.number}`} disabled={taskSubmitted} value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))}>
+                          <option value="">请选择</option>
+                          {answer.choices.map((choice) => <option value={choice} key={choice}>{choice}</option>)}
+                        </select>
+                      ) : (
+                        <input aria-label={`Question ${answer.number}`} autoComplete="off" disabled={taskSubmitted} placeholder="输入答案" value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))} />
+                      )}
+                      {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em></small>}
+                    </label>
+                  );
+                })}
+              </div>
+              <footer>
+                <span>{taskSubmitted ? `本 Task 得分 ${correctAnswerCount}/${taskAnswers.length}；每题旁已显示官方答案。` : allAnswersFilled ? "答案已全部填写，可以提交判分。" : `还需完成 ${taskAnswers.length - answeredCount} 题后才能提交。`}</span>
+                {taskSubmitted ? <button type="button" onClick={() => setSubmittedTasks((current) => ({ ...current, [taskKey]: false }))}>修改答案</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
+              </footer>
+            </form>
+          ) : (
+            <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
+          )}
           {material.audioTracks && audioTrack && (
             <div className="official-audio-dock">
               <label>选择官方录音<select value={audioTrackIndex} onChange={(event) => setAudioTrackIndex(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>

@@ -113,6 +113,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /查看答案/);
   assert.match(app, /Questions 1–3/);
   assert.match(app, /官方合集保留原始题号/);
+  assert.match(app, /COMPUTER-DELIVERED ANSWER SHEET/);
+  assert.match(app, /提交全部答案/);
+  assert.match(app, /正确答案：/);
+  assert.match(app, /officialAnswerIsCorrect/);
+  assert.match(app, /new Set\(groupResponses\)/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);
   assert.match(app, /昨日未完成/);
   assert.match(app, /carryoverTasks\.filter/);
