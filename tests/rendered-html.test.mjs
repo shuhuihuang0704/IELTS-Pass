@@ -238,7 +238,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /3 INDEPENDENT SPEAKING PARTS/);
   assert.match(app, /OfficialSpeakingResponse/);
   assert.match(app, /COMPUTER-DELIVERED SPEAKING PRACTICE/);
-  assert.match(app, /考官提问 → 60 秒准备 → 录音 → 回听 → 提交反馈/);
+  assert.match(app, /每次提交后考官继续追问；全部回答后才生成反馈/);
   assert.match(app, /navigator\.mediaDevices\?\.getUserMedia/);
   assert.match(app, /new MediaRecorder\(stream\)/);
   assert.match(app, /recorder\.pause\(\)/);
@@ -252,11 +252,19 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /!speakingTaskMode \|\| taskSubmitted/);
   assert.match(app, /REVIEW MATERIAL LOCKED/);
   assert.match(app, /提交本 Part 后，才会显示语音不足分析、针对性改进练习、话题模板/);
+  assert.match(app, /const allQuestions = \[prompt\.examinerQuestion, \.\.\.prompt\.supportingQuestions\]/);
+  assert.match(app, /questionIndex < allQuestions\.length - 1/);
+  assert.match(app, /playExaminerQuestion\(allQuestions\[nextQuestionIndex\]\)/);
+  assert.match(app, /提交本题，听下一问/);
+  assert.match(app, /提交最后一题并生成反馈/);
+  assert.match(app, /turnCount: String\(completedTurns\.length\)/);
+  assert.match(app, /本 Part 问题进度/);
   assert.match(app, /不能可靠判断单个音素是否准确/);
   assert.match(app, /正式 Part 2 会给 1 分钟准备/);
   assert.match(styles, /\.official-speaking-response/);
   assert.match(styles, /\.speaking-prep-panel/);
   assert.match(styles, /\.speaking-improvement-drills/);
+  assert.match(styles, /\.speaking-question-progress/);
   assert.match(styles, /\.official-speaking-material-lock/);
   assert.match(styles, /\.speaking-transcript-highlight mark\.is-good/);
   assert.match(app, /official-paper-frame/);
