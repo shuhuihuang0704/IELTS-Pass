@@ -8,6 +8,7 @@ export type LearningProgress = {
   dailyVocabularySeen: string[];
   dailyVocabularyKnown: string[];
   dailyDictationSeen: string[];
+  connectedSpeechSeen: string[];
   dailyVocabularyCompleted: boolean;
   dailyDictationCompleted: boolean;
   listeningCorrect: boolean | null;
@@ -34,6 +35,7 @@ export const defaultProgress: LearningProgress = {
   dailyVocabularySeen: [],
   dailyVocabularyKnown: [],
   dailyDictationSeen: [],
+  connectedSpeechSeen: [],
   dailyVocabularyCompleted: false,
   dailyDictationCompleted: false,
   listeningCorrect: null,
@@ -71,6 +73,7 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     dailyVocabularySeen: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularySeen) ? stored.dailyVocabularySeen : [],
     dailyVocabularyKnown: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularyKnown) ? stored.dailyVocabularyKnown : [],
     dailyDictationSeen: isCurrentVocabularyDay && Array.isArray(stored.dailyDictationSeen) ? stored.dailyDictationSeen : [],
+    connectedSpeechSeen: isCurrentVocabularyDay && Array.isArray(stored.connectedSpeechSeen) ? stored.connectedSpeechSeen : [],
     dailyVocabularyCompleted: isCurrentVocabularyDay ? Boolean(stored.dailyVocabularyCompleted) : false,
     dailyDictationCompleted: isCurrentVocabularyDay ? Boolean(stored.dailyDictationCompleted) : false,
     listeningCorrect: isCurrentVocabularyDay ? (stored.listeningCorrect ?? null) : null,

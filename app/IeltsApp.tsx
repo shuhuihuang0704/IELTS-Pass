@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  connectedSpeechPhrases,
   dailyVocabulary,
   getDailyVocabulary,
   listeningExercise,
@@ -340,20 +341,19 @@ function VocabularyPractice({
   onSectionComplete: (section: "daily" | "dictation") => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const [mode, setMode] = useState<"daily" | "typing">("daily");
+  const [mode, setMode] = useState<"daily" | "typing" | "phrases">("daily");
   const [index, setIndex] = useState(() => Math.min(
     vocabulary.filter((item) => progress.dailyDictationSeen.includes(item.word)).length,
     vocabulary.length - 1,
   ));
   const [value, setValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const [showHint, setShowHint] = useState(false);
   const word = vocabulary[index];
 
   const check = (event?: FormEvent) => {
     event?.preventDefault();
     const correct = value.trim().toLowerCase() === word.word;
-    setFeedback({ tone: correct ? "success" : "error", text: correct ? `正确：${word.word} ${word.phonetic}` : `再试一次。${word.hint}` });
+    setFeedback({ tone: correct ? "success" : "error", text: correct ? "拼写正确，答案已经揭晓。" : "拼写有误，已加入需要复习的词汇。" });
     updateProgress((current) => ({
       ...current,
       masteredWords: correct ? Array.from(new Set([...current.masteredWords, word.word])) : current.masteredWords,
@@ -373,7 +373,7 @@ function VocabularyPractice({
       return;
     }
     setIndex((current) => current + 1);
-    setValue(""); setFeedback(null); setShowHint(false);
+    setValue(""); setFeedback(null);
   };
 
   return (
@@ -381,17 +381,17 @@ function VocabularyPractice({
       <div className="vocabulary-mode-switch" role="tablist" aria-label="词汇练习模式">
         <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 100 词 {progress.dailyVocabularyCompleted ? "✓" : ""}</button>
         <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写 80 词 {progress.dailyDictationCompleted ? "✓" : ""}</button>
+        <button role="tab" aria-selected={mode === "phrases"} className={mode === "phrases" ? "is-active" : ""} onClick={() => setMode("phrases")}>吞音词组 {connectedSpeechPhrases.length}</button>
       </div>
-      <p className="completion-requirement">完成每日 100 词和场景听写 80 词后，词汇任务才会打勾。</p>
+      <p className="completion-requirement">完成每日 100 词和场景听写 80 词后，词汇任务才会打勾；吞音词组为专项加练。</p>
       {mode === "daily" ? (
         <DailyVocabularySprint progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
-      ) : (
+      ) : mode === "typing" ? (
         <div className="exercise-layout">
       <div className="exercise-main typing-practice">
         <div className="exercise-kicker"><span>听音拼写 · 第 {Math.floor(index / 10) + 1} / 8 组</span><span>{progress.dailyDictationSeen.length + (feedback ? 1 : 0)} / {vocabulary.length}</span></div>
-        <h2>听发音，输入对应的英文单词</h2><p>电脑端直接打字并按 Enter；手机端也可以使用键盘完成。</p>
+        <h2>只听声音，输入对应的英文单词</h2><p>提交检查前不显示中文、拼写和例句。</p>
         <button className="audio-control" onClick={() => speak(word.word, 0.72)}><span>▶</span>播放英式发音</button>
-        <div className="word-meaning">{word.meaning}</div>
         <form className="typing-form" onSubmit={check}>
           <input
             value={value}
@@ -408,16 +408,73 @@ function VocabularyPractice({
           />
           <button type="submit">检查</button>
         </form>
-        <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? (showHint ? word.hint : "先听发音，尽量不看提示。")}</div>
-        <div className="exercise-actions"><button className="text-action" onClick={() => setShowHint(true)}>显示提示</button><button className="secondary-action" disabled={!feedback} onClick={next}>{index === vocabulary.length - 1 ? "完成听写" : "下一个"} →</button></div>
+        <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? "先听发音再输入；检查后才会显示答案。"}</div>
+        {feedback && <div className="dictation-reveal"><span>正确拼写</span><strong>{word.word}</strong><p>{word.meaning}</p></div>}
+        <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === vocabulary.length - 1 ? "完成听写" : "下一个"} →</button></div>
       </div>
       <aside className="exercise-context">
-        <span>场景例句</span><p>{word.example}</p><button onClick={() => speak(word.example)}>播放例句</button>
+        <span>{feedback ? "场景例句" : "盲听规则"}</span><p>{feedback ? word.example : "中文释义、正确拼写和例句会在检查后出现。拼写错误的单词将自动进入复习。"}</p>{feedback && <button onClick={() => speak(word.example)}>播放例句</button>}
         <div className="context-stat"><strong>{progress.masteredWords.length}</strong><span>累计掌握词汇</span></div>
       </aside>
         </div>
+      ) : (
+        <ConnectedSpeechPractice progress={progress} updateProgress={updateProgress} />
       )}
     </>
+  );
+}
+
+function ConnectedSpeechPractice({
+  progress,
+  updateProgress,
+}: {
+  progress: LearningProgress;
+  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+}) {
+  const completedCount = connectedSpeechPhrases.filter((item) => progress.connectedSpeechSeen.includes(item.phrase)).length;
+  const [index, setIndex] = useState(() => Math.min(completedCount, connectedSpeechPhrases.length - 1));
+  const [value, setValue] = useState("");
+  const [feedback, setFeedback] = useState<Feedback>(null);
+  const phrase = connectedSpeechPhrases[index];
+  const finished = completedCount >= connectedSpeechPhrases.length;
+  const normalize = (text: string) => text.trim().toLowerCase().replace(/[.,?!]/g, "").replace(/\s+/g, " ");
+
+  const check = (event?: FormEvent) => {
+    event?.preventDefault();
+    const correct = normalize(value) === normalize(phrase.phrase);
+    setFeedback({ tone: correct ? "success" : "error", text: correct ? "词组听写正确。" : "词组拼写有误，已加入复习。" });
+    updateProgress((current) => ({
+      ...current,
+      masteredWords: correct ? Array.from(new Set([...current.masteredWords, phrase.phrase])) : current.masteredWords,
+      reviewWords: correct ? current.reviewWords.filter((item) => item !== phrase.phrase) : Array.from(new Set([...current.reviewWords, phrase.phrase])),
+    }));
+  };
+
+  const next = () => {
+    if (!feedback) return;
+    updateProgress((current) => ({ ...current, connectedSpeechSeen: Array.from(new Set([...current.connectedSpeechSeen, phrase.phrase])) }));
+    if (index < connectedSpeechPhrases.length - 1) setIndex((current) => current + 1);
+    setValue("");
+    setFeedback(null);
+  };
+
+  if (finished) {
+    return <div className="daily-complete"><span className="daily-complete-mark">{connectedSpeechPhrases.length}</span><div><p>CONNECTED SPEECH COMPLETE</p><h2>今天的连读与吞音词组已经练完。</h2><span>拼错的词组已经进入复习，可以随时回听。</span></div></div>;
+  }
+
+  return (
+    <div className="exercise-layout connected-speech-layout">
+      <div className="exercise-main typing-practice">
+        <div className="exercise-kicker"><span>连读 / 弱读 / 失爆</span><span>{completedCount + (feedback ? 1 : 0)} / {connectedSpeechPhrases.length}</span></div>
+        <h2>听自然语流，写出完整词组</h2><p>先听自然语速；需要时再听慢速，不显示文字提示。</p>
+        <div className="phrase-audio-actions"><button className="audio-control" onClick={() => speak(phrase.phrase, .98)}><span>▶</span>自然语速</button><button className="audio-control" onClick={() => speak(phrase.phrase, .62)}>慢速拆听</button></div>
+        <form className="typing-form" onSubmit={check}><input value={value} onChange={(event) => setValue(event.target.value)} spellCheck={false} placeholder="输入听到的完整词组…" aria-label="输入听到的完整词组" /><button type="submit">检查</button></form>
+        <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? "检查后显示完整词组、中文和语流现象。"}</div>
+        {feedback && <div className="dictation-reveal phrase-reveal"><span>{phrase.feature}</span><strong>{phrase.phrase}</strong><p>{phrase.meaning}</p><small>{phrase.note}</small></div>}
+        <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === connectedSpeechPhrases.length - 1 ? "完成加练" : "下一个"} →</button></div>
+      </div>
+      <aside className="exercise-context"><span>听音重点</span><p>{feedback ? phrase.note : "不要尝试把每个词切开听。先抓重读词，再从弱读、连读和辅音变化中还原完整词组。"}</p><div className="context-stat"><strong>{connectedSpeechPhrases.length}</strong><span>真实场景高频词组</span></div></aside>
+    </div>
   );
 }
 
@@ -513,6 +570,39 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
   const [choiceAnswers, setChoiceAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [playerState, setPlayerState] = useState<"idle" | "playing" | "paused">("idle");
+  const listeningUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+
+  useEffect(() => () => {
+    listeningUtterance.current = null;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, []);
+
+  const startListening = () => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(listeningExercise.script);
+    utterance.lang = "en-GB";
+    utterance.rate = .82;
+    listeningUtterance.current = utterance;
+    utterance.onend = () => { if (listeningUtterance.current === utterance) setPlayerState("idle"); };
+    utterance.onerror = () => { if (listeningUtterance.current === utterance) setPlayerState("idle"); };
+    window.speechSynthesis.speak(utterance);
+    setPlayerState("playing");
+  };
+
+  const toggleListening = () => {
+    if (!("speechSynthesis" in window)) return;
+    if (playerState === "playing") {
+      window.speechSynthesis.pause();
+      setPlayerState("paused");
+    } else if (playerState === "paused") {
+      window.speechSynthesis.resume();
+      setPlayerState("playing");
+    } else {
+      startListening();
+    }
+  };
 
   const normalize = (value: string) => value.trim().toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ");
   const formCorrect = (id: string) => {
@@ -548,7 +638,10 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
       <div className="exercise-main listening-exam-main">
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>正式考试录音只播放一次；Demo 可以重播以便精听复盘。</p>
-        <button className="listening-player" onClick={() => speak(listeningExercise.script, 0.82)}><span>▶</span><i /><strong>播放完整录音</strong><small>约 2 分钟</small></button>
+        <div className="listening-controls">
+          <button className={`listening-player is-${playerState}`} onClick={toggleListening}><span>{playerState === "playing" ? "Ⅱ" : "▶"}</span><i /><strong>{playerState === "playing" ? "暂停录音" : playerState === "paused" ? "继续播放" : "播放完整录音"}</strong><small>{playerState === "paused" ? "已暂停 · 保留当前位置" : "约 2 分钟"}</small></button>
+          <button className="listening-replay" disabled={playerState === "idle"} onClick={startListening}>↺ 从头重播</button>
+        </div>
         <div className="listening-answer-progress"><i style={{ width: `${answeredCount * 10}%` }} /><span>{answeredCount}/10</span></div>
 
         <section className="listening-question-group">
@@ -786,7 +879,8 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
       <div className="review-list">
         {reviewItems.length === 0 ? <div className="empty-state"><strong>暂时没有待复习内容</strong><p>去完成一次词汇练习，错误会自动回到这里。</p></div> : reviewItems.map((item) => {
           const word = vocabulary.find((entry) => entry.word === item) ?? dailyVocabulary.find((entry) => entry.word === item);
-          return <div className="review-item" key={item}><span><strong>{item}</strong><small>{word?.meaning ?? "场景词汇"}</small></span><button onClick={() => { speak(item, .75); updateProgress((current) => ({ ...current, reviewWords: current.reviewWords.filter((wordItem) => wordItem !== item), masteredWords: Array.from(new Set([...current.masteredWords, item])) })); }}>已掌握</button></div>;
+          const phrase = connectedSpeechPhrases.find((entry) => entry.phrase === item);
+          return <div className="review-item" key={item}><span><strong>{item}</strong><small>{word?.meaning ?? phrase?.meaning ?? "场景词汇"}</small></span><button onClick={() => { speak(item, phrase ? .95 : .75); updateProgress((current) => ({ ...current, reviewWords: current.reviewWords.filter((wordItem) => wordItem !== item), masteredWords: Array.from(new Set([...current.masteredWords, item])) })); }}>已掌握</button></div>;
         })}
       </div>
     </>

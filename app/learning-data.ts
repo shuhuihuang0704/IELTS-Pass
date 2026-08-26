@@ -423,6 +423,33 @@ export function getDailyVocabulary(dayKey: string, count = 100) {
   );
 }
 
+export const connectedSpeechPhrases = [
+  { phrase: "could you tell me", meaning: "你能告诉我吗", feature: "连读与合音", note: "could you 中 /d/ + /j/ 常合成接近 /dʒ/ 的声音" },
+  { phrase: "would you like to", meaning: "你想要……吗", feature: "合音与弱读", note: "would you 连读；to 在句中常弱读为 /tə/" },
+  { phrase: "did you receive it", meaning: "你收到它了吗", feature: "合音与连读", note: "did you 常听起来接近 /dɪdʒə/，receive it 元辅音连读" },
+  { phrase: "do you need it", meaning: "你需要它吗", feature: "合音与连读", note: "do you 可能听起来接近 /dʒə/，need it 连读" },
+  { phrase: "a couple of days", meaning: "几天；两三天", feature: "弱读", note: "of 通常弱读为 /əv/，与前后词连在一起" },
+  { phrase: "a lot of people", meaning: "很多人", feature: "连读", note: "lot of 常连成一组，of 使用弱读形式" },
+  { phrase: "one of the reasons", meaning: "原因之一", feature: "弱读", note: "of 和 the 都很轻，重音落在 one 与 reasons" },
+  { phrase: "most of the students", meaning: "大多数学生", feature: "弱读与辅音群", note: "most of the 中间辅音密集，/t/ 可能不完全释放" },
+  { phrase: "at the end of the week", meaning: "在本周末", feature: "连读与弱读", note: "end of 元辅音连读，两个 the 都使用弱读" },
+  { phrase: "in front of the library", meaning: "在图书馆前面", feature: "失爆与弱读", note: "front of 中 /t/ 在后接元音时快速连接，of 弱读" },
+  { phrase: "next door to the bank", meaning: "银行隔壁", feature: "辅音省略", note: "next door 的 /t/ 在辅音 /d/ 前常弱化或省略" },
+  { phrase: "used to be", meaning: "过去曾经是", feature: "辅音群简化", note: "used to 常读作 /juːstə/，不要逐字分开" },
+  { phrase: "have to submit it", meaning: "必须提交它", feature: "同化与弱读", note: "have to 中 have 常读成 /hæf/，to 弱读" },
+  { phrase: "going to arrive", meaning: "将要到达", feature: "弱化", note: "自然语流中 going to 会明显压缩，但正式拼写仍是 going to" },
+  { phrase: "want to change it", meaning: "想要更改它", feature: "辅音群简化", note: "want to 中两个 /t/ 不会完整重复，change it 连读" },
+  { phrase: "as soon as possible", meaning: "尽快", feature: "连续连读", note: "as 的尾辅音会与后面的元音自然连接" },
+  { phrase: "first of all", meaning: "首先", feature: "连读与弱读", note: "first of 连读，of 通常弱读为 /əv/" },
+  { phrase: "for example", meaning: "例如", feature: "弱读", note: "for 在句中常弱读为 /fə/，重音落在 example" },
+  { phrase: "there are several options", meaning: "有几个选项", feature: "弱读与连读", note: "there are 常紧密连读，are 不单独重读" },
+  { phrase: "could have been", meaning: "本来可能已经", feature: "弱读与缩合", note: "could have 常听起来接近 /kʊdəv/，不是 could of" },
+  { phrase: "should have checked", meaning: "本应该检查", feature: "弱读与失爆", note: "should have 常压缩为 /ʃʊdəv/，checked 的尾音轻" },
+  { phrase: "might have changed", meaning: "可能已经改变", feature: "弱读与辅音群", note: "might have 中 have 弱读，词间不会明显停顿" },
+  { phrase: "can you send it", meaning: "你能发送它吗", feature: "弱读与连读", note: "can 在疑问句中通常不重读，send it 连读" },
+  { phrase: "the rest of the course", meaning: "课程剩余部分", feature: "失爆与弱读", note: "rest of 中 /t/ 快速连接，of 与 the 都弱读" },
+];
+
 export const listeningExercise = {
   title: "University Residence Enquiry",
   subtitle: "Listening Section 1 · 原创考试型迷你套题",

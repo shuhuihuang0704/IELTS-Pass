@@ -48,6 +48,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /dailyVocabularyCompleted/);
   assert.match(state, /dailyDictationCompleted/);
   assert.match(state, /dailyDictationSeen/);
+  assert.match(state, /connectedSpeechSeen/);
 
   const dailySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\)/);
   assert.ok(dailySource, "daily vocabulary source should exist");
@@ -64,6 +65,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(data, /matchingHeadings|matchingInformation|trueFalseNotGiven|summary/);
   assert.match(data, /Two-way discussion|questions:/);
   assert.match(data, /formCompletion|multipleSelect|matching|multipleChoice/);
+  const connectedSpeechSource = data.match(/export const connectedSpeechPhrases = \[([\s\S]*?)\];/);
+  assert.ok(connectedSpeechSource, "connected speech phrase source should exist");
+  assert.equal((connectedSpeechSource[1].match(/\{ phrase:/g) ?? []).length, 24);
+  assert.match(app, /speechSynthesis\.pause/);
+  assert.match(app, /speechSynthesis\.resume/);
+  assert.match(app, /提交检查前不显示中文/);
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
   assert.match(app, /answeredCount < totalQuestions/);
