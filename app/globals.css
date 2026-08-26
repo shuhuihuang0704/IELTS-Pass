@@ -309,6 +309,8 @@ button { cursor: pointer; }
 .official-task-map button.is-active { border-color:var(--violet); color:white; background:var(--violet); }
 .official-task-map button.is-active span,.official-task-map button.is-active small { color:#e8e5ff; }
 .official-task-map button.is-complete { border-color:#a7d5c4; color:#176c4f; background:#f0f8f4; }
+.official-task-map button.is-active.is-complete { border-color:#5143b6; color:white; background:linear-gradient(145deg,#5143b6,#6f61d5); }
+.official-task-map button.is-active.is-complete span,.official-task-map button.is-active.is-complete small { color:#e9e6ff; }
 .official-audio-dock { margin-top:14px; padding:12px; display:grid; grid-template-columns:minmax(180px,.8fr) minmax(260px,1.2fr); align-items:end; gap:12px; border-radius:14px; background:#f4f1ed; }
 .official-audio-dock label { color:#6f6870; font-size:8px; }
 .official-audio-dock select { width:100%; height:34px; margin-top:5px; padding:0 9px; border:1px solid #d9d3db; border-radius:9px; color:var(--ink); background:white; font:inherit; font-size:9px; }

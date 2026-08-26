@@ -47,6 +47,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /localDayKey/);
   assert.match(state, /localWeekKey/);
   assert.match(state, /officialPracticeCompleted/);
+  assert.match(state, /OfficialTaskResult/);
+  assert.match(state, /officialTaskResults/);
   assert.match(state, /carryoverTasks/);
   assert.match(state, /newlyMissedTasks/);
   assert.match(state, /dailyVocabularyCompleted/);
@@ -140,7 +142,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /task\.transcriptPage && taskSubmitted/);
   assert.match(app, /听力原文尚未开放/);
   assert.match(app, /disabled=\{taskRequiresSubmission && !taskSubmitted\}/);
-  assert.match(app, /选择 Task 与官方录音/);
+  assert.match(app, /8 INDEPENDENT LISTENING TASKS/);
+  assert.match(app, /每个 Task 独立保存答案、得分、完成状态和原文解锁/);
+  assert.match(app, /officialTaskRecordId/);
+  assert.match(app, /officialTaskResults/);
+  assert.match(app, /当前独立 Task 的官方录音/);
   assert.match(app, /Official Academic Writing Sample Test 2023/);
   assert.match(app, /IELTS-OFFICIAL-AW-2023-01/);
   assert.match(app, /minimumWords: 150/);

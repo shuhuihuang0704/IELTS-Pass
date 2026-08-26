@@ -229,6 +229,10 @@ function officialPracticeRecordId(session: OfficialTestSession, weekKey = localW
   return `${weekKey}:${session.id}:${session.setCode}`;
 }
 
+function officialTaskRecordId(session: OfficialTestSession, material: OfficialTestMaterial, task: OfficialTaskSegment) {
+  return `${session.setCode}:${material.id}:${task.id}`;
+}
+
 function speak(text: string, rate = 0.9) {
   if (!("speechSynthesis" in window)) return false;
   window.speechSynthesis.cancel();
@@ -586,15 +590,28 @@ function OfficialTestRunner({
   onBack: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
+  const material = session.materials[0];
   const [taskIndex, setTaskIndex] = useState(0);
   const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
   const [audioTrackIndex, setAudioTrackIndex] = useState(0);
   const [readingSectionIndex, setReadingSectionIndex] = useState(0);
-  const [officialResponses, setOfficialResponses] = useState<Record<string, string>>({});
-  const [submittedTasks, setSubmittedTasks] = useState<Record<string, boolean>>({});
+  const [officialResponses, setOfficialResponses] = useState<Record<string, string>>(() => {
+    const responses: Record<string, string> = {};
+    for (const sessionMaterial of session.materials) {
+      for (const sessionTask of sessionMaterial.tasks) {
+        const result = progress.officialTaskResults[officialTaskRecordId(session, sessionMaterial, sessionTask)];
+        if (!result) continue;
+        for (const [responseId, value] of Object.entries(result.responses)) responses[`${sessionMaterial.id}:${sessionTask.id}:${responseId}`] = value;
+      }
+    }
+    return responses;
+  });
+  const [submittedTasks, setSubmittedTasks] = useState<Record<string, boolean>>(() => Object.fromEntries(session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks.map((sessionTask) => [
+    `${sessionMaterial.id}:${sessionTask.id}`,
+    Boolean(progress.officialTaskResults[officialTaskRecordId(session, sessionMaterial, sessionTask)]),
+  ]))));
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
   const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
-  const material = session.materials[0];
   const task = material.tasks[taskIndex];
   const audioTrack = material.audioTracks?.[audioTrackIndex];
   const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
@@ -606,6 +623,7 @@ function OfficialTestRunner({
   ];
   const readingSection = fullReadingSections[readingSectionIndex];
   const taskKey = `${material.id}:${task.id}`;
+  const taskRecordKey = officialTaskRecordId(session, material, task);
   const taskAnswers = task.answers ?? [];
   const openResponseKey = `${taskKey}:open-response`;
   const openResponse = officialResponses[openResponseKey] ?? "";
@@ -654,6 +672,12 @@ function OfficialTestRunner({
   };
   const submitCurrentTask = () => {
     const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
+    const taskResponses = taskAnswers.length > 0
+      ? Object.fromEntries(taskAnswers.map((answer) => [answer.number, officialResponses[`${taskKey}:${answer.number}`] ?? ""]))
+      : { "open-response": openResponse };
+    const taskScore = taskAnswers.length > 0
+      ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length
+      : null;
     setSubmittedTasks(nextSubmittedTasks);
     updateProgress((current) => {
       const notebook = current.notebook.map((entry) => {
@@ -666,6 +690,15 @@ function OfficialTestRunner({
       return {
         ...current,
         notebook,
+        officialTaskResults: {
+          ...current.officialTaskResults,
+          [taskRecordKey]: {
+            score: taskScore,
+            total: taskAnswers.length || 1,
+            responses: taskResponses,
+            completedAt: new Date().toISOString(),
+          },
+        },
         officialPracticeCompleted: allRequiredSubmitted && !current.officialPracticeCompleted.includes(recordId)
           ? [...current.officialPracticeCompleted, recordId]
           : current.officialPracticeCompleted,
@@ -678,6 +711,15 @@ function OfficialTestRunner({
     setPaperMode("questions");
     setReadingSectionIndex(0);
     setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
+  };
+  const reopenCurrentTask = () => {
+    setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
+    setPaperMode("questions");
+    updateProgress((current) => ({
+      ...current,
+      officialTaskResults: Object.fromEntries(Object.entries(current.officialTaskResults).filter(([key]) => key !== taskRecordKey)),
+      officialPracticeCompleted: current.officialPracticeCompleted.filter((item) => item !== recordId),
+    }));
   };
 
   return (
@@ -706,12 +748,12 @@ function OfficialTestRunner({
           </div>
           {material.tasks.length > 1 && (
             <section className="official-task-map" aria-label="官方练习任务导航">
-              <header><div><span>{material.audioTracks ? "LISTENING TASK MAP" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个独立 Task{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个必做项` : ""}</b><small>{material.audioTracks ? "题号来自不同 Sample Task，会重复；请选择 Task 逐个完成。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
+              <header><div><span>{material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 Task{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{material.audioTracks ? "每个 Task 独立保存答案、得分、完成状态和原文解锁；题号重复也不会串联。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
               <div>{material.tasks.map((materialTask, index) => {
                 const materialTaskKey = `${material.id}:${materialTask.id}`;
                 const materialTaskSubmitted = submittedTasks[materialTaskKey] ?? false;
                 const materialTaskSize = (materialTask.answers?.length ?? 0) > 0 ? `${materialTask.answers?.length} 题` : materialTask.minimumWords ? `至少 ${materialTask.minimumWords} 词` : "开放练习";
-                return <button className={taskIndex === index ? "is-active" : materialTaskSubmitted ? "is-complete" : ""} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>Task {index + 1}</span><b>{materialTask.label}</b><small>{materialTaskSize} {materialTaskSubmitted ? "· 已提交" : ""}</small></button>;
+                return <button className={`${taskIndex === index ? "is-active " : ""}${materialTaskSubmitted ? "is-complete" : ""}`} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>独立 Task {index + 1}</span><b>{materialTask.label}</b><small>{materialTaskSize} {materialTaskSubmitted ? "· ✓ 已单独提交" : "· 未完成"}</small></button>;
               })}</div>
             </section>
           )}
@@ -761,7 +803,7 @@ function OfficialTestRunner({
               </div>
               <footer>
                 <span>{taskSubmitted ? `本 Task 得分 ${correctAnswerCount}/${taskAnswers.length}；每题旁已显示官方答案。` : allAnswersFilled ? "答案已全部填写，可以提交判分。" : `还需完成 ${taskAnswers.length - answeredCount} 题后才能提交。`}</span>
-                {taskSubmitted ? <button type="button" onClick={() => { setSubmittedTasks((current) => ({ ...current, [taskKey]: false })); setPaperMode("questions"); }}>修改答案</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
+                {taskSubmitted ? <button type="button" onClick={reopenCurrentTask}>修改答案</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
               </footer>
             </form>
           ) : task.minimumWords ? (
@@ -772,14 +814,14 @@ function OfficialTestRunner({
             }}>
               <header><div><span>COMPUTER-DELIVERED WRITING</span><strong>{task.label} 作答区</strong><small>最低要求 {task.minimumWords} 词；提交后解锁官方范文与考官评语</small></div><b>{openResponseWordCount}<small> words</small></b></header>
               <textarea aria-label={`${task.label} answer`} disabled={taskSubmitted} placeholder="在这里输入你的英文答案……" value={openResponse} onChange={(event) => setOfficialResponses((current) => ({ ...current, [openResponseKey]: event.target.value }))} />
-              <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词，可以查看官方范文进行复盘。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={() => { setSubmittedTasks((current) => ({ ...current, [taskKey]: false })); setPaperMode("questions"); }}>继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
+              <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词，可以查看官方范文进行复盘。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={reopenCurrentTask}>继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
             </form>
           ) : (
             <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
           )}
           {material.audioTracks && audioTrack && (
             <div className="official-audio-dock">
-              <label>选择 Task 与官方录音<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
+              <label>当前独立 Task 的官方录音<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
               {/* eslint-disable-next-line jsx-a11y/media-has-caption -- The official transcript is included in the embedded source PDF. */}
               <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
             </div>

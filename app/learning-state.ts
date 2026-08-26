@@ -19,6 +19,13 @@ export type NotebookEntry = {
   createdAt: string;
 };
 
+export type OfficialTaskResult = {
+  score: number | null;
+  total: number;
+  responses: Record<string, string>;
+  completedAt: string;
+};
+
 export type LearningProgress = {
   completed: Record<Skill, boolean>;
   masteredWords: string[];
@@ -40,6 +47,7 @@ export type LearningProgress = {
   speakingTurns: number;
   speakingPart3Turns: number;
   officialPracticeCompleted: string[];
+  officialTaskResults: Record<string, OfficialTaskResult>;
   carryoverTasks: Skill[];
   minutes: number;
   streak: number;
@@ -88,6 +96,7 @@ export const defaultProgress: LearningProgress = {
   speakingTurns: 0,
   speakingPart3Turns: 0,
   officialPracticeCompleted: [],
+  officialTaskResults: {},
   carryoverTasks: [],
   minutes: 12,
   streak: 6,
@@ -208,6 +217,7 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     speakingTurns: isCurrentVocabularyDay ? (stored.speakingTurns ?? 0) : 0,
     speakingPart3Turns: isCurrentVocabularyDay ? (stored.speakingPart3Turns ?? 0) : 0,
     officialPracticeCompleted: Array.isArray(stored.officialPracticeCompleted) ? stored.officialPracticeCompleted : [],
+    officialTaskResults: stored.officialTaskResults && typeof stored.officialTaskResults === "object" ? stored.officialTaskResults : {},
     carryoverTasks,
   };
 }
