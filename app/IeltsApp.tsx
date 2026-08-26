@@ -503,7 +503,7 @@ function DailyVocabularySprint({
   const total = dailyWords.length;
   const dailyWordSet = useMemo(() => new Set(dailyWords.map((item) => item.word)), [dailyWords]);
   const [queue, setQueue] = useState(() => dailyWords.filter((item) => !progress.dailyVocabularyKnown.includes(item.word)));
-  const [pendingRating, setPendingRating] = useState<Exclude<WordRating, "known"> | null>(null);
+  const [pendingRating, setPendingRating] = useState<WordRating | null>(null);
   const knownCount = progress.dailyVocabularyKnown.filter((item) => dailyWordSet.has(item)).length;
   const finished = queue.length === 0;
   const word = queue[0];
@@ -514,7 +514,7 @@ function DailyVocabularySprint({
     if (finished && !progress.dailyVocabularyCompleted) onComplete();
   }, [finished, onComplete, progress.dailyVocabularyCompleted]);
 
-  const markWord = (rating: WordRating) => {
+  const commitRating = (rating: WordRating) => {
     updateProgress((current) => {
       const next = {
         ...current,
@@ -529,22 +529,18 @@ function DailyVocabularySprint({
       return rating === "known" ? next : scheduleWordForReview(next, word.word, rating, 1);
     });
 
-    if (rating === "known") {
-      setQueue((current) => current.slice(1));
-    } else {
-      setPendingRating(rating);
-    }
-  };
-
-  const continueRound = () => {
-    if (!pendingRating) return;
-    const repeatGap = pendingRating === "unfamiliar" ? 3 : 7;
     setQueue((current) => {
+      if (rating === "known") return current.slice(1);
+      const repeatGap = rating === "unfamiliar" ? 3 : 7;
       const [currentWord, ...remaining] = current;
       const insertAt = Math.min(repeatGap, remaining.length);
       return [...remaining.slice(0, insertAt), currentWord, ...remaining.slice(insertAt)];
     });
     setPendingRating(null);
+  };
+
+  const continueRound = () => {
+    if (pendingRating) commitRating(pendingRating);
   };
 
   if (finished) {
@@ -579,9 +575,14 @@ function DailyVocabularySprint({
         </section>
         {!pendingRating ? (
           <div className="word-rating-actions">
-            <button onClick={() => markWord("known")}><span>✓</span><strong>认识</strong><small>本轮不再出现</small></button>
-            <button onClick={() => markWord("fuzzy")}><span>≈</span><strong>模糊</strong><small>稍后再次出现</small></button>
-            <button onClick={() => markWord("unfamiliar")}><span>↺</span><strong>不熟悉</strong><small>很快再次出现</small></button>
+            <button onClick={() => setPendingRating("known")}><span>✓</span><strong>认识</strong><small>先核对中文含义</small></button>
+            <button onClick={() => setPendingRating("fuzzy")}><span>≈</span><strong>模糊</strong><small>核对后再次出现</small></button>
+            <button onClick={() => setPendingRating("unfamiliar")}><span>↺</span><strong>不熟悉</strong><small>核对后很快再现</small></button>
+          </div>
+        ) : pendingRating === "known" ? (
+          <div className="word-confirm-actions">
+            <button onClick={() => commitRating("unfamiliar")}>↺ 记错了 · 加入复习</button>
+            <button onClick={() => commitRating("known")}>确认认识 · 下一个 →</button>
           </div>
         ) : (
           <button className="reveal-action" onClick={continueRound}>记住含义，继续本轮 →</button>
@@ -590,7 +591,7 @@ function DailyVocabularySprint({
       <aside className="exercise-context daily-vocabulary-context">
         <span>今天的目标</span>
         <strong>{knownCount}<small>/100</small></strong>
-        <p>认识的词立即出队；模糊与不熟悉的词会在本轮按不同间隔再次出现，直到达到一眼认识。</p>
+        <p>先核对中文含义再确认认识；若点了“记错了”，该词会回到本轮并进入遗忘曲线复习。</p>
         <div><b>{dailyVocabulary.length}</b><small>高频核心词库</small></div>
         <div><b>{fuzzyCount}</b><small>本轮模糊</small></div>
         <div><b>{unfamiliarCount}</b><small>本轮不熟悉</small></div>
@@ -746,22 +747,23 @@ function SpeakingPractice({
   const [micStatus, setMicStatus] = useState("");
   const [answerFeedback, setAnswerFeedback] = useState("");
   const [showExaminerSubtitles, setShowExaminerSubtitles] = useState(false);
-  const initialExaminerPromptText = `${speakingScenario.opening} ${speakingScenario.questions[questionIndex]}`;
-  const initialExaminerPrompt = useRef(initialExaminerPromptText);
-  const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(initialExaminerPromptText);
+  const [speakingStarted, setSpeakingStarted] = useState(false);
+  const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => `${speakingScenario.opening} ${speakingScenario.questions[questionIndex]}`);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => speak(initialExaminerPrompt.current, .88), 250);
-    return () => {
-      window.clearTimeout(timer);
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    };
+  useEffect(() => () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
+
+  const startSpeaking = () => {
+    setSpeakingStarted(true);
+    setShowExaminerSubtitles(false);
+    speak(activeExaminerPrompt, .88);
+  };
 
   const send = (event?: FormEvent) => {
     event?.preventDefault();
     const text = draft.trim();
-    if (!text) return;
+    if (!speakingStarted || !text) return;
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     const hasDevelopment = /because|since|for example|for instance|however|although|whereas|therefore|so that/i.test(text);
     if (wordCount < 10) {
@@ -792,6 +794,7 @@ function SpeakingPractice({
   };
 
   const startMicrophone = () => {
+    if (!speakingStarted) return;
     type RecognitionEvent = { results: { 0: { 0: { transcript: string } } } };
     type Recognition = { lang: string; interimResults: boolean; start: () => void; onresult: ((event: RecognitionEvent) => void) | null; onerror: (() => void) | null; onend: (() => void) | null };
     type RecognitionConstructor = new () => Recognition;
@@ -811,12 +814,15 @@ function SpeakingPractice({
       <div className="exercise-main conversation-panel">
         <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
         <h2>{speakingScenario.title}</h2>
-        <div className="speaking-audio-controls"><button onClick={() => speak(activeExaminerPrompt, .88)}>▶ 重听当前问题</button><button onClick={() => setShowExaminerSubtitles((current) => !current)}>{showExaminerSubtitles ? "隐藏字幕" : "听不懂？显示字幕"}</button></div>
-        <div className="conversation" aria-live="polite">
-          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p className={message.from === "ai" && !showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{message.from === "ai" && !showExaminerSubtitles ? "🔊 考官正在用语音提问 · 字幕已隐藏" : message.text}</p></div>)}
+        <div className="speaking-audio-controls">
+          <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => speak(activeExaminerPrompt, .88) : startSpeaking}>{speakingStarted ? "▶ 重听当前问题" : "▶ 开始口语模拟"}</button>
+          <button disabled={!speakingStarted} onClick={() => setShowExaminerSubtitles((current) => !current)}>{showExaminerSubtitles ? "隐藏字幕" : "听不懂？显示字幕"}</button>
         </div>
-        <form className="speaking-form" onSubmit={send}><button type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="用英语回答考官，尽量说明原因并举例…" aria-label="口语回答" /><button type="submit">回答</button></form>
-        <div className="mic-status" aria-live="polite">{micStatus || "支持语音输入；也可以打字模拟回答。"}</div>
+        <div className="conversation" aria-live="polite">
+          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p className={message.from === "ai" && !showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{message.from === "ai" && !speakingStarted ? "点击“开始口语模拟”后，考官会用语音提问" : message.from === "ai" && !showExaminerSubtitles ? "🔊 考官正在用语音提问 · 字幕已隐藏" : message.text}</p></div>)}
+        </div>
+        <form className="speaking-form" onSubmit={send}><button disabled={!speakingStarted} type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input disabled={!speakingStarted} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={speakingStarted ? "用英语回答考官，尽量说明原因并举例…" : "请先点击开始口语模拟"} aria-label="口语回答" /><button disabled={!speakingStarted} type="submit">回答</button></form>
+        <div className="mic-status" aria-live="polite">{micStatus || (speakingStarted ? "支持语音输入；也可以打字模拟回答。" : "点击开始后，考官会先读出问题。")}</div>
         {answerFeedback && <div className="speaking-feedback" aria-live="polite">{answerFeedback}</div>}
       </div>
       <aside className="exercise-context speaking-exam-card"><span>真实考试结构</span><strong>{speakingScenario.duration}</strong><p>Part 3 与 Part 2 主题相关，但问题会转向更普遍、抽象的社会讨论。考官负责提问，不扮演场景角色。</p><ul>{speakingScenario.goals.map((goal, index) => <li className={progress.speakingPart3Turns > index ? "is-done" : ""} key={goal}>{progress.speakingPart3Turns > index ? "✓" : index + 1} · {goal}</li>)}</ul><p className="demo-note">当前反馈检查回答长度和展开信号，不冒充官方 IELTS 分数。</p></aside>

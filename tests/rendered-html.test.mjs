@@ -78,12 +78,14 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /listening-scrubber/);
   assert.match(app, /currentTime = nextTime/);
   assert.match(app, /听不懂？显示字幕/);
+  assert.match(app, /开始口语模拟/);
+  assert.match(app, /记错了/);
   assert.match(app, /重听当前问题/);
   assert.match(app, /字幕已隐藏/);
   assert.match(app, /提交检查前不显示中文/);
-  assert.match(app, /本轮不再出现/);
-  assert.match(app, /稍后再次出现/);
-  assert.match(app, /很快再次出现/);
+  assert.match(app, /先核对中文含义/);
+  assert.match(app, /核对后再次出现/);
+  assert.match(app, /核对后很快再现/);
   assert.match(app, /repeatGap/);
   assert.match(app, /今日到期复习/);
   assert.match(app, /fullyCompleted/);

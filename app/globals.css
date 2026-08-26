@@ -203,6 +203,9 @@ button { cursor: pointer; }
 .daily-word-answer>span { color:#8a8490; font-size:10px; }
 .daily-word-answer button { padding:0; border:0; color:#837c85; background:transparent; font-size:11px; }
 .reveal-action { width:100%; min-height:48px; margin-top:13px; border:0; border-radius:14px; color:white; background:var(--ink); font-size:12px; font-weight:650; }
+.word-confirm-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:13px; }
+.word-confirm-actions button { min-height:50px; border:0; border-radius:14px; color:#a34a43; background:#f7e8e6; font-size:12px; font-weight:650; }
+.word-confirm-actions button:last-child { color:white; background:var(--violet); }
 .word-rating-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:13px; }
 .word-rating-actions button { min-height:64px; padding:9px; border:0; border-radius:14px; background:#e4f2ec; color:#176c4f; }
 .word-rating-actions button:nth-child(2) { color:#93601f; background:#f7eddc; }
@@ -275,6 +278,8 @@ button { cursor: pointer; }
 .speaking-audio-controls { display:flex; gap:8px; margin-top:15px; }
 .speaking-audio-controls button { min-height:36px; padding:0 11px; border:0; border-radius:11px; color:#4e43b4; background:#ece8f8; font-size:10px; }
 .speaking-audio-controls button:last-child { color:#6b5561; background:#f2e9ed; }
+.speaking-audio-controls button.speaking-start { color:white; background:var(--violet); }
+.speaking-audio-controls button:disabled,.speaking-form button:disabled { opacity:.38; cursor:not-allowed; }
 .conversation { height:270px; margin-top:17px; padding:15px; overflow-y:auto; border-radius:17px; background:#f4f1ed; }
 .message { max-width:82%; margin-bottom:12px; }
 .message.user { margin-left:auto; }
@@ -285,6 +290,7 @@ button { cursor: pointer; }
 .message>p.examiner-subtitle-hidden { color:#7d7480; background:#ece8ef; font-style:italic; }
 .speaking-form { display:grid; grid-template-columns:40px 1fr auto; gap:8px; margin-top:13px; }
 .speaking-form input { min-width:0; height:43px; padding:0 13px; border:1px solid #d7d1d8; border-radius:12px; outline:0; font:inherit; font-size:11px; }
+.speaking-form input:disabled { color:#8d8790; background:#f2eff3; cursor:not-allowed; }
 .speaking-form>button { border:0; border-radius:12px; }
 .mic-button { color:#c55767; background:#f5e3e7; }
 .speaking-form>button:last-child { padding:0 15px; color:white; background:var(--violet); font-size:11px; }
