@@ -143,9 +143,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /official-task-map/);
   assert.match(app, /official-source-document/);
   assert.match(app, /材料区 \+ 答题区模板/);
-  assert.match(app, /isolateOfficialListeningPages/);
+  assert.match(app, /isolateOfficialTaskPages/);
   assert.match(app, /当前 Task 独立显示/);
-  assert.match(app, /officialListeningPaperPages\.map/);
+  assert.match(app, /officialTaskPaperPages\.map/);
   assert.match(app, /task\.transcriptPages \?\? \[task\.transcriptPage\]/);
   assert.match(app, /toolbar=0&navpanes=0&scrollbar=0&view=Fit/);
   assert.match(app, /提交后只解锁本 Task 的听力原文/);
@@ -162,6 +162,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /IELTS-OFFICIAL-AW-2023-01/);
   assert.match(app, /minimumWords: 150/);
   assert.match(app, /minimumWords: 250/);
+  const writingBlock = app.match(/const writingMaterial:[\s\S]*?const speakingMaterial:/)?.[0] ?? "";
+  assert.match(writingBlock, /questionPages: \[3\], answerPage: 9, answerPages: \[9, 10\]/);
+  assert.match(writingBlock, /questionPages: \[6\], answerPage: 18, answerPages: \[18, 19, 20, 21, 22\]/);
+  assert.match(app, /2 INDEPENDENT WRITING TASKS/);
+  assert.match(app, /每个 Writing Task 独立保存作文与完成状态/);
+  assert.match(app, /提交后只解锁本 Task 的范文与考官评语/);
   assert.match(app, /COMPUTER-DELIVERED WRITING/);
   assert.match(app, /提交本 Task/);
   assert.doesNotMatch(app, /materials: \[listeningMaterial, readingMaterial, writingMaterial\]/);
@@ -174,7 +180,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /3 INDEPENDENT READING PASSAGES/);
   assert.match(app, /每个 Passage 独立保存答案、得分和完成状态/);
   assert.match(app, /officialPracticeRecordId/);
-  assert.match(app, /完成全部 \$\{requiredQuestionCount\} 题后自动记录/);
+  assert.match(app, /requiredCompletionLabel/);
+  assert.match(app, /完成全部 \$\{requiredCompletionLabel\} 后自动记录/);
   assert.doesNotMatch(app, /markComplete|完成整套后记录/);
   assert.match(app, /COMPUTER-DELIVERED ANSWER SHEET/);
   assert.match(app, /提交全部答案/);

@@ -71,6 +71,7 @@ type OfficialTaskSegment = {
   questionPages?: number[];
   passagePages?: number[];
   answerPage?: number;
+  answerPages?: number[];
   transcriptPage?: number;
   transcriptPages?: number[];
   audioTrackIndex?: number;
@@ -205,8 +206,8 @@ const writingMaterial: OfficialTestMaterial = {
   label: "Academic Writing · Task 1 + Task 2",
   pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf",
   tasks: [
-    { id: "task-1a", label: "Writing Task 1", questionLabel: "Task 1 · Visual information", questionPage: 3, answerPage: 9, answerLabel: "查看范文与考官评语", minimumWords: 150 },
-    { id: "task-2a", label: "Writing Task 2", questionLabel: "Task 2 · Essay", questionPage: 6, answerPage: 18, answerLabel: "查看范文与考官评语", minimumWords: 250 },
+    { id: "task-1a", label: "Writing Task 1", questionLabel: "Task 1 · Visual information", questionPage: 3, questionPages: [3], answerPage: 9, answerPages: [9, 10], answerLabel: "查看本 Task 范文与考官评语", minimumWords: 150 },
+    { id: "task-2a", label: "Writing Task 2", questionLabel: "Task 2 · Essay", questionPage: 6, questionPages: [6], answerPage: 18, answerPages: [18, 19, 20, 21, 22], answerLabel: "查看本 Task 范文与考官评语", minimumWords: 250 },
   ],
 };
 const speakingMaterial: OfficialTestMaterial = {
@@ -633,10 +634,12 @@ function OfficialTestRunner({
   const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
   const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
   const taskSubmitted = submittedTasks[taskKey] ?? false;
-  const isolateOfficialListeningPages = Boolean(material.audioTracks && task.transcriptPage);
-  const officialListeningPaperPages = paperMode === "answers" && task.answerPage
-    ? [task.answerPage]
+  const isolateOfficialTaskPages = Boolean((material.audioTracks && task.transcriptPage) || task.minimumWords);
+  const officialTaskPaperPages = paperMode === "answers" && task.answerPage
+    ? task.answerPages ?? [task.answerPage]
     : task.questionPages ?? [task.questionPage];
+  const questionPageLabel = (task.questionPages ?? [task.questionPage]).join("–");
+  const answerPageLabel = (task.answerPages ?? (task.answerPage ? [task.answerPage] : [])).join("–");
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
     .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords))
@@ -644,6 +647,8 @@ function OfficialTestRunner({
   const requiredQuestionCount = requiredTasks.reduce((total, requiredTask) => total + requiredTask.questionCount, 0);
   const submittedRequiredTaskCount = requiredTasks.filter((requiredTask) => submittedTasks[requiredTask.key]).length;
   const materialRequiredTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0 || Boolean(materialTask.minimumWords));
+  const writingTaskMode = materialRequiredTasks.some((materialTask) => Boolean(materialTask.minimumWords));
+  const requiredCompletionLabel = writingTaskMode ? `${requiredTasks.length} 个 Writing Task` : `${requiredQuestionCount} 题`;
   const materialQuestionCount = materialRequiredTasks.reduce((total, materialTask) => total + ((materialTask.answers?.length ?? 0) || 1), 0);
   const submittedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => submittedTasks[`${material.id}:${materialTask.id}`]).length;
   const recordId = officialPracticeRecordId(session);
@@ -738,20 +743,20 @@ function OfficialTestRunner({
           <button className="runner-timer-primary" disabled={timerState === "finished"} onClick={toggleTimer}>{timerState === "running" ? "Ⅱ 暂停计时" : timerState === "paused" ? "▶ 继续计时" : "▶ 开始计时"}</button>
           <button className="runner-timer-reset" onClick={resetTimer}>重新计时</button>
           <div className="official-runner-rights"><b>IELTS 官方公开样题</b><p>题目与录音由 IELTS.org 提供。本 App 仅在学习界面中加载原始官方文件并保存你的进度。</p></div>
-          <div className={completed ? "runner-completion-status is-complete" : "runner-completion-status"}><b>{completed ? "✓ 本套已完成" : "等待完整提交"}</b><p>{completed ? `全部 ${requiredQuestionCount} 题已提交，系统已自动记录。` : requiredTasks.length > 0 ? `${submittedRequiredTaskCount}/${requiredTasks.length} 个必做 ${taskUnitLabel} 已提交；完成全部 ${requiredQuestionCount} 题后自动记录。` : "本套没有可自动判定的客观题，当前不会记录为完成。"}</p></div>
+          <div className={completed ? "runner-completion-status is-complete" : "runner-completion-status"}><b>{completed ? "✓ 本套已完成" : "等待完整提交"}</b><p>{completed ? `全部 ${requiredCompletionLabel} 已提交，系统已自动记录。` : requiredTasks.length > 0 ? `${submittedRequiredTaskCount}/${requiredTasks.length} 个必做 ${taskUnitLabel} 已提交；完成全部 ${requiredCompletionLabel} 后自动记录。` : "本套没有可自动判定的客观题，当前不会记录为完成。"}</p></div>
         </aside>
         <section className="official-paper-panel">
           <header><div><strong>{task.questionLabel}</strong></div><small>官方原始题号 · 当前显示 P{displayPage}</small></header>
           <div className={material.tasks.length > 1 ? "official-task-controls" : "official-task-controls is-single"}>
             {material.tasks.length > 1 && <label>选择 {taskUnitLabel}<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>}
             <div className="official-paper-switch" aria-label="题目与答案切换">
-              <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{task.questionPage}</button>
-              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
+              <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{questionPageLabel}</button>
+              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{answerPageLabel}</button>}
             </div>
           </div>
           {material.tasks.length > 1 && (
             <section className="official-task-map" aria-label="官方练习任务导航">
-              <header><div><span>{material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{material.audioTracks ? "每个 Task 独立保存答案、得分、完成状态和原文解锁；题号重复也不会串联。" : material.passagePdfUrl ? "每个 Passage 独立保存答案、得分和完成状态；提交一篇不会显示另外两篇的答案。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
+              <header><div><span>{material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{material.audioTracks ? "每个 Task 独立保存答案、得分、完成状态和原文解锁；题号重复也不会串联。" : material.passagePdfUrl ? "每个 Passage 独立保存答案、得分和完成状态；提交一篇不会显示另外两篇的答案。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
               <div>{material.tasks.map((materialTask, index) => {
                 const materialTaskKey = `${material.id}:${materialTask.id}`;
                 const materialTaskSubmitted = submittedTasks[materialTaskKey] ?? false;
@@ -844,13 +849,13 @@ function OfficialTestRunner({
               </section>
             </div>
           ) : (
-            <section className={isolateOfficialListeningPages ? "official-source-document is-page-locked" : "official-source-document"}>
-              <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>{isolateOfficialListeningPages ? `仅显示当前 Task · P${officialListeningPaperPages.join("–")}` : `PDF P${displayPage}`}</small></header>
-              {isolateOfficialListeningPages ? (
-                <div className="official-listening-page-stack">
-                  {officialListeningPaperPages.map((page, index) => <div className="official-pdf-page-lock" key={`${paperMode}-${page}`}>
+            <section className={isolateOfficialTaskPages ? "official-source-document is-page-locked" : "official-source-document"}>
+              <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>{isolateOfficialTaskPages ? `仅显示当前 Task · P${officialTaskPaperPages.join("–")}` : `PDF P${displayPage}`}</small></header>
+              {isolateOfficialTaskPages ? (
+                <div className="official-task-page-stack">
+                  {officialTaskPaperPages.map((page, index) => <div className="official-pdf-page-lock" key={`${paperMode}-${page}`}>
                     <iframe className="official-paper-frame" tabIndex={-1} title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"} · P${page}`} src={`${displayPdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />
-                    {index === 0 && paperMode === "questions" && !taskSubmitted && <div className="official-page-lock-badge"><span>🔒 当前 Task 独立显示</span><small>提交后只解锁本 Task 的听力原文</small></div>}
+                    {index === 0 && paperMode === "questions" && !taskSubmitted && <div className="official-page-lock-badge"><span>🔒 当前 Task 独立显示</span><small>{material.audioTracks ? "提交后只解锁本 Task 的听力原文" : "提交后只解锁本 Task 的范文与考官评语"}</small></div>}
                   </div>)}
                 </div>
               ) : (
@@ -862,7 +867,7 @@ function OfficialTestRunner({
           {task.transcriptPage && taskSubmitted && (
             <section className="official-listening-transcript is-unlocked">
               <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>仅解锁当前 Task · P{(task.transcriptPages ?? [task.transcriptPage]).join("–")}</small></header>
-              <div className="official-listening-page-stack">{(task.transcriptPages ?? [task.transcriptPage]).map((page) => <div className="official-pdf-page-lock" key={`transcript-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 听力原文 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
+              <div className="official-task-page-stack">{(task.transcriptPages ?? [task.transcriptPage]).map((page) => <div className="official-pdf-page-lock" key={`transcript-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 听力原文 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
             </section>
           )}
           </div>
