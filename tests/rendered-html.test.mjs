@@ -98,12 +98,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
   assert.match(app, /answeredCount < totalQuestions/);
-  assert.match(app, /真题训练计划/);
+  assert.match(app, /官方套题训练计划/);
   assert.match(app, /IELTS 官方公开样题/);
-  assert.match(app, /不冒充 Cambridge 历年真题/);
+  assert.match(app, /不等同于已正式考过的 Cambridge 历年原卷/);
   assert.match(app, /开始本套/);
   assert.match(app, /OfficialTestRunner/);
-  assert.match(app, /IELTS-OFFICIAL-AR-MLP-2024-01/);
+  assert.match(app, /IELTS-OFFICIAL-AR-MLP-01/);
   assert.match(app, /Questions 1–40 · 3 Passages/);
   assert.match(app, /modified-large-print-question-booklet\.pdf/);
   assert.match(app, /modified-large-print-text-booklet\.pdf/);
@@ -126,6 +126,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /COMPUTER-DELIVERED ANSWER SHEET/);
   assert.match(app, /提交全部答案/);
   assert.match(app, /正确答案：/);
+  assert.match(app, /文章 \+ 对应题目连续显示/);
+  assert.match(app, /题目紧接文章，无需切换题册/);
+  assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
   assert.match(app, /officialAnswerIsCorrect/);
   assert.match(app, /new Set\(groupResponses\)/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);

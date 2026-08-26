@@ -241,11 +241,19 @@ button { cursor: pointer; }
 .official-full-reading-body>.official-answer-sheet { grid-column:2; grid-row:1; max-height:760px; overflow:auto; position:sticky; top:12px; }
 .official-reading-booklet { min-width:0; grid-column:1; grid-row:1; margin-top:13px; }
 .official-reading-booklet>header { padding:9px; display:flex; align-items:center; justify-content:space-between; gap:8px; border-radius:13px; background:#f4f1ed; }
-.official-reading-sections,.official-booklet-switch { display:flex; gap:5px; }
-.official-reading-sections button,.official-booklet-switch button { min-height:35px; padding:0 9px; border:0; border-radius:8px; color:#6e6770; background:#e8e3df; font-size:8px; }
+.official-reading-booklet>header>span { color:#716979; font-size:8px; }
+.official-reading-sections { display:flex; gap:5px; }
+.official-reading-sections button { min-height:35px; padding:0 9px; border:0; border-radius:8px; color:#6e6770; background:#e8e3df; font-size:8px; }
 .official-reading-sections button small { display:block; margin-top:2px; color:inherit; font-size:7px; }
-.official-reading-sections button.is-active,.official-booklet-switch button.is-active { color:white; background:var(--violet); }
-.official-reading-booklet>.official-paper-frame { margin-top:8px; }
+.official-reading-sections button.is-active { color:white; background:var(--violet); }
+.official-reading-pair { margin-top:8px; padding:10px; border:1px solid #e7e1e9; border-radius:15px; background:#fbfafc; }
+.official-reading-pair>header { padding:2px 3px 8px; display:flex; align-items:end; justify-content:space-between; gap:10px; }
+.official-reading-pair>header b { font-size:10px; }
+.official-reading-pair>header small { color:var(--muted); font-size:8px; }
+.official-reading-pair>.official-paper-frame { margin:0; }
+.official-reading-continue { margin:10px 0; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-radius:11px; color:#544a80; background:#ece8f8; }
+.official-reading-continue span { font-size:8px; }
+.official-reading-continue b { font-size:10px; }
 .official-answer-sheet { margin-top:13px; padding:15px; border:1px solid #e5dfe9; border-radius:16px; background:#faf9fb; }
 .official-answer-sheet>header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .official-answer-sheet>header span,.official-answer-sheet>header strong,.official-answer-sheet>header small { display:block; }
@@ -550,7 +558,8 @@ button { cursor: pointer; }
   .official-reading-booklet { grid-column:1; grid-row:1; }
   .official-reading-booklet>header { align-items:stretch; flex-direction:column; }
   .official-reading-sections button { flex:1; }
-  .official-booklet-switch button { flex:1; }
+  .official-reading-pair { padding:7px; }
+  .official-reading-pair>header { align-items:flex-start; flex-direction:column; }
   .official-audio-dock { grid-template-columns:1fr; }
   .official-paper-frame { height:640px; border-radius:11px; }
   .scene-tabs { grid-template-columns:repeat(4,1fr); padding:5px; }

@@ -209,7 +209,7 @@ const speakingMaterial: OfficialTestMaterial = {
 };
 
 const officialTestSchedule: OfficialTestSession[] = [
-  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Full Sample Test 2024", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方完整样题", setCode: "IELTS-OFFICIAL-AR-MLP-2024-01", description: "完整 3 篇 Academic Reading，题号从 1 连续到 40；全部填写并提交后自动记录完成。", materials: [readingMaterial] },
+  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Full Sample Test", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方完整样题", setCode: "IELTS-OFFICIAL-AR-MLP-01", description: "完整 3 篇 Academic Reading，题号从 1 连续到 40；全部填写并提交后自动记录完成。", materials: [readingMaterial] },
   { id: "listening", isoDay: 4, dayLabel: "周四", time: "20:00", title: "Official Listening Sample Tasks 2023", duration: "40 分钟", durationMinutes: 40, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-L-2023-01", description: "内置官方题目 PDF 与 8 段对应录音，覆盖填空、单选、简答、匹配和地图题。", materials: [listeningMaterial] },
   { id: "full-mock", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Official L/R/W Sample Bundle 2023", duration: "150 分钟", durationMinutes: 150, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-LRW-2023-01", description: "在同一套题运行器中切换 Listening、Reading 与 Writing 官方样题，连续计时训练。", materials: [listeningMaterial, readingMaterial, writingMaterial] },
   { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Official Speaking Sample Tasks 2023", duration: "55 分钟", durationMinutes: 55, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-S-2023-01", description: "内置官方 Speaking Part 1–3 题目与示范录音，完成后复盘本周错题。", materials: [speakingMaterial] },
@@ -493,9 +493,9 @@ function TodayView({
         </aside>
       </div>
       <section className="official-plan-strip">
-        <div><span>WEEKLY OFFICIAL PRACTICE</span><strong>本周真题训练</strong><p>下一项：{nextOfficialSession.dayLabel} {nextOfficialSession.time} · {nextOfficialSession.title}</p></div>
+        <div><span>WEEKLY OFFICIAL PRACTICE</span><strong>本周官方套题训练</strong><p>下一项：{nextOfficialSession.dayLabel} {nextOfficialSession.time} · {nextOfficialSession.title}</p></div>
         <div className="official-plan-progress"><strong>{completedOfficialSessions.length}<small>/4</small></strong><span>本周已完成</span></div>
-        <button onClick={() => onNavigate("practice")}>查看真题计划 <span>→</span></button>
+        <button onClick={() => onNavigate("practice")}>查看官方套题计划 <span>→</span></button>
       </section>
     </>
   );
@@ -542,10 +542,10 @@ function OfficialPracticePlan({
   return (
     <section className="official-practice-plan">
       <header className="official-practice-heading">
-        <div><span>AUTHENTIC TEST WEEK</span><h2>真题训练计划</h2><p>每周 4 次 · 共约 5 小时 · 独立于每日基础训练</p></div>
+        <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>每周 4 次 · 共约 5 小时 · 独立于每日基础训练</p></div>
         <strong>{completedCount}<small>/4</small></strong>
       </header>
-      <div className="official-source-note"><b>内容来源说明</b><p>Reading 只保留 IELTS.org 官方 2024 完整 Academic Reading Sample Test（3 篇、1–40 题），不再混入重复编号的题型合集。其他官方材料也不冒充 Cambridge 历年真题。</p></div>
+      <div className="official-source-note"><b>内容来源说明</b><p>Reading 使用 IELTS.org 官方完整 Academic Reading Sample Test（3 篇、1–40 题）。这是官方样题，不等同于已正式考过的 Cambridge 历年原卷；App 不会把两者混淆。</p></div>
       <div className="official-session-list">
         {officialTestSchedule.map((session, index) => {
           const recordId = officialPracticeRecordId(session, weekKey);
@@ -580,7 +580,6 @@ function OfficialTestRunner({
   const [taskIndex, setTaskIndex] = useState(0);
   const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
   const [audioTrackIndex, setAudioTrackIndex] = useState(0);
-  const [readingBookletView, setReadingBookletView] = useState<"passage" | "questions">("passage");
   const [readingSectionIndex, setReadingSectionIndex] = useState(0);
   const [officialResponses, setOfficialResponses] = useState<Record<string, string>>({});
   const [submittedTasks, setSubmittedTasks] = useState<Record<string, boolean>>({});
@@ -653,7 +652,6 @@ function OfficialTestRunner({
     setMaterialIndex(index);
     setTaskIndex(0);
     setPaperMode("questions");
-    setReadingBookletView("passage");
     setReadingSectionIndex(0);
     setAudioTrackIndex(nextMaterial.tasks[0].audioTrackIndex ?? 0);
   };
@@ -661,7 +659,6 @@ function OfficialTestRunner({
     const nextTask = material.tasks[index];
     setTaskIndex(index);
     setPaperMode("questions");
-    setReadingBookletView("passage");
     setReadingSectionIndex(0);
     setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
   };
@@ -670,7 +667,7 @@ function OfficialTestRunner({
     <>
       <PageHeader eyebrow={`OFFICIAL MATERIAL · ${session.setCode}`} title="题目直接在这里，" accent="不再跳出 App。" />
       <div className="official-runner-bar">
-        <button onClick={onBack}>← 返回真题计划</button>
+        <button onClick={onBack}>← 返回官方套题计划</button>
         <div><span>当前套题</span><strong>{session.title}</strong><small>{session.source}</small></div>
         <span className="official-set-badge">{session.setCode}</span>
       </div>
@@ -692,7 +689,7 @@ function OfficialTestRunner({
               {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={Boolean(material.answerPdfUrl && !taskSubmitted)} onClick={() => setPaperMode("answers")}>{material.answerPdfUrl && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
             </div>
           </div>
-          <p className="official-task-note">{material.passagePdfUrl ? "这是一份完整的官方 Academic Reading Sample Test：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交。Modified Large Print 仅改变排版，不改变题目与评分。" : "官方 Sample Tasks 保留各自的原始题号；它们按独立 Task 使用，不与完整套题混排。"}</p>
+          <p className="official-task-note">{material.passagePdfUrl ? "这是 IELTS 官方 Modified Large Print 无障碍样题：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交；App 将原文与对应题目连续展示。" : "官方 Sample Tasks 保留各自的原始题号；它们按独立 Task 使用，不与完整套题混排。"}</p>
           <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : "official-standard-paper-body"}>
           {taskAnswers.length > 0 ? (
             <form className="official-answer-sheet" onSubmit={(event) => {
@@ -743,9 +740,15 @@ function OfficialTestRunner({
             <div className="official-reading-booklet">
               <header>
                 <div className="official-reading-sections" aria-label="阅读文章分段">{fullReadingSections.map((section, index) => <button className={readingSectionIndex === index ? "is-active" : ""} onClick={() => setReadingSectionIndex(index)} type="button" key={section.label}>{section.label}<small>{section.range}</small></button>)}</div>
-                <div className="official-booklet-switch" aria-label="文章册与题册切换"><button className={readingBookletView === "passage" ? "is-active" : ""} onClick={() => setReadingBookletView("passage")} type="button">文章册</button><button className={readingBookletView === "questions" ? "is-active" : ""} onClick={() => setReadingBookletView("questions")} type="button">题册</button></div>
+                <span>文章 + 对应题目连续显示</span>
               </header>
-              <iframe key={`${readingBookletView}-${readingSectionIndex}`} className="official-paper-frame" title={`${readingSection.label} · ${readingBookletView === "passage" ? "文章册" : "题册"}`} src={`${readingBookletView === "passage" ? material.passagePdfUrl : material.pdfUrl}#page=${readingBookletView === "passage" ? readingSection.passagePage : readingSection.questionPage}&toolbar=1&navpanes=0&view=FitH`} />
+              <section className="official-reading-pair" key={readingSection.label}>
+                <header><b>{readingSection.label} · 阅读文章</b><small>先阅读本篇原文</small></header>
+                <iframe className="official-paper-frame" title={`${readingSection.label} · 阅读文章`} src={`${material.passagePdfUrl}#page=${readingSection.passagePage}&toolbar=1&navpanes=0&view=FitH`} />
+                <div className="official-reading-continue"><span>接着完成</span><b>{readingSection.range}</b></div>
+                <header><b>{readingSection.label} · 对应题目</b><small>题目紧接文章，无需切换题册</small></header>
+                <iframe className="official-paper-frame" title={`${readingSection.label} · 对应题目`} src={`${material.pdfUrl}#page=${readingSection.questionPage}&toolbar=1&navpanes=0&view=FitH`} />
+              </section>
             </div>
           ) : (
             <iframe key={`${material.id}-${task.id}-${paperMode}`} className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${displayPdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&view=FitH`} />

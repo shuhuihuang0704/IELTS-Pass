@@ -42,7 +42,7 @@
 - **Listening Section 1 套题**：原创双人生活场景对话，包含表格填空、多选、匹配和单选，共 10 题；真实音频播放器支持拖动定位、暂停、继续和从头重播。
 - **口语 Part 3 模拟**：点击开始后考官才用语音提问，播放中可以暂停并从原位置继续，也可以从头重听；字幕默认隐藏，听不懂时可以显示；保留 4–5 分钟结构、短回答追问和展开提示。
 - **Academic Reading 套题**：原创长文配段落标题匹配、信息匹配、单选、判断和摘要填空，共 11 题。
-- **每周真题计划**：周二阅读、周四听力、周六 L/R/W 连续训练、周日口语与错题复盘。Reading 只使用 IELTS 官方 2024 Modified Large Print 完整样题（3 篇文章、Questions 1–40 连续编号），文章册与题册可分区切换，40 题统一提交并逐题判分；只有全部必做题提交后才由系统自动记录完成。
+- **每周官方套题计划**：周二阅读、周四听力、周六 L/R/W 连续训练、周日口语与错题复盘。Reading 使用 IELTS 官方 Modified Large Print 完整样题（3 篇文章、Questions 1–40 连续编号），每篇文章后直接连接对应题目，40 题统一提交并逐题判分；只有全部必做题提交后才由系统自动记录完成。
 - **进度激励**：今日完成度、连续学习、本周时长、各项完成状态。
 - **未完成任务回流**：日期变化后，昨天未完成的专项自动进入今天的待补做区并优先开始；同类任务不会无限叠加，只有完整完成专项后才会移除。
 - **严格完成判定**：专项必须完成全部必做内容后才打勾；词汇需同时完成每日 100 词与 80 词听写。
@@ -54,7 +54,7 @@
 >
 > 当前词库不是《雅思词汇真经》的电子化版本：该书只作为“3600+ 核心词、22 个主题”的产品规模参考，本项目没有其完整词表或再分发授权。APP 内每张卡片会标注来源层级；学术高频层依据 Academic Word List（AWL）的频率分层，中文释义与搭配由项目独立整理。
 >
-> 真题模块在 App 内加载 IELTS.org 官方原始材料。Reading 使用 2024 Modified Large Print [文章册](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf)、[题册](https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf)及[答案表](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf)，共 3 篇、40 题；另加载官方 [Listening](https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf)、[Writing](https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf) 与 [Speaking](https://ielts.org/cdn/ielts-sample-tests/ielts-speaking-sample-tasks-2023.pdf) Sample Tasks。它们是官方公开样题，不标注成 Cambridge 历年真题；商业题库必须获得授权后才能内置。
+> 官方套题模块在 App 内加载 IELTS.org 官方原始材料。Reading 使用 Modified Large Print [文章册](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf)、[题册](https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf)及[答案表](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf)，共 3 篇、40 题；另加载官方 [Listening](https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf)、[Writing](https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf) 与 [Speaking](https://ielts.org/cdn/ielts-sample-tests/ielts-speaking-sample-tasks-2023.pdf) Sample Tasks。这些可以确认是官方公开样题，但不能表述为已正式考过的 Cambridge 历年原卷；商业题库必须获得授权后才能内置。
 
 词汇选取依据：
 
@@ -98,7 +98,7 @@ npm run build
 5. 切换到口语 Part 3，用文字或麦克风回答考官；先提交一个很短的回答，检查考官追问，再提交完整回答。
 6. 完成阅读的 11 道混合题型，查看每题正误和总分。
 7. 刷新页面，确认进度仍然存在。
-8. 进入「专项练习」查看每周真题计划，点击“开始本套”，确认官方 PDF、套题编号、倒计时和 Listening / Speaking 录音都在 App 内显示。
+8. 进入「专项练习」查看每周官方套题计划，点击“开始本套”，确认官方 PDF、套题编号、倒计时和 Listening / Speaking 录音都在 App 内显示。
 9. 将一份旧日期的未完成进度载入，确认未完成专项出现在首页“昨日未完成”，完成后才消失。
 10. 缩小浏览器宽度，检查手机端底部导航和练习布局。
 
@@ -138,7 +138,7 @@ tests/
 - [ ] 获得商业教材授权后再导入对应词表；未授权内容不得标注为教材来源
 - [x] 进度激励和浏览器本地持久化
 - [x] 自动构建测试与社交分享封面
-- [x] IELTS 官方公开样题周计划与正版真题册训练记录
+- [x] IELTS 官方公开样题周计划与套题训练记录
 - [ ] 接入真实 AI 对话与结构化口语反馈
 - [ ] 用户登录与手机、电脑进度同步
 - [ ] 扩充雅思题型和人工审核场景语料
