@@ -74,8 +74,12 @@ test("ships all four learning modes and persistent progress", async () => {
   const connectedSpeechSource = data.match(/export const connectedSpeechPhrases = \[([\s\S]*?)\];/);
   assert.ok(connectedSpeechSource, "connected speech phrase source should exist");
   assert.equal((connectedSpeechSource[1].match(/\{ phrase:/g) ?? []).length, 24);
-  assert.match(app, /speechSynthesis\.pause/);
-  assert.match(app, /speechSynthesis\.resume/);
+  assert.match(app, /listening-section-1\.wav/);
+  assert.match(app, /listening-scrubber/);
+  assert.match(app, /currentTime = nextTime/);
+  assert.match(app, /听不懂？显示字幕/);
+  assert.match(app, /重听当前问题/);
+  assert.match(app, /字幕已隐藏/);
   assert.match(app, /提交检查前不显示中文/);
   assert.match(app, /本轮不再出现/);
   assert.match(app, /稍后再次出现/);
@@ -91,7 +95,10 @@ test("ships all four learning modes and persistent progress", async () => {
 
 test("includes the finished social preview and removes starter preview files", async () => {
   const image = new URL("../public/og.png", import.meta.url);
+  const listeningAudio = new URL("../public/listening-section-1.wav", import.meta.url);
   await access(image);
   assert.ok((await stat(image)).size > 100_000);
+  await access(listeningAudio);
+  assert.ok((await stat(listeningAudio)).size > 1_000_000);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });

@@ -1,0 +1,33 @@
+Receptionist: Good morning, Westbridge University Residence. How can I help?
+
+Student: Hello. I'm calling to complete my accommodation application.
+
+Receptionist: Certainly. First, can I take your family name?
+
+Student: It's Chen, C H E N.
+
+Receptionist: Thank you. And when will you arrive?
+
+Student: On the fourteenth of October. I originally wrote the twelfth, but my flight changed.
+
+Receptionist: Right, the fourteenth of October. Do you want a shared room?
+
+Student: No, a single room, please. I need somewhere quiet to study.
+
+Receptionist: Any dietary requirement?
+
+Student: Yes, vegetarian. I eat dairy products, but no meat or fish.
+
+Receptionist: Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building.
+
+Student: That's fine. What documents do you need?
+
+Receptionist: Please send a copy of your passport by email. You can show the original at reception when you arrive. The deposit must be paid by bank transfer; we cannot accept cash for that.
+
+Student: I understand. What time can I collect my key?
+
+Receptionist: Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable.
+
+Student: Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.
+
+Receptionist: That makes sense. I'll email your confirmation today.

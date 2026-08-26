@@ -608,38 +608,30 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
   const [score, setScore] = useState<number | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
   const [playerState, setPlayerState] = useState<"idle" | "playing" | "paused">("idle");
-  const listeningUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const [audioTime, setAudioTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const listeningAudio = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => () => {
-    listeningUtterance.current = null;
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    listeningAudio.current?.pause();
   }, []);
 
-  const startListening = () => {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(listeningExercise.script);
-    utterance.lang = "en-GB";
-    utterance.rate = .82;
-    listeningUtterance.current = utterance;
-    utterance.onend = () => { if (listeningUtterance.current === utterance) setPlayerState("idle"); };
-    utterance.onerror = () => { if (listeningUtterance.current === utterance) setPlayerState("idle"); };
-    window.speechSynthesis.speak(utterance);
-    setPlayerState("playing");
+  const toggleListening = () => {
+    const audio = listeningAudio.current;
+    if (!audio) return;
+    if (audio.paused) void audio.play();
+    else audio.pause();
   };
 
-  const toggleListening = () => {
-    if (!("speechSynthesis" in window)) return;
-    if (playerState === "playing") {
-      window.speechSynthesis.pause();
-      setPlayerState("paused");
-    } else if (playerState === "paused") {
-      window.speechSynthesis.resume();
-      setPlayerState("playing");
-    } else {
-      startListening();
-    }
+  const restartListening = () => {
+    const audio = listeningAudio.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    setAudioTime(0);
+    void audio.play();
   };
+
+  const formatAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 
   const normalize = (value: string) => value.trim().toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ");
   const formCorrect = (id: string) => {
@@ -676,8 +668,13 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>正式考试录音只播放一次；Demo 可以重播以便精听复盘。</p>
         <div className="listening-controls">
-          <button className={`listening-player is-${playerState}`} onClick={toggleListening}><span>{playerState === "playing" ? "Ⅱ" : "▶"}</span><i /><strong>{playerState === "playing" ? "暂停录音" : playerState === "paused" ? "继续播放" : "播放完整录音"}</strong><small>{playerState === "paused" ? "已暂停 · 保留当前位置" : "约 2 分钟"}</small></button>
-          <button className="listening-replay" disabled={playerState === "idle"} onClick={startListening}>↺ 从头重播</button>
+          <audio ref={listeningAudio} src="/listening-section-1.wav" preload="metadata" onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src="/listening-section-1.vtt" srcLang="en" label="English" /></audio>
+          <div className={`listening-player is-${playerState}`}>
+            <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
+            <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
+            <span className="listening-player-copy"><strong>{playerState === "playing" ? "正在播放" : playerState === "paused" ? "已暂停" : "播放完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)}</small></span>
+          </div>
+          <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
         </div>
         <div className="listening-answer-progress"><i style={{ width: `${answeredCount * 10}%` }} /><span>{answeredCount}/10</span></div>
 
@@ -748,6 +745,18 @@ function SpeakingPractice({
   const [draft, setDraft] = useState("");
   const [micStatus, setMicStatus] = useState("");
   const [answerFeedback, setAnswerFeedback] = useState("");
+  const [showExaminerSubtitles, setShowExaminerSubtitles] = useState(false);
+  const initialExaminerPromptText = `${speakingScenario.opening} ${speakingScenario.questions[questionIndex]}`;
+  const initialExaminerPrompt = useRef(initialExaminerPromptText);
+  const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(initialExaminerPromptText);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => speak(initialExaminerPrompt.current, .88), 250);
+    return () => {
+      window.clearTimeout(timer);
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
+  }, []);
 
   const send = (event?: FormEvent) => {
     event?.preventDefault();
@@ -760,7 +769,9 @@ function SpeakingPractice({
       setMessages((current) => [...current, { from: "user", text }, { from: "ai", text: reply }]);
       setDraft("");
       setAnswerFeedback("回答偏短：Part 3 需要观点 + 原因，尽量再展开 2–3 句。");
-      speak(reply);
+      setActiveExaminerPrompt(reply);
+      setShowExaminerSubtitles(false);
+      speak(reply, .88);
       return;
     }
     const nextTurns = progress.speakingPart3Turns + 1;
@@ -774,7 +785,9 @@ function SpeakingPractice({
       ? `本轮完成：${wordCount} 词，并使用了展开信号。继续保持观点—原因—例子的结构。`
       : `本轮完成：${wordCount} 词。下一题可加入 because、for example 或 however，让论证更清楚。`);
     updateProgress((current) => ({ ...current, speakingPart3Turns: current.speakingPart3Turns + 1 }));
-    speak(reply);
+    setActiveExaminerPrompt(reply);
+    setShowExaminerSubtitles(false);
+    speak(reply, .88);
     if (finished) onComplete();
   };
 
@@ -798,8 +811,9 @@ function SpeakingPractice({
       <div className="exercise-main conversation-panel">
         <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
         <h2>{speakingScenario.title}</h2>
+        <div className="speaking-audio-controls"><button onClick={() => speak(activeExaminerPrompt, .88)}>▶ 重听当前问题</button><button onClick={() => setShowExaminerSubtitles((current) => !current)}>{showExaminerSubtitles ? "隐藏字幕" : "听不懂？显示字幕"}</button></div>
         <div className="conversation" aria-live="polite">
-          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p>{message.text}</p></div>)}
+          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p className={message.from === "ai" && !showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{message.from === "ai" && !showExaminerSubtitles ? "🔊 考官正在用语音提问 · 字幕已隐藏" : message.text}</p></div>)}
         </div>
         <form className="speaking-form" onSubmit={send}><button type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="用英语回答考官，尽量说明原因并举例…" aria-label="口语回答" /><button type="submit">回答</button></form>
         <div className="mic-status" aria-live="polite">{micStatus || "支持语音输入；也可以打字模拟回答。"}</div>
