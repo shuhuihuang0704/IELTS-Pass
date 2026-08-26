@@ -36,6 +36,15 @@ test("ships all four learning modes and persistent progress", async () => {
   }
   assert.match(app, /localStorage\.setItem/);
   assert.match(app, /SpeechSynthesisUtterance/);
+  assert.match(app, /DailyVocabularySprint/);
+  assert.match(state, /dailyVocabularyDate|dailyVocabularySeen|dailyVocabularyKnown/);
+  assert.match(state, /localDayKey/);
+
+  const dailySource = data.match(/const dailyVocabularySource = \`([\s\S]*?)\`\.trim\(\)/);
+  assert.ok(dailySource, "daily vocabulary source should exist");
+  const words = dailySource[1].trim().split("\n").map((line) => line.split("|")[0]);
+  assert.equal(words.length, 100);
+  assert.equal(new Set(words).size, 100);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
 });

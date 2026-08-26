@@ -7,7 +7,7 @@ export const skills: Array<{
   description: string;
   duration: string;
 }> = [
-  { id: "vocabulary", short: "词", label: "场景词汇", description: "听音拼写与例句理解", duration: "6 分钟" },
+  { id: "vocabulary", short: "词", label: "每日 100 词", description: "5 × 20 高频词速刷 + 场景听写", duration: "15 分钟" },
   { id: "listening", short: "听", label: "听力精练", description: "Section 1 租房咨询", duration: "8 分钟" },
   { id: "speaking", short: "说", label: "AI 口语", description: "与房东完成真实沟通", duration: "6 分钟" },
   { id: "reading", short: "读", label: "阅读做题", description: "租房广告定位信息", duration: "7 分钟" },
@@ -43,6 +43,114 @@ export const vocabulary = [
     hint: "9 个字母，以 uti 开头",
   },
 ];
+
+const dailyVocabularySource = `
+analyse|分析；剖析|学术核心|analyse the results
+assess|评估；评价|学术核心|assess the impact
+assume|假定；认为|学术核心|assume responsibility
+benefit|益处；使受益|学术核心|provide long-term benefits
+concept|概念；观念|学术核心|a difficult concept
+conduct|实施；进行|学术核心|conduct research
+consequence|结果；后果|学术核心|a serious consequence
+constitute|构成；组成|学术核心|constitute a majority
+context|背景；语境|学术核心|in a social context
+contrast|对比；差异|学术核心|in sharp contrast
+data|数据；资料|学术核心|collect reliable data
+define|定义；界定|学术核心|clearly define
+derive|获得；源自|学术核心|derive benefit from
+establish|建立；证实|学术核心|establish a link
+evidence|证据；根据|学术核心|strong evidence
+factor|因素；要素|学术核心|a key factor
+indicate|表明；显示|学术核心|results indicate that
+interpret|解释；理解|学术核心|interpret the findings
+method|方法；方式|学术核心|an effective method
+significant|重要的；显著的|学术核心|a significant increase
+biodiversity|生物多样性|环境生态|protect biodiversity
+climate|气候|环境生态|climate change
+conservation|保护；保存|环境生态|wildlife conservation
+consume|消耗；消费|环境生态|consume less energy
+contaminate|污染；弄脏|环境生态|contaminate water
+deforestation|森林砍伐|环境生态|reduce deforestation
+ecosystem|生态系统|环境生态|a fragile ecosystem
+emission|排放物；排放|环境生态|carbon emissions
+energy|能源；能量|环境生态|save energy
+environment|环境|环境生态|protect the environment
+fossil|化石的|环境生态|fossil fuels
+habitat|栖息地|环境生态|natural habitat
+pollution|污染|环境生态|air pollution
+recycle|回收利用|环境生态|recycle household waste
+renewable|可再生的|环境生态|renewable energy
+resource|资源|环境生态|natural resources
+sustainable|可持续的|环境生态|sustainable development
+waste|废物；浪费|环境生态|reduce food waste
+wildlife|野生动物|环境生态|protect wildlife
+drought|干旱|环境生态|a severe drought
+academic|学术的；学业的|教育学习|academic performance
+curriculum|课程体系|教育学习|the school curriculum
+discipline|学科；纪律|教育学习|academic discipline
+educate|教育；培养|教育学习|educate young people
+evaluate|评估；评价|教育学习|evaluate progress
+graduate|毕业；毕业生|教育学习|university graduate
+literacy|读写能力|教育学习|improve literacy
+motivate|激励；促进|教育学习|motivate students
+participate|参加；参与|教育学习|participate in class
+practical|实际的；实用的|教育学习|practical skills
+primary|初级的；主要的|教育学习|primary education
+qualification|资格；学历|教育学习|professional qualification
+research|研究；调查|教育学习|carry out research
+scholarship|奖学金；学术研究|教育学习|receive a scholarship
+secondary|中等的；次要的|教育学习|secondary school
+skill|技能；技巧|教育学习|develop a skill
+student|学生|教育学习|international student
+tuition|学费；教学|教育学习|tuition fees
+vocational|职业的|教育学习|vocational training
+compulsory|强制的；必修的|教育学习|compulsory education
+community|社区；群体|社会生活|local community
+culture|文化|社会生活|cultural differences
+demographic|人口统计的|社会生活|demographic change
+discrimination|歧视|社会生活|workplace discrimination
+diversity|多样性；差异|社会生活|cultural diversity
+economy|经济|社会生活|the global economy
+equality|平等|社会生活|gender equality
+government|政府|社会生活|government policy
+healthcare|医疗保健|社会生活|public healthcare
+immigration|移民；移居|社会生活|immigration policy
+income|收入|社会生活|household income
+inequality|不平等|社会生活|income inequality
+infrastructure|基础设施|社会生活|transport infrastructure
+population|人口；群体|社会生活|an ageing population
+poverty|贫困|社会生活|reduce poverty
+policy|政策；方针|社会生活|public policy
+public|公众的；公共的|社会生活|public services
+resident|居民；居住者|社会生活|local residents
+urban|城市的|社会生活|urban areas
+welfare|福利；幸福|社会生活|social welfare
+artificial|人工的；人造的|科技工作|artificial intelligence
+automate|使自动化|科技工作|automate routine tasks
+career|职业；生涯|科技工作|career development
+communicate|交流；传达|科技工作|communicate effectively
+digital|数字的|科技工作|digital technology
+employment|就业；雇用|科技工作|employment opportunities
+innovation|创新；革新|科技工作|technological innovation
+internet|互联网|科技工作|internet access
+labour|劳动；劳动力|科技工作|the labour market
+manufacture|制造；生产|科技工作|manufacture products
+occupation|职业；工作|科技工作|a skilled occupation
+productivity|生产力；效率|科技工作|increase productivity
+remote|远程的；偏远的|科技工作|remote working
+replace|替代；更换|科技工作|replace manual labour
+salary|薪水|科技工作|annual salary
+technology|技术；科技|科技工作|modern technology
+training|培训；训练|科技工作|staff training
+transport|交通；运输|科技工作|public transport
+unemployment|失业|科技工作|youth unemployment
+workforce|劳动力；全体员工|科技工作|a skilled workforce
+`.trim();
+
+export const dailyVocabulary = dailyVocabularySource.split("\n").map((line) => {
+  const [word, meaning, category, collocation] = line.split("|");
+  return { word, meaning, category, collocation };
+});
 
 export const listeningExercise = {
   title: "询问出租房信息",
@@ -85,4 +193,3 @@ export const readingExercise = {
     },
   ],
 };
-

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  dailyVocabulary,
   listeningExercise,
   readingExercise,
   skills,
@@ -106,6 +107,7 @@ export default function IeltsApp() {
             completedCount={completedCount}
             progress={progress}
             onStart={() => openSkill(skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary")}
+            onVocabulary={() => openSkill("vocabulary")}
             onNavigate={setView}
           />
         )}
@@ -200,12 +202,14 @@ function TodayView({
   completedCount,
   progress,
   onStart,
+  onVocabulary,
   onNavigate,
 }: {
   percent: number;
   completedCount: number;
   progress: LearningProgress;
   onStart: () => void;
+  onVocabulary: () => void;
   onNavigate: (view: View) => void;
 }) {
   const nextSkill = skills.find((skill) => !progress.completed[skill.id]) ?? skills[0];
@@ -215,7 +219,7 @@ function TodayView({
       <div className="dashboard-grid">
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">RENT<br />LIFE</div>
-          <div className="scene-heading"><span>SCENE 04 · LONDON</span><span>约 27 分钟</span></div>
+          <div className="scene-heading"><span>SCENE 04 · LONDON</span><span>约 36 分钟</span></div>
           <h2>第一次<br />在英国租房</h2><p>一段真实场景，串联四项能力</p>
           <button className="voice-orb" aria-label="试听场景" onClick={() => speak("Hello, I'm calling about the room for rent.")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
@@ -237,6 +241,11 @@ function TodayView({
             <div className="progress-track"><i style={{ width: `${percent}%` }} /></div>
             <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.label}。`}</p>
           </div>
+          <button className="daily-word-row" onClick={onVocabulary}>
+            <span><small>TODAY&apos;S WORDS</small><strong>{progress.dailyVocabularySeen.length}<b>/100</b></strong></span>
+            <span className="daily-word-copy"><strong>每日高频词</strong><small>5 组 × 20 词 · 先眼熟，再记牢</small></span>
+            <b>→</b>
+          </button>
           <div className="streak-row"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟</small></span></div>
           <button className="memory-row" onClick={() => onNavigate("review")}>
             <span><strong>记忆回流</strong><small>{progress.reviewWords.length} 个待复习词 · 来自真实错误</small></span><b>→</b>
@@ -294,7 +303,7 @@ function SceneView({
         ))}
       </div>
       <section className="exercise-surface">
-        {activeSkill === "vocabulary" && <VocabularyPractice progress={progress} onComplete={() => onComplete("vocabulary", 6)} updateProgress={updateProgress} />}
+        {activeSkill === "vocabulary" && <VocabularyPractice progress={progress} onComplete={() => onComplete("vocabulary", 15)} updateProgress={updateProgress} />}
         {activeSkill === "listening" && <ListeningPractice onComplete={(correct) => {
           updateProgress((current) => ({ ...current, listeningCorrect: correct }));
           onComplete("listening", 8);
@@ -318,6 +327,7 @@ function VocabularyPractice({
   onComplete: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
+  const [mode, setMode] = useState<"daily" | "typing">("daily");
   const [index, setIndex] = useState(0);
   const [value, setValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback>(null);
@@ -346,7 +356,15 @@ function VocabularyPractice({
   };
 
   return (
-    <div className="exercise-layout">
+    <>
+      <div className="vocabulary-mode-switch" role="tablist" aria-label="词汇练习模式">
+        <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 100 词</button>
+        <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写</button>
+      </div>
+      {mode === "daily" ? (
+        <DailyVocabularySprint progress={progress} onComplete={onComplete} updateProgress={updateProgress} />
+      ) : (
+        <div className="exercise-layout">
       <div className="exercise-main typing-practice">
         <div className="exercise-kicker"><span>听音拼写</span><span>{index + 1} / {vocabulary.length}</span></div>
         <h2>听发音，输入对应的英文单词</h2><p>电脑端直接打字并按 Enter；手机端也可以使用键盘完成。</p>
@@ -374,6 +392,89 @@ function VocabularyPractice({
       <aside className="exercise-context">
         <span>场景例句</span><p>{word.example}</p><button onClick={() => speak(word.example)}>播放例句</button>
         <div className="context-stat"><strong>{progress.masteredWords.length}</strong><span>累计掌握词汇</span></div>
+      </aside>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DailyVocabularySprint({
+  progress,
+  onComplete,
+  updateProgress,
+}: {
+  progress: LearningProgress;
+  onComplete: () => void;
+  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  const total = dailyVocabulary.length;
+  const seenCount = Math.min(progress.dailyVocabularySeen.length, total);
+  const finished = seenCount >= total;
+  const word = dailyVocabulary[Math.min(seenCount, total - 1)];
+
+  const markWord = (known: boolean) => {
+    const isLastWord = seenCount === total - 1;
+    updateProgress((current) => ({
+      ...current,
+      dailyVocabularySeen: Array.from(new Set([...current.dailyVocabularySeen, word.word])),
+      dailyVocabularyKnown: known
+        ? Array.from(new Set([...current.dailyVocabularyKnown, word.word]))
+        : current.dailyVocabularyKnown.filter((item) => item !== word.word),
+      reviewWords: known
+        ? current.reviewWords.filter((item) => item !== word.word)
+        : Array.from(new Set([...current.reviewWords, word.word])),
+    }));
+    setRevealed(false);
+    if (isLastWord) onComplete();
+  };
+
+  if (finished) {
+    return (
+      <div className="daily-complete">
+        <span className="daily-complete-mark">100</span>
+        <div><p>DAILY VOCABULARY COMPLETE</p><h2>今天的 100 个词，已经全部眼熟。</h2>
+          <span>熟悉 {progress.dailyVocabularyKnown.length} 个 · 待强化 {total - progress.dailyVocabularyKnown.length} 个</span>
+        </div>
+      </div>
+    );
+  }
+
+  const round = Math.floor(seenCount / 20) + 1;
+  return (
+    <div className="exercise-layout daily-vocabulary-layout">
+      <div className="exercise-main daily-vocabulary-main">
+        <div className="exercise-kicker"><span>每日 100 词 · 第 {round} 组</span><span>{seenCount + 1} / {total}</span></div>
+        <div className="word-rounds" aria-label={`已浏览 ${seenCount} / ${total} 个词`}>
+          {Array.from({ length: 5 }, (_, index) => {
+            const completed = Math.max(0, Math.min(20, seenCount - index * 20));
+            return <span key={index}><i style={{ width: `${completed * 5}%` }} /></span>;
+          })}
+        </div>
+        <section className={`daily-word-card ${revealed ? "is-revealed" : ""}`}>
+          <div><span>{word.category}</span><button onClick={() => speak(word.word, .76)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button></div>
+          <h2>{word.word}</h2>
+          <p className="word-collocation">{word.collocation}</p>
+          <div className="daily-word-answer" aria-live="polite">
+            {revealed ? <strong>{word.meaning}</strong> : <button onClick={() => setRevealed(true)}>点击查看中文含义</button>}
+          </div>
+        </section>
+        {!revealed ? (
+          <button className="reveal-action" onClick={() => setRevealed(true)}>翻开答案</button>
+        ) : (
+          <div className="word-judgement">
+            <button onClick={() => markWord(false)}><span>↺</span>还不熟</button>
+            <button onClick={() => markWord(true)}><span>✓</span>认识</button>
+          </div>
+        )}
+      </div>
+      <aside className="exercise-context daily-vocabulary-context">
+        <span>今天的目标</span>
+        <strong>{seenCount}<small>/100</small></strong>
+        <p>先完成快速辨认。标记“还不熟”的词会自动进入复习，不要求第一次就完全拼写正确。</p>
+        <div><b>{progress.dailyVocabularyKnown.length}</b><small>已经认识</small></div>
+        <div><b>{progress.reviewWords.length}</b><small>等待强化</small></div>
       </aside>
     </div>
   );
@@ -490,7 +591,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
       <section className="review-hero"><div><span>今日待复习</span><strong>{reviewItems.length}</strong><p>这里只出现你在真实练习中答错或标记过的内容。</p></div><span className="review-loop" aria-hidden="true">↺</span></section>
       <div className="review-list">
         {reviewItems.length === 0 ? <div className="empty-state"><strong>暂时没有待复习内容</strong><p>去完成一次词汇练习，错误会自动回到这里。</p></div> : reviewItems.map((item) => {
-          const word = vocabulary.find((entry) => entry.word === item);
+          const word = vocabulary.find((entry) => entry.word === item) ?? dailyVocabulary.find((entry) => entry.word === item);
           return <div className="review-item" key={item}><span><strong>{item}</strong><small>{word?.meaning ?? "场景词汇"}</small></span><button onClick={() => { speak(item, .75); updateProgress((current) => ({ ...current, reviewWords: current.reviewWords.filter((wordItem) => wordItem !== item), masteredWords: Array.from(new Set([...current.masteredWords, item])) })); }}>已掌握</button></div>;
         })}
       </div>
@@ -501,8 +602,9 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
 function ProfileView({ progress, percent, onReset }: { progress: LearningProgress; percent: number; onReset: () => void }) {
   const stats = useMemo(() => [
     ["今日完成度", `${percent}%`],
+    ["今日词汇", `${progress.dailyVocabularySeen.length} / 100`],
     ["累计学习", `${progress.minutes} 分钟`],
-    ["掌握词汇", `${progress.masteredWords.length}`],
+    ["待强化词汇", `${progress.reviewWords.length}`],
     ["连续学习", `${progress.streak} 天`],
   ], [percent, progress]);
   return (
