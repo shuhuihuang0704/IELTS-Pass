@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   dailyVocabulary,
+  getDailyVocabulary,
   listeningExercise,
   readingExercise,
   skills,
@@ -232,7 +233,7 @@ function TodayView({
           </div>
           <button className="daily-word-row" onClick={onVocabulary}>
             <span><small>TODAY&apos;S WORDS</small><strong>{progress.dailyVocabularySeen.length}<b>/100</b></strong></span>
-            <span className="daily-word-copy"><strong>每日高频词</strong><small>5 组 × 20 词 · 先眼熟，再记牢</small></span>
+            <span className="daily-word-copy"><strong>每日高频词</strong><small>300 词核心库轮换 · 每天 5 × 20</small></span>
             <b>→</b>
           </button>
           <div className="streak-row"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟</small></span></div>
@@ -405,10 +406,11 @@ function DailyVocabularySprint({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const [revealed, setRevealed] = useState(false);
-  const total = dailyVocabulary.length;
+  const dailyWords = useMemo(() => getDailyVocabulary(progress.dailyVocabularyDate), [progress.dailyVocabularyDate]);
+  const total = dailyWords.length;
   const seenCount = Math.min(progress.dailyVocabularySeen.length, total);
   const finished = seenCount >= total;
-  const word = dailyVocabulary[Math.min(seenCount, total - 1)];
+  const word = dailyWords[Math.min(seenCount, total - 1)];
 
   const markWord = (known: boolean) => {
     const isLastWord = seenCount === total - 1;
@@ -449,7 +451,7 @@ function DailyVocabularySprint({
           })}
         </div>
         <section className={`daily-word-card ${revealed ? "is-revealed" : ""}`}>
-          <div><span>{word.category}</span><button onClick={() => speak(word.word, .76)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button></div>
+          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><button onClick={() => speak(word.word, .76)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button></div>
           <h2>{word.word}</h2>
           <p className="word-collocation">{word.collocation}</p>
           <div className="daily-word-answer" aria-live="polite">
@@ -469,6 +471,7 @@ function DailyVocabularySprint({
         <span>今天的目标</span>
         <strong>{seenCount}<small>/100</small></strong>
         <p>先完成快速辨认。标记“还不熟”的词会自动进入复习，不要求第一次就完全拼写正确。</p>
+        <div><b>{dailyVocabulary.length}</b><small>高频核心词库</small></div>
         <div><b>{progress.dailyVocabularyKnown.length}</b><small>已经认识</small></div>
         <div><b>{progress.reviewWords.length}</b><small>等待强化</small></div>
       </aside>

@@ -208,12 +208,220 @@ training|培训；训练|科技工作|staff training
 transport|交通；运输|科技工作|public transport
 unemployment|失业|科技工作|youth unemployment
 workforce|劳动力；全体员工|科技工作|a skilled workforce
+area|领域；区域|AWL 高频 1|a research area|AWL 学术词族
+authority|权威；职权|AWL 高频 1|local authorities|AWL 学术词族
+available|可获得的；有空的|AWL 高频 1|readily available|AWL 学术词族
+consist|由……组成|AWL 高频 1|consist of three parts|AWL 学术词族
+contract|合同；合约|AWL 高频 1|sign a contract|AWL 学术词族
+create|创造；造成|AWL 高频 1|create opportunities|AWL 学术词族
+distribute|分配；分发|AWL 高频 1|distribute resources|AWL 学术词族
+estimate|估计；估算|AWL 高频 1|estimate the cost|AWL 学术词族
+evident|明显的|AWL 高频 1|become evident|AWL 学术词族
+export|出口；出口产品|AWL 高频 1|export agricultural goods|AWL 学术词族
+finance|资金；为……融资|AWL 高频 1|public finance|AWL 学术词族
+formula|公式；方案|AWL 高频 1|a mathematical formula|AWL 学术词族
+function|功能；运作|AWL 高频 1|perform a function|AWL 学术词族
+identify|识别；确定|AWL 高频 1|identify the cause|AWL 学术词族
+individual|个人；个体的|AWL 高频 1|individual differences|AWL 学术词族
+involve|涉及；使参与|AWL 高频 1|involve local people|AWL 学术词族
+issue|问题；议题|AWL 高频 1|address an issue|AWL 学术词族
+legal|法律的；合法的|AWL 高频 1|legal protection|AWL 学术词族
+legislate|制定法律|AWL 高频 1|legislate against pollution|AWL 学术词族
+major|主要的；专业|AWL 高频 1|a major challenge|AWL 学术词族
+occur|发生；出现|AWL 高频 1|occur naturally|AWL 学术词族
+percent|百分之……|AWL 高频 1|twenty percent of|AWL 学术词族
+period|时期；一段时间|AWL 高频 1|over a long period|AWL 学术词族
+principle|原则；原理|AWL 高频 1|a basic principle|AWL 学术词族
+proceed|继续进行|AWL 高频 1|proceed with the study|AWL 学术词族
+process|过程；处理|AWL 高频 1|the learning process|AWL 学术词族
+require|需要；要求|AWL 高频 1|require further research|AWL 学术词族
+respond|回应；作出反应|AWL 高频 1|respond to change|AWL 学术词族
+role|角色；作用|AWL 高频 1|play a vital role|AWL 学术词族
+section|部分；章节|AWL 高频 1|the final section|AWL 学术词族
+sector|部门；行业|AWL 高频 1|the public sector|AWL 学术词族
+similar|相似的|AWL 高频 1|broadly similar|AWL 学术词族
+source|来源；源头|AWL 高频 1|a reliable source|AWL 学术词族
+specific|具体的；特定的|AWL 高频 1|a specific example|AWL 学术词族
+structure|结构；构造|AWL 高频 1|sentence structure|AWL 学术词族
+theory|理论；学说|AWL 高频 1|support a theory|AWL 学术词族
+vary|变化；相异|AWL 高频 1|vary considerably|AWL 学术词族
+achieve|实现；达到|AWL 高频 2|achieve a goal|AWL 学术词族
+acquire|获得；习得|AWL 高频 2|acquire knowledge|AWL 学术词族
+administrate|管理；实施|AWL 高频 2|administrate a programme|AWL 学术词族
+affect|影响|AWL 高频 2|affect performance|AWL 学术词族
+appropriate|合适的；恰当的|AWL 高频 2|an appropriate response|AWL 学术词族
+aspect|方面；层面|AWL 高频 2|an important aspect|AWL 学术词族
+assist|帮助；协助|AWL 高频 2|assist with research|AWL 学术词族
+category|类别；范畴|AWL 高频 2|fall into a category|AWL 学术词族
+chapter|章；章节|AWL 高频 2|the opening chapter|AWL 学术词族
+commission|委员会；委托|AWL 高频 2|an independent commission|AWL 学术词族
+complex|复杂的；综合体|AWL 高频 2|a complex problem|AWL 学术词族
+compute|计算|AWL 高频 2|compute the average|AWL 学术词族
+conclude|得出结论；结束|AWL 高频 2|conclude that|AWL 学术词族
+consequent|随之发生的|AWL 高频 2|consequent changes|AWL 学术词族
+construct|建造；构建|AWL 高频 2|construct an argument|AWL 学术词族
+credit|学分；信用|AWL 高频 2|earn course credits|AWL 学术词族
+design|设计；方案|AWL 高频 2|research design|AWL 学术词族
+distinct|不同的；清楚的|AWL 高频 2|a distinct advantage|AWL 学术词族
+element|要素；元素|AWL 高频 2|a key element|AWL 学术词族
+equate|等同；使相等|AWL 高频 2|equate wealth with success|AWL 学术词族
+feature|特征；以……为特色|AWL 高频 2|a common feature|AWL 学术词族
+final|最终的；决赛|AWL 高频 2|the final outcome|AWL 学术词族
+focus|焦点；集中|AWL 高频 2|focus on quality|AWL 学术词族
+impact|影响；冲击|AWL 高频 2|have a major impact|AWL 学术词族
+injure|使受伤；损害|AWL 高频 2|seriously injure|AWL 学术词族
+institute|机构；建立|AWL 高频 2|a research institute|AWL 学术词族
+invest|投资；投入|AWL 高频 2|invest in education|AWL 学术词族
+item|项目；物品|AWL 高频 2|a questionnaire item|AWL 学术词族
+journal|期刊；日志|AWL 高频 2|an academic journal|AWL 学术词族
+maintain|维持；主张|AWL 高频 2|maintain standards|AWL 学术词族
+normal|正常的；常态|AWL 高频 2|return to normal|AWL 学术词族
+obtain|获得；取得|AWL 高频 2|obtain permission|AWL 学术词族
+perceive|察觉；认为|AWL 高频 2|perceive a risk|AWL 学术词族
+positive|积极的；正面的|AWL 高频 2|a positive effect|AWL 学术词族
+potential|潜在的；潜力|AWL 高频 2|potential benefits|AWL 学术词族
+previous|先前的|AWL 高频 2|previous research|AWL 学术词族
+purchase|购买；购买物|AWL 高频 2|purchase equipment|AWL 学术词族
+range|范围；一系列|AWL 高频 2|a wide range of|AWL 学术词族
+region|地区；区域|AWL 高频 2|a rural region|AWL 学术词族
+regulate|监管；调节|AWL 高频 2|regulate the industry|AWL 学术词族
+relevant|相关的；切题的|AWL 高频 2|relevant evidence|AWL 学术词族
+reside|居住；存在于|AWL 高频 2|reside in urban areas|AWL 学术词族
+restrict|限制；约束|AWL 高频 2|restrict access|AWL 学术词族
+secure|确保；安全的|AWL 高频 2|secure funding|AWL 学术词族
+seek|寻求；试图|AWL 高频 2|seek a solution|AWL 学术词族
+select|选择；精选的|AWL 高频 2|select participants|AWL 学术词族
+site|地点；场所|AWL 高频 2|a construction site|AWL 学术词族
+strategy|策略；战略|AWL 高频 2|an effective strategy|AWL 学术词族
+survey|调查；测量|AWL 高频 2|conduct a survey|AWL 学术词族
+text|文本；课文|AWL 高频 2|analyse a text|AWL 学术词族
+tradition|传统|AWL 高频 2|a cultural tradition|AWL 学术词族
+transfer|转移；转让|AWL 高频 2|transfer knowledge|AWL 学术词族
+alternative|替代方案；另类的|AWL 高频 3|an alternative approach|AWL 学术词族
+circumstance|情况；环境|AWL 高频 3|under certain circumstances|AWL 学术词族
+comment|评论；评述|AWL 高频 3|comment on the findings|AWL 学术词族
+compensate|补偿；弥补|AWL 高频 3|compensate for losses|AWL 学术词族
+component|组成部分；部件|AWL 高频 3|a central component|AWL 学术词族
+consent|同意；许可|AWL 高频 3|give informed consent|AWL 学术词族
+considerable|相当大的|AWL 高频 3|considerable evidence|AWL 学术词族
+constant|持续的；常量|AWL 高频 3|remain constant|AWL 学术词族
+constrain|限制；约束|AWL 高频 3|constrain development|AWL 学术词族
+contribute|贡献；促成|AWL 高频 3|contribute to growth|AWL 学术词族
+convene|召集；集合|AWL 高频 3|convene a meeting|AWL 学术词族
+coordinate|协调；坐标|AWL 高频 3|coordinate activities|AWL 学术词族
+core|核心；核心的|AWL 高频 3|a core principle|AWL 学术词族
+corporate|公司的；企业的|AWL 高频 3|corporate responsibility|AWL 学术词族
+correspond|相符；通信|AWL 高频 3|correspond with the data|AWL 学术词族
+criteria|标准；准则|AWL 高频 3|selection criteria|AWL 学术词族
+deduce|推断；演绎|AWL 高频 3|deduce from evidence|AWL 学术词族
+demonstrate|证明；展示|AWL 高频 3|demonstrate the effect|AWL 学术词族
+document|文件；记录|AWL 高频 3|document the process|AWL 学术词族
+dominate|支配；占主导|AWL 高频 3|dominate the market|AWL 学术词族
+emphasis|强调；重点|AWL 高频 3|place emphasis on|AWL 学术词族
+ensure|确保；保证|AWL 高频 3|ensure equal access|AWL 学术词族
+exclude|排除；不包括|AWL 高频 3|exclude unreliable data|AWL 学术词族
+framework|框架；体系|AWL 高频 3|a legal framework|AWL 学术词族
+fund|资金；资助|AWL 高频 3|fund medical research|AWL 学术词族
+illustrate|说明；图示|AWL 高频 3|illustrate a point|AWL 学术词族
+imply|暗示；意味着|AWL 高频 3|the results imply that|AWL 学术词族
+initial|最初的；首字母|AWL 高频 3|the initial stage|AWL 学术词族
+instance|例子；情况|AWL 高频 3|for instance|AWL 学术词族
+interact|互动；相互作用|AWL 高频 3|interact with others|AWL 学术词族
+justify|证明……合理|AWL 高频 3|justify the decision|AWL 学术词族
+layer|层；层次|AWL 高频 3|a protective layer|AWL 学术词族
+link|联系；连接|AWL 高频 3|establish a link|AWL 学术词族
+locate|定位；位于|AWL 高频 3|locate the source|AWL 学术词族
+maximise|使最大化|AWL 高频 3|maximise efficiency|AWL 学术词族
+minor|较小的；次要的|AWL 高频 3|a minor change|AWL 学术词族
+negate|否定；抵消|AWL 高频 3|negate the benefits|AWL 学术词族
+outcome|结果；成果|AWL 高频 3|a positive outcome|AWL 学术词族
+partner|伙伴；合作|AWL 高频 3|a research partner|AWL 学术词族
+philosophy|哲学；理念|AWL 高频 3|educational philosophy|AWL 学术词族
+physical|身体的；物理的|AWL 高频 3|physical activity|AWL 学术词族
+proportion|比例；部分|AWL 高频 3|a large proportion of|AWL 学术词族
+publish|出版；发表|AWL 高频 3|publish the results|AWL 学术词族
+react|反应；回应|AWL 高频 3|react to pressure|AWL 学术词族
+register|登记；注册|AWL 高频 3|register for a course|AWL 学术词族
+rely|依赖；依靠|AWL 高频 3|rely on evidence|AWL 学术词族
+remove|移除；消除|AWL 高频 3|remove a barrier|AWL 学术词族
+scheme|计划；方案|AWL 高频 3|a recycling scheme|AWL 学术词族
+sequence|顺序；序列|AWL 高频 3|in chronological sequence|AWL 学术词族
+sex|性别；性|AWL 高频 3|differences by sex|AWL 学术词族
+shift|转变；轮班|AWL 高频 3|a shift in attitude|AWL 学术词族
+specify|明确说明；指定|AWL 高频 3|specify the conditions|AWL 学术词族
+sufficient|足够的|AWL 高频 3|sufficient evidence|AWL 学术词族
+task|任务；工作|AWL 高频 3|complete a task|AWL 学术词族
+technical|技术的；专业的|AWL 高频 3|technical knowledge|AWL 学术词族
+technique|技巧；技术|AWL 高频 3|a research technique|AWL 学术词族
+valid|有效的；合理的|AWL 高频 3|a valid argument|AWL 学术词族
+volume|量；体积|AWL 高频 3|a large volume of data|AWL 学术词族
+access|使用权；访问|AWL 高频 4|access to education|AWL 学术词族
+adequate|足够的；合格的|AWL 高频 4|adequate funding|AWL 学术词族
+annual|每年的；年度的|AWL 高频 4|annual income|AWL 学术词族
+apparent|明显的；表面上的|AWL 高频 4|an apparent decline|AWL 学术词族
+approximate|大约的；近似|AWL 高频 4|an approximate figure|AWL 学术词族
+attitude|态度；看法|AWL 高频 4|public attitudes|AWL 学术词族
+attribute|归因于；属性|AWL 高频 4|attribute the change to|AWL 学术词族
+civil|公民的；民事的|AWL 高频 4|civil society|AWL 学术词族
+code|代码；准则|AWL 高频 4|a code of conduct|AWL 学术词族
+commit|承诺；投入|AWL 高频 4|commit resources to|AWL 学术词族
+concentrate|集中；专注|AWL 高频 4|concentrate on the task|AWL 学术词族
+confer|授予；商议|AWL 高频 4|confer a benefit|AWL 学术词族
+cycle|循环；周期|AWL 高频 4|the economic cycle|AWL 学术词族
+debate|辩论；讨论|AWL 高频 4|a public debate|AWL 学术词族
+despite|尽管|AWL 高频 4|despite the evidence|AWL 学术词族
+dimension|维度；方面|AWL 高频 4|a social dimension|AWL 学术词族
+domestic|国内的；家庭的|AWL 高频 4|domestic demand|AWL 学术词族
+emerge|出现；显现|AWL 高频 4|a pattern emerges|AWL 学术词族
+error|错误；误差|AWL 高频 4|a measurement error|AWL 学术词族
+ethnic|族群的；民族的|AWL 高频 4|ethnic diversity|AWL 学术词族
+goal|目标；目的|AWL 高频 4|achieve a goal|AWL 学术词族
+grant|拨款；授予|AWL 高频 4|a research grant|AWL 学术词族
+hence|因此；从此|AWL 高频 4|hence the need for|AWL 学术词族
+hypothesis|假设；假说|AWL 高频 4|test a hypothesis|AWL 学术词族
+implement|实施；执行|AWL 高频 4|implement a policy|AWL 学术词族
+implicate|牵涉；表明关联|AWL 高频 4|be implicated in|AWL 学术词族
+impose|强加；施加|AWL 高频 4|impose a limit|AWL 学术词族
+integrate|整合；融入|AWL 高频 4|integrate technology into|AWL 学术词族
+internal|内部的；内在的|AWL 高频 4|internal factors|AWL 学术词族
+investigate|调查；研究|AWL 高频 4|investigate the cause|AWL 学术词族
+job|工作；职责|AWL 高频 4|job satisfaction|AWL 学术词族
+label|标签；给……分类|AWL 高频 4|label the diagram|AWL 学术词族
+mechanism|机制；装置|AWL 高频 4|a coping mechanism|AWL 学术词族
+obvious|明显的|AWL 高频 4|an obvious difference|AWL 学术词族
+occupy|占据；使用|AWL 高频 4|occupy a central position|AWL 学术词族
+option|选择；选项|AWL 高频 4|a practical option|AWL 学术词族
+output|产出；输出|AWL 高频 4|economic output|AWL 学术词族
+overall|总体的；总的来说|AWL 高频 4|the overall trend|AWL 学术词族
+parallel|平行的；相似之处|AWL 高频 4|draw a parallel between|AWL 学术词族
+parameter|参数；界限|AWL 高频 4|within the parameters|AWL 学术词族
+phase|阶段；时期|AWL 高频 4|the final phase|AWL 学术词族
+predict|预测；预言|AWL 高频 4|predict future demand|AWL 学术词族
+principal|主要的；负责人|AWL 高频 4|the principal reason|AWL 学术词族
+prior|先前的；优先的|AWL 高频 4|prior knowledge|AWL 学术词族
+professional|专业的；职业人士|AWL 高频 4|professional development|AWL 学术词族
+project|项目；预测|AWL 高频 4|a research project|AWL 学术词族
+promote|促进；推广|AWL 高频 4|promote social change|AWL 学术词族
+regime|制度；管理体系|AWL 高频 4|a regulatory regime|AWL 学术词族
+resolve|解决；下定决心|AWL 高频 4|resolve a conflict|AWL 学术词族
+retain|保留；保持|AWL 高频 4|retain information|AWL 学术词族
+series|系列；一连串|AWL 高频 4|a series of studies|AWL 学术词族
+statistic|统计量；统计数据|AWL 高频 4|official statistics|AWL 学术词族
+status|地位；状态|AWL 高频 4|social status|AWL 学术词族
 `.trim();
 
 export const dailyVocabulary = dailyVocabularySource.split("\n").map((line) => {
-  const [word, meaning, category, collocation] = line.split("|");
-  return { word, meaning, category, collocation };
+  const [word, meaning, category, collocation, source] = line.split("|");
+  return { word, meaning, category, collocation, source: source ?? "IELTS 主题独立整理" };
 });
+
+export function getDailyVocabulary(dayKey: string, count = 100) {
+  const dayNumber = Math.floor(new Date(`${dayKey}T00:00:00`).getTime() / 86_400_000);
+  const start = ((dayNumber % dailyVocabulary.length) * count) % dailyVocabulary.length;
+  return Array.from({ length: Math.min(count, dailyVocabulary.length) }, (_, index) =>
+    dailyVocabulary[(start + index) % dailyVocabulary.length],
+  );
+}
 
 export const listeningExercise = {
   title: "University Residence Enquiry",

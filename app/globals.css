@@ -183,6 +183,9 @@ button { cursor: pointer; }
 .daily-word-card.is-revealed { border-color:#b8afe9; background:radial-gradient(circle at 94% 7%,rgba(168,135,232,.25),transparent 30%),#f8f6fd; }
 .daily-word-card>div:first-child { display:flex; align-items:center; justify-content:space-between; }
 .daily-word-card>div:first-child>span { color:#7166d8; font-size:10px; letter-spacing:.7px; text-transform:uppercase; }
+.word-source b,.word-source small { display:block; }
+.word-source b { font-size:10px; }
+.word-source small { margin-top:4px; color:#8a8490; font-size:8px; font-weight:500; letter-spacing:.2px; text-transform:none; }
 .daily-word-card>div:first-child>button { padding:7px 10px; border:0; border-radius:10px; color:#4e43b4; background:#ece8f8; font-size:10px; }
 .daily-word-card h2 { margin:31px 0 5px; font-size:clamp(46px,7vw,72px); line-height:1; letter-spacing:-3px; }
 .daily-word-card .word-collocation { margin:4px 0 26px; color:#7a747c; font-family:Georgia,"Times New Roman",serif; font-size:16px; }

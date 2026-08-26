@@ -49,8 +49,10 @@ test("ships all four learning modes and persistent progress", async () => {
   const dailySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\)/);
   assert.ok(dailySource, "daily vocabulary source should exist");
   const words = dailySource[1].trim().split("\n").map((line) => line.split("|")[0]);
-  assert.equal(words.length, 100);
-  assert.equal(new Set(words).size, 100);
+  assert.equal(words.length, 300);
+  assert.equal(new Set(words).size, 300);
+  assert.match(data, /getDailyVocabulary/);
+  assert.match(data, /AWL 学术词族/);
   const listeningSource = data.match(/const listeningVocabularySource = `([\s\S]*?)`\.trim\(\)/);
   assert.ok(listeningSource, "listening vocabulary source should exist");
   const listeningWords = listeningSource[1].trim().split("\n").map((line) => line.split("|")[0]);
