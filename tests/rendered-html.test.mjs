@@ -148,6 +148,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /文章 \+ 对应题目连续显示/);
   assert.match(app, /题目紧接文章，无需切换题册/);
   assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
+  assert.doesNotMatch(app, /题目直接在这里|本套材料|本材料任务|Academic Reading · Full Test 1–40|runner-material-index/);
+  assert.match(app, /official-task-controls is-single/);
   assert.match(app, /officialAnswerIsCorrect/);
   assert.match(app, /new Set\(groupResponses\)/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);

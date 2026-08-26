@@ -133,7 +133,7 @@ const listeningMaterial: OfficialTestMaterial = {
 };
 const readingMaterial: OfficialTestMaterial = {
   id: "reading-full-40",
-  label: "Academic Reading · Full Test 1–40",
+  label: "Reading",
   pdfUrl: "https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf",
   passagePdfUrl: "https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf",
   answerPdfUrl: "https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf",
@@ -575,7 +575,6 @@ function OfficialTestRunner({
   onBack: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const [materialIndex, setMaterialIndex] = useState(0);
   const [taskIndex, setTaskIndex] = useState(0);
   const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
   const [audioTrackIndex, setAudioTrackIndex] = useState(0);
@@ -584,7 +583,7 @@ function OfficialTestRunner({
   const [submittedTasks, setSubmittedTasks] = useState<Record<string, boolean>>({});
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
   const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
-  const material = session.materials[materialIndex];
+  const material = session.materials[0];
   const task = material.tasks[taskIndex];
   const audioTrack = material.audioTracks?.[audioTrackIndex];
   const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
@@ -653,14 +652,6 @@ function OfficialTestRunner({
       }));
     }
   };
-  const changeMaterial = (index: number) => {
-    const nextMaterial = session.materials[index];
-    setMaterialIndex(index);
-    setTaskIndex(0);
-    setPaperMode("questions");
-    setReadingSectionIndex(0);
-    setAudioTrackIndex(nextMaterial.tasks[0].audioTrackIndex ?? 0);
-  };
   const changeTask = (index: number) => {
     const nextTask = material.tasks[index];
     setTaskIndex(index);
@@ -671,7 +662,6 @@ function OfficialTestRunner({
 
   return (
     <>
-      <PageHeader eyebrow={`OFFICIAL MATERIAL · ${session.setCode}`} title="题目直接在这里，" accent="不再跳出 App。" />
       <div className="official-runner-bar">
         <button onClick={onBack}>← 返回官方套题计划</button>
         <div><span>当前套题</span><strong>{session.title}</strong><small>{session.source}</small></div>
@@ -682,20 +672,18 @@ function OfficialTestRunner({
           <span>套题计时</span><strong className={timerState === "paused" ? "is-paused" : ""}>{minutes}:{seconds}</strong><small>{timerState === "running" ? "计时进行中" : timerState === "paused" ? "计时已暂停" : timerState === "finished" ? "本套计时结束" : `建议用时 ${session.duration}`}</small>
           <button className="runner-timer-primary" disabled={timerState === "finished"} onClick={toggleTimer}>{timerState === "running" ? "Ⅱ 暂停计时" : timerState === "paused" ? "▶ 继续计时" : "▶ 开始计时"}</button>
           <button className="runner-timer-reset" onClick={resetTimer}>重新计时</button>
-          <div className="runner-material-index"><span>本套材料</span>{session.materials.map((item, index) => <button className={materialIndex === index ? "is-active" : ""} onClick={() => changeMaterial(index)} key={item.id}>{index + 1}. {item.label}</button>)}</div>
           <div className="official-runner-rights"><b>IELTS 官方公开样题</b><p>题目与录音由 IELTS.org 提供。本 App 仅在学习界面中加载原始官方文件并保存你的进度。</p></div>
           <div className={completed ? "runner-completion-status is-complete" : "runner-completion-status"}><b>{completed ? "✓ 本套已完成" : "等待完整提交"}</b><p>{completed ? `全部 ${requiredQuestionCount} 题已提交，系统已自动记录。` : requiredTasks.length > 0 ? `${submittedRequiredTaskCount}/${requiredTasks.length} 个必做 Task 已提交；完成全部 ${requiredQuestionCount} 题后自动记录。` : "本套没有可自动判定的客观题，当前不会记录为完成。"}</p></div>
         </aside>
         <section className="official-paper-panel">
-          <header><div><span>{material.label}</span><strong>{task.label} · {task.questionLabel}</strong></div><small>官方原始题号 · 当前显示 P{displayPage}</small></header>
-          <div className="official-task-controls">
-            <label>本材料任务<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>
+          <header><div><strong>{task.questionLabel}</strong></div><small>官方原始题号 · 当前显示 P{displayPage}</small></header>
+          <div className={material.tasks.length > 1 ? "official-task-controls" : "official-task-controls is-single"}>
+            {material.tasks.length > 1 && <label>选择 Task<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>}
             <div className="official-paper-switch" aria-label="题目与答案切换">
               <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{task.questionPage}</button>
               {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{task.answerPage}</button>}
             </div>
           </div>
-          <p className="official-task-note">{material.passagePdfUrl ? "这是 IELTS 官方 Modified Large Print 无障碍样题：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交；App 将原文与对应题目连续展示。" : "官方 Sample Tasks 保留各自的原始题号；它们按独立 Task 使用，不与完整套题混排。"}</p>
           {material.tasks.length > 1 && (
             <section className="official-task-map" aria-label="官方练习任务导航">
               <header><div><span>{material.audioTracks ? "LISTENING TASK MAP" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个独立 Task{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个必做项` : ""}</b><small>{material.audioTracks ? "题号来自不同 Sample Task，会重复；请选择 Task 逐个完成。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
