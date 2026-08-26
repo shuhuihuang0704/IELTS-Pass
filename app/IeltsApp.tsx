@@ -1190,8 +1190,13 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
     listeningExercise.matching.questions.filter((question) => matchingAnswers[question.id]).length +
     listeningExercise.multipleChoice.filter((question) => choiceAnswers[question.id]).length;
 
-  const toggleFacility = (option: string) => {
+  const invalidateSubmission = () => {
     setScore(null);
+    setShowTranscript(false);
+  };
+
+  const toggleFacility = (option: string) => {
+    invalidateSubmission();
     setSelectedFacilities((current) => current.includes(option)
       ? current.filter((item) => item !== option)
       : current.length < 2 ? [...current, option] : current);
@@ -1205,6 +1210,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
     const choiceScore = listeningExercise.multipleChoice.filter((question) => choiceAnswers[question.id] === question.answer).length;
     const nextScore = formScore + facilityScore + matchingScore + choiceScore;
     setScore(nextScore);
+    setShowTranscript(false);
     onComplete(nextScore);
   };
 
@@ -1231,7 +1237,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
             {listeningExercise.formCompletion.map((question, index) => (
               <label className={score === null ? "" : formCorrect(question.id) ? "is-correct" : "is-incorrect"} key={question.id}>
                 <span>{index + 1}. {question.label}</span>
-                <input value={formAnswers[question.id] ?? ""} onChange={(event) => { setScore(null); setFormAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 1}, ${question.label}`} />
+                <input value={formAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setFormAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 1}, ${question.label}`} />
               </label>
             ))}
           </div>
@@ -1254,7 +1260,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
           <div className="matching-option-bank">{listeningExercise.matching.options.map((option) => <span key={option.id}><b>{option.id}</b>{option.label}</span>)}</div>
           {listeningExercise.matching.questions.map((question, index) => {
             const resultClass = score === null ? "" : matchingAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <label className={`matching-row ${resultClass}`} key={question.id}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { setScore(null); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>;
+            return <label className={`matching-row ${resultClass}`} key={question.id}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>;
           })}
         </section>
 
@@ -1262,14 +1268,14 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
           <div className="question-type"><span>Questions 9–10</span><strong>Multiple Choice · Choose ONE</strong><p>Choose the correct letter, A, B or C.</p></div>
           {listeningExercise.multipleChoice.map((question, index) => {
             const resultClass = score === null ? "" : choiceAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <fieldset className={`question-block ${resultClass}`} key={question.id}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { setScore(null); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}</fieldset>;
+            return <fieldset className={`question-block ${resultClass}`} key={question.id}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}</fieldset>;
           })}
         </section>
 
         {score !== null && <div className={`answer-feedback ${score >= 8 ? "success" : "neutral"}`}>得分 {score} / 10。{score < 8 ? "建议打开原文，重点检查拼写、同义替换和转折后的信息。" : "细节定位和拼写表现良好。"}</div>}
-        <div className="exercise-actions"><button className="text-action" onClick={() => setShowTranscript((current) => !current)}>{showTranscript ? "隐藏原文" : "查看原文复盘"}</button><button className="secondary-action" disabled={answeredCount < 10} onClick={submit}>提交 10 道答案 →</button></div>
+        <div className="exercise-actions"><button className="text-action" disabled={score === null} onClick={() => setShowTranscript((current) => !current)}>{score === null ? "提交后解锁原文" : showTranscript ? "隐藏原文" : "查看原文复盘"}</button><button className="secondary-action" disabled={answeredCount < 10} onClick={submit}>提交 10 道答案 →</button></div>
       </div>
-      <aside className="exercise-context transcript-panel listening-transcript"><span>听力原文</span><p>{showTranscript ? listeningExercise.script : "正式训练建议只听一次并完成全部答案。提交后再打开原文，标记没有听到的拼写和同义替换。"}</p></aside>
+      <aside className={`exercise-context transcript-panel listening-transcript ${score === null ? "is-locked" : "is-unlocked"}`}><span>{score === null ? "听力原文 · 未解锁" : "听力原文 · 已解锁"}</span><p>{score === null ? "请先完成全部 10 道题并提交。判分前不会显示原文，避免提前看到答案线索。" : showTranscript ? listeningExercise.script : "已经完成提交。点击“查看原文复盘”，标记没有听到的拼写、连读和同义替换。"}</p></aside>
     </div>
   );
 }

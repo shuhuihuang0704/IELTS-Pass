@@ -104,6 +104,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
+  assert.match(app, /disabled=\{score === null\}/);
+  assert.match(app, /提交后解锁原文/);
+  assert.match(app, /听力原文 · 未解锁/);
+  assert.match(app, /判分前不会显示原文/);
+  assert.match(app, /setShowTranscript\(false\)/);
   assert.match(app, /answeredCount < totalQuestions/);
   assert.match(app, /官方套题训练计划/);
   assert.match(app, /IELTS 官方公开样题/);
