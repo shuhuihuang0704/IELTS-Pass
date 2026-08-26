@@ -25,7 +25,7 @@ import {
   type WordRating,
 } from "./learning-state";
 
-type View = "today" | "practice" | "scene" | "review" | "profile";
+type View = "today" | "practice" | "official-test" | "scene" | "review" | "profile";
 type Feedback = { tone: "success" | "error" | "neutral"; text: string } | null;
 
 const storageKey = "ielts-ai-learning-progress-v1";
@@ -37,17 +37,49 @@ type OfficialTestSession = {
   time: string;
   title: string;
   duration: string;
+  durationMinutes: number;
   source: string;
+  setCode: string;
   description: string;
-  href: string;
+  materials: OfficialTestMaterial[];
 };
 
-const officialAcademicSamplesUrl = "https://ielts.org/take-a-test/preparation-resources/sample-test-questions/academic-test";
+type OfficialAudioTrack = { label: string; url: string };
+type OfficialTestMaterial = { id: string; label: string; pdfUrl: string; audioTracks?: OfficialAudioTrack[] };
+
+const listeningMaterial: OfficialTestMaterial = {
+  id: "listening",
+  label: "Listening",
+  pdfUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf",
+  audioTracks: [
+    { label: "Task 1 · Form Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-1-form-completion.mp3" },
+    { label: "Task 2 · Multiple Choice", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-2-multiple-choice.mp3" },
+    { label: "Task 3 · Short-answer Questions", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-3-short-answer-questions.mp3" },
+    { label: "Task 4 · Sentence Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-4-sentence-completion.mp3" },
+    { label: "Task 5 · Matching 1", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-5-matching.mp3" },
+    { label: "Task 6 · Matching 2", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-6-matching.mp3" },
+    { label: "Task 7 · Map Labelling", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-7-plan-map-diagram-labelling.mp3" },
+    { label: "Task 8 · Note Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
+  ],
+};
+const readingMaterial: OfficialTestMaterial = { id: "reading", label: "Academic Reading", pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-reading-sample-tasks-2023.pdf" };
+const writingMaterial: OfficialTestMaterial = { id: "writing", label: "Academic Writing", pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf" };
+const speakingMaterial: OfficialTestMaterial = {
+  id: "speaking",
+  label: "Speaking",
+  pdfUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking-sample-tasks-2023.pdf",
+  audioTracks: [
+    { label: "Part 1 · Introduction and interview", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking/ielts-speaking-part-1-sample-recording.mp3" },
+    { label: "Part 2 · Long turn", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking/ielts-speaking-part-2-sample-recording.mp3" },
+    { label: "Part 3 · Two-way discussion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-speaking/ielts-speaking-part-3-sample-recording.mp3" },
+  ],
+};
+
 const officialTestSchedule: OfficialTestSession[] = [
-  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Academic Reading 计时套题", duration: "60 分钟", source: "IELTS 官方公开样题", description: "一次完成 3 篇、40 题；结束后再查答案，不在中途暂停。", href: officialAcademicSamplesUrl },
-  { id: "listening", isoDay: 4, dayLabel: "周四", time: "20:00", title: "Listening 40 题整套训练", duration: "40 分钟", source: "IELTS 官方公开样题", description: "约 30 分钟连续作答，再用 10 分钟核对拼写与错题。", href: officialAcademicSamplesUrl },
-  { id: "full-mock", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Listening + Reading + Writing 模考", duration: "150 分钟", source: "IELTS 官方机考体验 / 已购正版真题", description: "严格连续计时；可使用官方机考样题，或自己购买的 Cambridge IELTS 完整 Test。", href: officialAcademicSamplesUrl },
-  { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Speaking 全流程 + 错题复盘", duration: "55 分钟", source: "IELTS 官方 Speaking 样题", description: "先完成 11–14 分钟口语，再集中复盘本周真题错因。", href: officialAcademicSamplesUrl },
+  { id: "reading", isoDay: 2, dayLabel: "周二", time: "20:00", title: "Official Academic Reading Sample Tasks 2023", duration: "60 分钟", durationMinutes: 60, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-AR-2023-01", description: "App 内直接显示官方 Academic Reading 样题合集，并进行 60 分钟计时。", materials: [readingMaterial] },
+  { id: "listening", isoDay: 4, dayLabel: "周四", time: "20:00", title: "Official Listening Sample Tasks 2023", duration: "40 分钟", durationMinutes: 40, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-L-2023-01", description: "内置官方题目 PDF 与 8 段对应录音，覆盖填空、单选、简答、匹配和地图题。", materials: [listeningMaterial] },
+  { id: "full-mock", isoDay: 6, dayLabel: "周六", time: "09:30", title: "Official L/R/W Sample Bundle 2023", duration: "150 分钟", durationMinutes: 150, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-LRW-2023-01", description: "在同一套题运行器中切换 Listening、Reading 与 Writing 官方样题，连续计时训练。", materials: [listeningMaterial, readingMaterial, writingMaterial] },
+  { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Official Speaking Sample Tasks 2023", duration: "55 分钟", durationMinutes: 55, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-S-2023-01", description: "内置官方 Speaking Part 1–3 题目与示范录音，完成后复盘本周错题。", materials: [speakingMaterial] },
 ];
 
 function speak(text: string, rate = 0.9) {
@@ -63,6 +95,7 @@ function speak(text: string, rate = 0.9) {
 export default function IeltsApp() {
   const [view, setView] = useState<View>("today");
   const [activeSkill, setActiveSkill] = useState<Skill>("vocabulary");
+  const [activeOfficialSessionId, setActiveOfficialSessionId] = useState(officialTestSchedule[0].id);
   const [progress, setProgress] = useState<LearningProgress>(defaultProgress);
   const [hydrated, setHydrated] = useState(false);
 
@@ -105,6 +138,12 @@ export default function IeltsApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openOfficialTest = (sessionId: string) => {
+    setActiveOfficialSessionId(sessionId);
+    setView("official-test");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const resetProgress = () => {
     window.localStorage.removeItem(storageKey);
     setProgress(defaultProgress);
@@ -126,7 +165,8 @@ export default function IeltsApp() {
             onNavigate={setView}
           />
         )}
-        {view === "practice" && <PracticeView progress={progress} onOpen={openSkill} updateProgress={updateProgress} />}
+        {view === "practice" && <PracticeView progress={progress} onOpen={openSkill} onOpenOfficialTest={openOfficialTest} />}
+        {view === "official-test" && <OfficialTestRunner session={officialTestSchedule.find((session) => session.id === activeOfficialSessionId) ?? officialTestSchedule[0]} progress={progress} onBack={() => setView("practice")} updateProgress={updateProgress} />}
         {view === "scene" && (
           <SceneView
             activeSkill={activeSkill}
@@ -290,11 +330,11 @@ function TodayView({
 function PracticeView({
   progress,
   onOpen,
-  updateProgress,
+  onOpenOfficialTest,
 }: {
   progress: LearningProgress;
   onOpen: (skill: Skill) => void;
-  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+  onOpenOfficialTest: (sessionId: string) => void;
 }) {
   return (
     <>
@@ -310,30 +350,20 @@ function PracticeView({
           </button>
         ))}
       </div>
-      <OfficialPracticePlan progress={progress} updateProgress={updateProgress} />
+      <OfficialPracticePlan progress={progress} onOpenOfficialTest={onOpenOfficialTest} />
     </>
   );
 }
 
 function OfficialPracticePlan({
   progress,
-  updateProgress,
+  onOpenOfficialTest,
 }: {
   progress: LearningProgress;
-  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+  onOpenOfficialTest: (sessionId: string) => void;
 }) {
   const weekKey = localWeekKey();
   const completedCount = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(`${weekKey}:${session.id}`)).length;
-
-  const toggleSession = (session: OfficialTestSession) => {
-    const recordId = `${weekKey}:${session.id}`;
-    updateProgress((current) => ({
-      ...current,
-      officialPracticeCompleted: current.officialPracticeCompleted.includes(recordId)
-        ? current.officialPracticeCompleted.filter((item) => item !== recordId)
-        : [...current.officialPracticeCompleted, recordId],
-    }));
-  };
 
   return (
     <section className="official-practice-plan">
@@ -341,7 +371,7 @@ function OfficialPracticePlan({
         <div><span>AUTHENTIC TEST WEEK</span><h2>真题训练计划</h2><p>每周 4 次 · 共约 5 小时 · 独立于每日基础训练</p></div>
         <strong>{completedCount}<small>/4</small></strong>
       </header>
-      <div className="official-source-note"><b>内容来源说明</b><p>本 App 只链接 IELTS 官方公开样题并记录训练进度。你已购买的 Cambridge IELTS 真题册可以按周六计划使用，但题目正文不会被上传或再分发。</p></div>
+      <div className="official-source-note"><b>内容来源说明</b><p>官方题目、对应录音和套题编号会直接显示在 App 内，不再跳转官网。当前内置的是 IELTS.org 公开的 2023 Sample Tasks，不冒充 Cambridge 历年真题。</p></div>
       <div className="official-session-list">
         {officialTestSchedule.map((session, index) => {
           const recordId = `${weekKey}:${session.id}`;
@@ -349,16 +379,106 @@ function OfficialPracticePlan({
           return (
             <article className={completed ? "official-session is-complete" : "official-session"} key={session.id}>
               <div className="official-session-date"><span>{session.dayLabel}</span><strong>{session.time}</strong></div>
-              <div className="official-session-copy"><small>0{index + 1} · {session.source}</small><h3>{session.title}</h3><p>{session.description}</p><b>{session.duration}</b></div>
+              <div className="official-session-copy"><small>0{index + 1} · {session.source}</small><h3>{session.title}</h3><p>{session.description}</p><b>{session.setCode} · {session.duration}</b></div>
               <div className="official-session-actions">
-                <a href={session.href} target="_blank" rel="noreferrer">打开官方练习 ↗</a>
-                <button onClick={() => toggleSession(session)}>{completed ? "✓ 已完成" : "完成后记录"}</button>
+                <button onClick={() => onOpenOfficialTest(session.id)}>{completed ? "查看本套 · 已完成" : "开始本套 →"}</button>
               </div>
             </article>
           );
         })}
       </div>
     </section>
+  );
+}
+
+function OfficialTestRunner({
+  session,
+  progress,
+  onBack,
+  updateProgress,
+}: {
+  session: OfficialTestSession;
+  progress: LearningProgress;
+  onBack: () => void;
+  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+}) {
+  const [materialIndex, setMaterialIndex] = useState(0);
+  const [audioTrackIndex, setAudioTrackIndex] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
+  const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
+  const material = session.materials[materialIndex];
+  const audioTrack = material.audioTracks?.[audioTrackIndex];
+  const recordId = `${localWeekKey()}:${session.id}`;
+  const completed = progress.officialPracticeCompleted.includes(recordId);
+
+  useEffect(() => {
+    if (timerState !== "running") return;
+    const timer = window.setInterval(() => {
+      setRemainingSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          setTimerState("finished");
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [timerState]);
+
+  const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, "0");
+  const seconds = String(remainingSeconds % 60).padStart(2, "0");
+  const toggleTimer = () => {
+    if (timerState === "running") setTimerState("paused");
+    else if (timerState !== "finished") setTimerState("running");
+  };
+  const resetTimer = () => {
+    setRemainingSeconds(session.durationMinutes * 60);
+    setTimerState("idle");
+  };
+  const markComplete = () => {
+    updateProgress((current) => ({
+      ...current,
+      officialPracticeCompleted: current.officialPracticeCompleted.includes(recordId)
+        ? current.officialPracticeCompleted
+        : [...current.officialPracticeCompleted, recordId],
+    }));
+  };
+  const changeMaterial = (index: number) => {
+    setMaterialIndex(index);
+    setAudioTrackIndex(0);
+  };
+
+  return (
+    <>
+      <PageHeader eyebrow={`OFFICIAL MATERIAL · ${session.setCode}`} title="题目直接在这里，" accent="不再跳出 App。" />
+      <div className="official-runner-bar">
+        <button onClick={onBack}>← 返回真题计划</button>
+        <div><span>当前套题</span><strong>{session.title}</strong><small>{session.source}</small></div>
+        <span className="official-set-badge">{session.setCode}</span>
+      </div>
+      <div className="official-runner-layout">
+        <aside className="official-runner-sidebar">
+          <span>套题计时</span><strong className={timerState === "paused" ? "is-paused" : ""}>{minutes}:{seconds}</strong><small>{timerState === "running" ? "计时进行中" : timerState === "paused" ? "计时已暂停" : timerState === "finished" ? "本套计时结束" : `建议用时 ${session.duration}`}</small>
+          <button className="runner-timer-primary" disabled={timerState === "finished"} onClick={toggleTimer}>{timerState === "running" ? "Ⅱ 暂停计时" : timerState === "paused" ? "▶ 继续计时" : "▶ 开始计时"}</button>
+          <button className="runner-timer-reset" onClick={resetTimer}>重新计时</button>
+          <div className="runner-material-index"><span>本套材料</span>{session.materials.map((item, index) => <button className={materialIndex === index ? "is-active" : ""} onClick={() => changeMaterial(index)} key={item.id}>{index + 1}. {item.label}</button>)}</div>
+          <div className="official-runner-rights"><b>IELTS 官方公开样题</b><p>题目与录音由 IELTS.org 提供。本 App 仅在学习界面中加载原始官方文件并保存你的进度。</p></div>
+          <button className={completed ? "runner-complete is-complete" : "runner-complete"} onClick={markComplete}>{completed ? "✓ 本套已完成" : "完成整套后记录"}</button>
+        </aside>
+        <section className="official-paper-panel">
+          <header><div><span>{material.label}</span><strong>{session.setCode}</strong></div><small>官方原始题目 · 可在下方直接滚动查看</small></header>
+          {material.audioTracks && audioTrack && (
+            <div className="official-audio-dock">
+              <label>选择官方录音<select value={audioTrackIndex} onChange={(event) => setAudioTrackIndex(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption -- The official transcript is included in the embedded source PDF. */}
+              <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
+            </div>
+          )}
+          <iframe className="official-paper-frame" title={`${session.title} · ${material.label}`} src={`${material.pdfUrl}#toolbar=1&navpanes=0&view=FitH`} />
+        </section>
+      </div>
+    </>
   );
 }
 

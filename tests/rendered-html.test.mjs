@@ -98,8 +98,13 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /answeredCount < totalQuestions/);
   assert.match(app, /真题训练计划/);
   assert.match(app, /IELTS 官方公开样题/);
-  assert.match(app, /Cambridge IELTS 真题册/);
-  assert.match(app, /打开官方练习/);
+  assert.match(app, /不冒充 Cambridge 历年真题/);
+  assert.match(app, /开始本套/);
+  assert.match(app, /OfficialTestRunner/);
+  assert.match(app, /IELTS-OFFICIAL-AR-2023-01/);
+  assert.match(app, /ielts-listening-sample-tasks-2023\.pdf/);
+  assert.match(app, /ielts-speaking-part-3-sample-recording\.mp3/);
+  assert.match(app, /official-paper-frame/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
 });
