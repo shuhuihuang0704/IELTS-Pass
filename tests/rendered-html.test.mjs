@@ -49,6 +49,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /dailyDictationCompleted/);
   assert.match(state, /dailyDictationSeen/);
   assert.match(state, /connectedSpeechSeen/);
+  assert.match(state, /dailyVocabularyRatings/);
+  assert.match(state, /dailyVocabularyAttempts/);
+  assert.match(state, /reviewSchedule/);
+  assert.match(state, /reviewIntervals = \[1, 3, 7, 14, 30, 60\]/);
+  assert.match(state, /scheduleWordForReview/);
+  assert.match(state, /rateReviewWord/);
 
   const dailySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\)/);
   assert.ok(dailySource, "daily vocabulary source should exist");
@@ -71,6 +77,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /speechSynthesis\.pause/);
   assert.match(app, /speechSynthesis\.resume/);
   assert.match(app, /提交检查前不显示中文/);
+  assert.match(app, /本轮不再出现/);
+  assert.match(app, /稍后再次出现/);
+  assert.match(app, /很快再次出现/);
+  assert.match(app, /repeatGap/);
+  assert.match(app, /今日到期复习/);
   assert.match(app, /fullyCompleted/);
   assert.match(app, /answeredCount < 10/);
   assert.match(app, /answeredCount < totalQuestions/);

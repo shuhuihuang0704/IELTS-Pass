@@ -15,8 +15,13 @@ import {
 import {
   completionPercent,
   defaultProgress,
+  localDayKey,
   mergeStoredProgress,
+  rateReviewWord,
+  reviewIntervals,
+  scheduleWordForReview,
   type LearningProgress,
+  type WordRating,
 } from "./learning-state";
 
 type View = "today" | "practice" | "scene" | "review" | "profile";
@@ -205,7 +210,8 @@ function TodayView({
 }) {
   const nextSkill = skills.find((skill) => !progress.completed[skill.id]) ?? skills[0];
   const todayWordSet = new Set(getDailyVocabulary(progress.dailyVocabularyDate).map((word) => word.word));
-  const todaySeenCount = progress.dailyVocabularySeen.filter((word) => todayWordSet.has(word)).length;
+  const todaySeenCount = progress.dailyVocabularyKnown.filter((word) => todayWordSet.has(word)).length;
+  const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
   return (
     <>
       <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" />
@@ -241,7 +247,7 @@ function TodayView({
           </button>
           <div className="streak-row"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟</small></span></div>
           <button className="memory-row" onClick={() => onNavigate("review")}>
-            <span><strong>记忆回流</strong><small>{progress.reviewWords.length} 个待复习词 · 来自真实错误</small></span><b>→</b>
+            <span><strong>记忆回流</strong><small>{dueReviewCount} 个今日到期 · {progress.reviewWords.length} 个已安排</small></span><b>→</b>
           </button>
         </aside>
       </div>
@@ -354,11 +360,14 @@ function VocabularyPractice({
     event?.preventDefault();
     const correct = value.trim().toLowerCase() === word.word;
     setFeedback({ tone: correct ? "success" : "error", text: correct ? "拼写正确，答案已经揭晓。" : "拼写有误，已加入需要复习的词汇。" });
-    updateProgress((current) => ({
-      ...current,
-      masteredWords: correct ? Array.from(new Set([...current.masteredWords, word.word])) : current.masteredWords,
-      reviewWords: correct ? current.reviewWords.filter((item) => item !== word.word) : Array.from(new Set([...current.reviewWords, word.word])),
-    }));
+    updateProgress((current) => {
+      const next = {
+        ...current,
+        masteredWords: correct ? Array.from(new Set([...current.masteredWords, word.word])) : current.masteredWords,
+        reviewWords: current.reviewWords,
+      };
+      return correct ? next : scheduleWordForReview(next, word.word, "unfamiliar", 0);
+    });
   };
 
   const next = () => {
@@ -443,11 +452,14 @@ function ConnectedSpeechPractice({
     event?.preventDefault();
     const correct = normalize(value) === normalize(phrase.phrase);
     setFeedback({ tone: correct ? "success" : "error", text: correct ? "词组听写正确。" : "词组拼写有误，已加入复习。" });
-    updateProgress((current) => ({
-      ...current,
-      masteredWords: correct ? Array.from(new Set([...current.masteredWords, phrase.phrase])) : current.masteredWords,
-      reviewWords: correct ? current.reviewWords.filter((item) => item !== phrase.phrase) : Array.from(new Set([...current.reviewWords, phrase.phrase])),
-    }));
+    updateProgress((current) => {
+      const next = {
+        ...current,
+        masteredWords: correct ? Array.from(new Set([...current.masteredWords, phrase.phrase])) : current.masteredWords,
+        reviewWords: current.reviewWords,
+      };
+      return correct ? next : scheduleWordForReview(next, phrase.phrase, "unfamiliar", 0);
+    });
   };
 
   const next = () => {
@@ -487,29 +499,52 @@ function DailyVocabularySprint({
   onComplete: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const [revealed, setRevealed] = useState(false);
   const dailyWords = useMemo(() => getDailyVocabulary(progress.dailyVocabularyDate), [progress.dailyVocabularyDate]);
   const total = dailyWords.length;
   const dailyWordSet = useMemo(() => new Set(dailyWords.map((item) => item.word)), [dailyWords]);
-  const seenCount = Math.min(progress.dailyVocabularySeen.filter((item) => dailyWordSet.has(item)).length, total);
+  const [queue, setQueue] = useState(() => dailyWords.filter((item) => !progress.dailyVocabularyKnown.includes(item.word)));
+  const [pendingRating, setPendingRating] = useState<Exclude<WordRating, "known"> | null>(null);
   const knownCount = progress.dailyVocabularyKnown.filter((item) => dailyWordSet.has(item)).length;
-  const finished = seenCount >= total;
-  const word = dailyWords[Math.min(seenCount, total - 1)];
+  const finished = queue.length === 0;
+  const word = queue[0];
+  const fuzzyCount = dailyWords.filter((item) => progress.dailyVocabularyRatings[item.word] === "fuzzy").length;
+  const unfamiliarCount = dailyWords.filter((item) => progress.dailyVocabularyRatings[item.word] === "unfamiliar").length;
 
-  const markWord = (known: boolean) => {
-    const isLastWord = seenCount === total - 1;
-    updateProgress((current) => ({
-      ...current,
-      dailyVocabularySeen: Array.from(new Set([...current.dailyVocabularySeen, word.word])),
-      dailyVocabularyKnown: known
-        ? Array.from(new Set([...current.dailyVocabularyKnown, word.word]))
-        : current.dailyVocabularyKnown.filter((item) => item !== word.word),
-      reviewWords: known
-        ? current.reviewWords.filter((item) => item !== word.word)
-        : Array.from(new Set([...current.reviewWords, word.word])),
-    }));
-    setRevealed(false);
-    if (isLastWord) onComplete();
+  useEffect(() => {
+    if (finished && !progress.dailyVocabularyCompleted) onComplete();
+  }, [finished, onComplete, progress.dailyVocabularyCompleted]);
+
+  const markWord = (rating: WordRating) => {
+    updateProgress((current) => {
+      const next = {
+        ...current,
+        dailyVocabularySeen: Array.from(new Set([...current.dailyVocabularySeen, word.word])),
+        dailyVocabularyKnown: rating === "known"
+          ? Array.from(new Set([...current.dailyVocabularyKnown, word.word]))
+          : current.dailyVocabularyKnown.filter((item) => item !== word.word),
+        dailyVocabularyRatings: { ...current.dailyVocabularyRatings, [word.word]: rating },
+        dailyVocabularyAttempts: { ...current.dailyVocabularyAttempts, [word.word]: (current.dailyVocabularyAttempts[word.word] ?? 0) + 1 },
+        masteredWords: rating === "known" ? Array.from(new Set([...current.masteredWords, word.word])) : current.masteredWords,
+      };
+      return rating === "known" ? next : scheduleWordForReview(next, word.word, rating, 1);
+    });
+
+    if (rating === "known") {
+      setQueue((current) => current.slice(1));
+    } else {
+      setPendingRating(rating);
+    }
+  };
+
+  const continueRound = () => {
+    if (!pendingRating) return;
+    const repeatGap = pendingRating === "unfamiliar" ? 3 : 7;
+    setQueue((current) => {
+      const [currentWord, ...remaining] = current;
+      const insertAt = Math.min(repeatGap, remaining.length);
+      return [...remaining.slice(0, insertAt), currentWord, ...remaining.slice(insertAt)];
+    });
+    setPendingRating(null);
   };
 
   if (finished) {
@@ -517,47 +552,49 @@ function DailyVocabularySprint({
       <div className="daily-complete">
         <span className="daily-complete-mark">100</span>
         <div><p>DAILY VOCABULARY COMPLETE</p><h2>今天的 100 个词，已经全部眼熟。</h2>
-          <span>熟悉 {knownCount} 个 · 待强化 {total - knownCount} 个</span>
+          <span>全部达到“一眼认识” · 待复习词已按间隔计划保存</span>
         </div>
       </div>
     );
   }
 
-  const round = Math.floor(seenCount / 20) + 1;
+  const round = Math.min(5, Math.floor(knownCount / 20) + 1);
   return (
     <div className="exercise-layout daily-vocabulary-layout">
       <div className="exercise-main daily-vocabulary-main">
-        <div className="exercise-kicker"><span>每日 100 词 · 第 {round} 组</span><span>{seenCount + 1} / {total}</span></div>
-        <div className="word-rounds" aria-label={`已浏览 ${seenCount} / ${total} 个词`}>
+        <div className="exercise-kicker"><span>每日 100 词 · 第 {round} 组</span><span>已确认 {knownCount} / {total}</span></div>
+        <div className="word-rounds" aria-label={`已认识 ${knownCount} / ${total} 个词`}>
           {Array.from({ length: 5 }, (_, index) => {
-            const completed = Math.max(0, Math.min(20, seenCount - index * 20));
+            const completed = Math.max(0, Math.min(20, knownCount - index * 20));
             return <span key={index}><i style={{ width: `${completed * 5}%` }} /></span>;
           })}
         </div>
-        <section className={`daily-word-card ${revealed ? "is-revealed" : ""}`}>
+        <section className={`daily-word-card ${pendingRating ? "is-revealed" : ""}`}>
           <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><button onClick={() => speak(word.word, .76)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button></div>
           <h2>{word.word}</h2>
-          <p className="word-collocation">{word.collocation}</p>
+          <p className="word-collocation">{pendingRating ? word.collocation : "看到单词后，凭第一反应选择熟悉程度"}</p>
           <div className="daily-word-answer" aria-live="polite">
-            {revealed ? <strong>{word.meaning}</strong> : <button onClick={() => setRevealed(true)}>点击查看中文含义</button>}
+            {pendingRating ? <strong>{word.meaning}</strong> : <span>本轮已出现 {progress.dailyVocabularyAttempts[word.word] ?? 0} 次</span>}
           </div>
         </section>
-        {!revealed ? (
-          <button className="reveal-action" onClick={() => setRevealed(true)}>翻开答案</button>
-        ) : (
-          <div className="word-judgement">
-            <button onClick={() => markWord(false)}><span>↺</span>还不熟</button>
-            <button onClick={() => markWord(true)}><span>✓</span>认识</button>
+        {!pendingRating ? (
+          <div className="word-rating-actions">
+            <button onClick={() => markWord("known")}><span>✓</span><strong>认识</strong><small>本轮不再出现</small></button>
+            <button onClick={() => markWord("fuzzy")}><span>≈</span><strong>模糊</strong><small>稍后再次出现</small></button>
+            <button onClick={() => markWord("unfamiliar")}><span>↺</span><strong>不熟悉</strong><small>很快再次出现</small></button>
           </div>
+        ) : (
+          <button className="reveal-action" onClick={continueRound}>记住含义，继续本轮 →</button>
         )}
       </div>
       <aside className="exercise-context daily-vocabulary-context">
         <span>今天的目标</span>
-        <strong>{seenCount}<small>/100</small></strong>
-        <p>先完成快速辨认。标记“还不熟”的词会自动进入复习，不要求第一次就完全拼写正确。</p>
+        <strong>{knownCount}<small>/100</small></strong>
+        <p>认识的词立即出队；模糊与不熟悉的词会在本轮按不同间隔再次出现，直到达到一眼认识。</p>
         <div><b>{dailyVocabulary.length}</b><small>高频核心词库</small></div>
-        <div><b>{knownCount}</b><small>已经认识</small></div>
-        <div><b>{progress.reviewWords.length}</b><small>等待强化</small></div>
+        <div><b>{fuzzyCount}</b><small>本轮模糊</small></div>
+        <div><b>{unfamiliarCount}</b><small>本轮不熟悉</small></div>
+        <div><b>{progress.reviewWords.length}</b><small>已进入间隔复习</small></div>
       </aside>
     </div>
   );
@@ -871,16 +908,32 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
 }
 
 function ReviewView({ progress, updateProgress }: { progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
-  const reviewItems = progress.reviewWords;
+  const today = localDayKey();
+  const reviewItems = progress.reviewWords.filter((item) => (progress.reviewSchedule[item]?.dueDate ?? today) <= today);
+  const scheduledCount = progress.reviewWords.length - reviewItems.length;
+  const rateItem = (item: string, rating: WordRating) => {
+    updateProgress((current) => {
+      const rated = rateReviewWord(current, item, rating);
+      return rating === "unfamiliar"
+        ? { ...rated, reviewWords: [...rated.reviewWords.filter((word) => word !== item), item] }
+        : rated;
+    });
+  };
   return (
     <>
       <PageHeader eyebrow="MEMORY LOOP" title="把错误，变成" accent="长期记忆。" />
-      <section className="review-hero"><div><span>今日待复习</span><strong>{reviewItems.length}</strong><p>这里只出现你在真实练习中答错或标记过的内容。</p></div><span className="review-loop" aria-hidden="true">↺</span></section>
+      <section className="review-hero"><div><span>今日到期复习</span><strong>{reviewItems.length}</strong><p>{scheduledCount} 个词已安排在未来出现 · 间隔按 1、3、7、14、30、60 天递增</p></div><span className="review-loop" aria-hidden="true">↺</span></section>
       <div className="review-list">
-        {reviewItems.length === 0 ? <div className="empty-state"><strong>暂时没有待复习内容</strong><p>去完成一次词汇练习，错误会自动回到这里。</p></div> : reviewItems.map((item) => {
+        {reviewItems.length === 0 ? <div className="empty-state"><strong>今天没有到期内容</strong><p>{scheduledCount > 0 ? `${scheduledCount} 个词已按记忆间隔排到后续日期。` : "模糊、不熟悉和拼错的内容会自动进入这里。"}</p></div> : reviewItems.map((item) => {
           const word = vocabulary.find((entry) => entry.word === item) ?? dailyVocabulary.find((entry) => entry.word === item);
           const phrase = connectedSpeechPhrases.find((entry) => entry.phrase === item);
-          return <div className="review-item" key={item}><span><strong>{item}</strong><small>{word?.meaning ?? phrase?.meaning ?? "场景词汇"}</small></span><button onClick={() => { speak(item, phrase ? .95 : .75); updateProgress((current) => ({ ...current, reviewWords: current.reviewWords.filter((wordItem) => wordItem !== item), masteredWords: Array.from(new Set([...current.masteredWords, item])) })); }}>已掌握</button></div>;
+          const schedule = progress.reviewSchedule[item];
+          const interval = reviewIntervals[Math.min(schedule?.stage ?? 0, reviewIntervals.length - 1)];
+          return <article className="review-item" key={item}>
+            <div className="review-word"><span>当前间隔 {interval} 天 · 遗忘 {schedule?.lapses ?? 0} 次</span><strong>{item}</strong><details><summary>查看释义</summary><small>{word?.meaning ?? phrase?.meaning ?? "场景词汇"}</small></details></div>
+            <button className="review-audio" onClick={() => speak(item, phrase ? .95 : .75)} aria-label={`播放 ${item}`}>▶</button>
+            <div className="review-rating-actions"><button onClick={() => rateItem(item, "known")}>认识</button><button onClick={() => rateItem(item, "fuzzy")}>模糊</button><button onClick={() => rateItem(item, "unfamiliar")}>不熟悉</button></div>
+          </article>;
         })}
       </div>
     </>
@@ -890,7 +943,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
 function ProfileView({ progress, percent, onReset }: { progress: LearningProgress; percent: number; onReset: () => void }) {
   const stats = useMemo(() => [
     ["今日完成度", `${percent}%`],
-    ["今日词汇", `${progress.dailyVocabularySeen.length} / 100`],
+    ["今日词汇", `${progress.dailyVocabularyKnown.length} / 100`],
     ["累计学习", `${progress.minutes} 分钟`],
     ["待强化词汇", `${progress.reviewWords.length}`],
     ["连续学习", `${progress.streak} 天`],

@@ -200,8 +200,17 @@ button { cursor: pointer; }
 .daily-word-card .word-collocation { margin:4px 0 26px; color:#7a747c; font-family:Georgia,"Times New Roman",serif; font-size:16px; }
 .daily-word-answer { min-height:49px; padding-top:17px; border-top:1px solid #e8e3ea; }
 .daily-word-answer strong { font-size:18px; }
+.daily-word-answer>span { color:#8a8490; font-size:10px; }
 .daily-word-answer button { padding:0; border:0; color:#837c85; background:transparent; font-size:11px; }
 .reveal-action { width:100%; min-height:48px; margin-top:13px; border:0; border-radius:14px; color:white; background:var(--ink); font-size:12px; font-weight:650; }
+.word-rating-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:13px; }
+.word-rating-actions button { min-height:64px; padding:9px; border:0; border-radius:14px; background:#e4f2ec; color:#176c4f; }
+.word-rating-actions button:nth-child(2) { color:#93601f; background:#f7eddc; }
+.word-rating-actions button:nth-child(3) { color:#a34a43; background:#f7e8e6; }
+.word-rating-actions span,.word-rating-actions strong,.word-rating-actions small { display:block; }
+.word-rating-actions span { font-size:15px; }
+.word-rating-actions strong { margin-top:3px; font-size:12px; }
+.word-rating-actions small { margin-top:3px; opacity:.72; font-size:8px; }
 .word-judgement { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:13px; }
 .word-judgement button { min-height:50px; border:0; border-radius:14px; color:#a34a43; background:#f7e8e6; font-size:12px; font-weight:650; }
 .word-judgement button:last-child { color:white; background:var(--violet); }
@@ -327,10 +336,18 @@ button { cursor: pointer; }
 .review-hero .review-loop { font-size:130px; line-height:1; opacity:.12; }
 .review-list { display:grid; gap:9px; margin-top:14px; }
 .review-item,.empty-state { min-height:76px; padding:16px 19px; border-radius:18px; background:white; }
-.review-item { display:flex; align-items:center; justify-content:space-between; }
-.review-item strong,.review-item small { display:block; }
-.review-item small { margin-top:5px; color:var(--muted); font-size:10px; }
-.review-item button { padding:8px 11px; border:0; border-radius:10px; color:#4f43b4; background:#ece8f8; font-size:10px; }
+.review-item { display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; }
+.review-word>span,.review-word>strong { display:block; }
+.review-word>span { color:var(--muted); font-size:9px; }
+.review-word>strong { margin-top:5px; font-size:18px; }
+.review-word details { margin-top:7px; color:var(--muted); font-size:10px; }
+.review-word summary { width:max-content; cursor:pointer; }
+.review-word small { display:block; margin-top:5px; color:#504a52; font-size:11px; }
+.review-audio { width:34px; height:34px; border:0; border-radius:50%; color:#4f43b4; background:#ece8f8; }
+.review-rating-actions { grid-column:1/-1; display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.review-rating-actions button { min-height:35px; border:0; border-radius:10px; color:#176c4f; background:#e2f3ec; font-size:10px; }
+.review-rating-actions button:nth-child(2) { color:#93601f; background:#f7eddc; }
+.review-rating-actions button:nth-child(3) { color:#a34a43; background:#f7e8e6; }
 .empty-state { padding:29px; text-align:center; }
 .empty-state p { margin:7px 0 0; color:var(--muted); font-size:11px; }
 .profile-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:34px; }
@@ -373,6 +390,9 @@ button { cursor: pointer; }
   .daily-word-card { min-height:285px; padding:22px; }
   .daily-word-card h2 { font-size:47px; letter-spacing:-2px; overflow-wrap:anywhere; }
   .daily-word-card .word-collocation { font-size:14px; }
+  .word-rating-actions { grid-template-columns:1fr; }
+  .word-rating-actions button { min-height:49px; display:grid; grid-template-columns:24px 1fr auto; align-items:center; text-align:left; }
+  .word-rating-actions strong,.word-rating-actions small { margin:0; }
   .daily-complete { padding:29px 23px; align-items:flex-start; flex-direction:column; gap:22px; }
   .daily-complete-mark { width:88px; height:88px; border-radius:29px 29px 29px 9px; font-size:27px; }
   .speaking-form { grid-template-columns:39px 1fr; }

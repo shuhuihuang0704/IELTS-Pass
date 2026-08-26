@@ -1,12 +1,24 @@
 import type { Skill } from "./learning-data";
 
+export type WordRating = "known" | "fuzzy" | "unfamiliar";
+
+export type ReviewScheduleItem = {
+  dueDate: string;
+  stage: number;
+  lastRating: WordRating;
+  lapses: number;
+};
+
 export type LearningProgress = {
   completed: Record<Skill, boolean>;
   masteredWords: string[];
   reviewWords: string[];
+  reviewSchedule: Record<string, ReviewScheduleItem>;
   dailyVocabularyDate: string;
   dailyVocabularySeen: string[];
   dailyVocabularyKnown: string[];
+  dailyVocabularyRatings: Record<string, WordRating>;
+  dailyVocabularyAttempts: Record<string, number>;
   dailyDictationSeen: string[];
   connectedSpeechSeen: string[];
   dailyVocabularyCompleted: boolean;
@@ -27,13 +39,24 @@ export function localDayKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+export const reviewIntervals = [1, 3, 7, 14, 30, 60] as const;
+
+export function dayKeyAfter(days: number, from = localDayKey()) {
+  const date = new Date(`${from}T12:00:00`);
+  date.setDate(date.getDate() + days);
+  return localDayKey(date);
+}
+
 export const defaultProgress: LearningProgress = {
   completed: { vocabulary: false, listening: false, speaking: false, reading: false },
   masteredWords: [],
   reviewWords: [],
+  reviewSchedule: {},
   dailyVocabularyDate: localDayKey(),
   dailyVocabularySeen: [],
   dailyVocabularyKnown: [],
+  dailyVocabularyRatings: {},
+  dailyVocabularyAttempts: {},
   dailyDictationSeen: [],
   connectedSpeechSeen: [],
   dailyVocabularyCompleted: false,
@@ -46,6 +69,59 @@ export const defaultProgress: LearningProgress = {
   minutes: 12,
   streak: 6,
 };
+
+export function scheduleWordForReview(
+  progress: LearningProgress,
+  word: string,
+  rating: Exclude<WordRating, "known">,
+  dueInDays = 1,
+): LearningProgress {
+  const existing = progress.reviewSchedule[word];
+  return {
+    ...progress,
+    reviewWords: Array.from(new Set([...progress.reviewWords, word])),
+    reviewSchedule: {
+      ...progress.reviewSchedule,
+      [word]: {
+        dueDate: dayKeyAfter(dueInDays),
+        stage: rating === "unfamiliar" ? 0 : Math.max(0, existing?.stage ?? 0),
+        lastRating: rating,
+        lapses: (existing?.lapses ?? 0) + (rating === "unfamiliar" ? 1 : 0),
+      },
+    },
+  };
+}
+
+export function rateReviewWord(progress: LearningProgress, word: string, rating: WordRating): LearningProgress {
+  const existing = progress.reviewSchedule[word] ?? { dueDate: localDayKey(), stage: 0, lastRating: "unfamiliar" as const, lapses: 0 };
+  if (rating === "known" && existing.stage >= reviewIntervals.length - 1) {
+    const { [word]: _graduated, ...reviewSchedule } = progress.reviewSchedule;
+    void _graduated;
+    return {
+      ...progress,
+      reviewWords: progress.reviewWords.filter((item) => item !== word),
+      reviewSchedule,
+      masteredWords: Array.from(new Set([...progress.masteredWords, word])),
+    };
+  }
+
+  const nextStage = rating === "known" ? Math.min(existing.stage + 1, reviewIntervals.length - 1) : rating === "fuzzy" ? Math.max(0, existing.stage - 1) : 0;
+  const dueInDays = rating === "known" ? reviewIntervals[nextStage] : rating === "fuzzy" ? 1 : 0;
+  return {
+    ...progress,
+    reviewWords: Array.from(new Set([...progress.reviewWords, word])),
+    reviewSchedule: {
+      ...progress.reviewSchedule,
+      [word]: {
+        dueDate: dayKeyAfter(dueInDays),
+        stage: nextStage,
+        lastRating: rating,
+        lapses: existing.lapses + (rating === "unfamiliar" ? 1 : 0),
+      },
+    },
+    masteredWords: rating === "known" ? Array.from(new Set([...progress.masteredWords, word])) : progress.masteredWords,
+  };
+}
 
 export function completionPercent(progress: LearningProgress) {
   const completedCount = Object.values(progress.completed).filter(Boolean).length;
@@ -63,15 +139,26 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   completed.vocabulary = Boolean(
     isCurrentVocabularyDay && stored.dailyVocabularyCompleted && stored.dailyDictationCompleted,
   );
+  const reviewWords = Array.isArray(stored.reviewWords) ? stored.reviewWords : [];
+  const storedReviewSchedule = stored.reviewSchedule && typeof stored.reviewSchedule === "object" ? stored.reviewSchedule : {};
+  const reviewSchedule = Object.fromEntries(reviewWords.map((word) => [word, storedReviewSchedule[word] ?? {
+    dueDate: today,
+    stage: 0,
+    lastRating: "unfamiliar",
+    lapses: 0,
+  }])) as Record<string, ReviewScheduleItem>;
   return {
     ...defaultProgress,
     ...stored,
     completed,
     masteredWords: Array.isArray(stored.masteredWords) ? stored.masteredWords : [],
-    reviewWords: Array.isArray(stored.reviewWords) ? stored.reviewWords : [],
+    reviewWords,
+    reviewSchedule,
     dailyVocabularyDate: today,
     dailyVocabularySeen: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularySeen) ? stored.dailyVocabularySeen : [],
     dailyVocabularyKnown: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularyKnown) ? stored.dailyVocabularyKnown : [],
+    dailyVocabularyRatings: isCurrentVocabularyDay && stored.dailyVocabularyRatings && typeof stored.dailyVocabularyRatings === "object" ? stored.dailyVocabularyRatings : {},
+    dailyVocabularyAttempts: isCurrentVocabularyDay && stored.dailyVocabularyAttempts && typeof stored.dailyVocabularyAttempts === "object" ? stored.dailyVocabularyAttempts : {},
     dailyDictationSeen: isCurrentVocabularyDay && Array.isArray(stored.dailyDictationSeen) ? stored.dailyDictationSeen : [],
     connectedSpeechSeen: isCurrentVocabularyDay && Array.isArray(stored.connectedSpeechSeen) ? stored.connectedSpeechSeen : [],
     dailyVocabularyCompleted: isCurrentVocabularyDay ? Boolean(stored.dailyVocabularyCompleted) : false,
