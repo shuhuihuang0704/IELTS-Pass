@@ -614,6 +614,7 @@ function OfficialTestRunner({
   const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
   const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
   const taskSubmitted = submittedTasks[taskKey] ?? false;
+  const lockOfficialListeningPaper = Boolean(material.audioTracks && task.transcriptPage && !taskSubmitted && paperMode === "questions");
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
     .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords))
@@ -798,15 +799,25 @@ function OfficialTestRunner({
               </section>
             </div>
           ) : (
-            <section className="official-source-document">
-              <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>PDF P{displayPage}</small></header>
-              <iframe key={`${material.id}-${task.id}-${paperMode}`} className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${displayPdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&view=FitH`} />
+            <section className={lockOfficialListeningPaper ? "official-source-document is-page-locked" : "official-source-document"}>
+              <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>{lockOfficialListeningPaper ? `仅显示题目页 P${displayPage}` : `PDF P${displayPage}`}</small></header>
+              <div className={lockOfficialListeningPaper ? "official-pdf-page-lock" : ""}>
+                <iframe
+                  key={`${material.id}-${task.id}-${paperMode}-${taskSubmitted ? "submitted" : "locked"}`}
+                  className="official-paper-frame"
+                  tabIndex={lockOfficialListeningPaper ? -1 : undefined}
+                  title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`}
+                  src={`${displayPdfUrl}#page=${displayPage}&toolbar=${lockOfficialListeningPaper ? 0 : 1}&navpanes=0&scrollbar=${lockOfficialListeningPaper ? 0 : 1}&view=${lockOfficialListeningPaper ? "Fit" : "FitH"}`}
+                />
+                {lockOfficialListeningPaper && <div className="official-page-lock-badge"><span>🔒 当前仅开放题目页</span><small>提交本 Task 后才会显示听力原文</small></div>}
+              </div>
             </section>
           )}
-          {task.transcriptPage && (
-            <section className={taskSubmitted ? "official-listening-transcript is-unlocked" : "official-listening-transcript"}>
-              <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>{taskSubmitted ? `已解锁 · 官方 PDF P${task.transcriptPage}` : "提交当前 Task 后解锁"}</small></header>
-              {taskSubmitted ? <iframe className="official-paper-frame" title={`${task.label} · 听力原文`} src={`${material.pdfUrl}#page=${task.transcriptPage}&toolbar=1&navpanes=0&view=FitH`} /> : <div><b>原文暂未显示</b><p>请先听完录音、填写当前 Task 的全部答案并提交；判分后这里会自动出现官方 Tapescript。</p></div>}
+          {task.transcriptPage && !taskSubmitted && <div className="official-transcript-lock-note"><b>🔒 听力原文尚未开放</b><span>请先填写当前 Task 的全部答案并提交判分。</span></div>}
+          {task.transcriptPage && taskSubmitted && (
+            <section className="official-listening-transcript is-unlocked">
+              <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>已解锁 · 官方 PDF P{task.transcriptPage}</small></header>
+              <iframe className="official-paper-frame" title={`${task.label} · 听力原文`} src={`${material.pdfUrl}#page=${task.transcriptPage}&toolbar=1&navpanes=0&view=FitH`} />
             </section>
           )}
           </div>

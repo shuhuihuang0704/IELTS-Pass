@@ -132,9 +132,13 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /official-task-map/);
   assert.match(app, /official-source-document/);
   assert.match(app, /材料区 \+ 答题区模板/);
-  assert.match(app, /提交当前 Task 后解锁/);
-  assert.match(app, /原文暂未显示/);
-  assert.match(app, /taskSubmitted \? <iframe className="official-paper-frame" title=\{`\$\{task\.label\} · 听力原文`\}/);
+  assert.match(app, /lockOfficialListeningPaper/);
+  assert.match(app, /当前仅开放题目页/);
+  assert.match(app, /toolbar=\$\{lockOfficialListeningPaper \? 0 : 1\}/);
+  assert.match(app, /tabIndex=\{lockOfficialListeningPaper \? -1 : undefined\}/);
+  assert.match(app, /task\.transcriptPage && !taskSubmitted/);
+  assert.match(app, /task\.transcriptPage && taskSubmitted/);
+  assert.match(app, /听力原文尚未开放/);
   assert.match(app, /disabled=\{taskRequiresSubmission && !taskSubmitted\}/);
   assert.match(app, /选择 Task 与官方录音/);
   assert.match(app, /Official Academic Writing Sample Test 2023/);
