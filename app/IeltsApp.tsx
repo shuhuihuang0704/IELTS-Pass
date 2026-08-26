@@ -928,7 +928,7 @@ function OfficialTestRunner({
               submitCurrentTask();
             }}>
               <header>
-                <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>按官方题号填写，提交前不会显示答案</small></div>
+                <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>{material.passagePdfUrl ? "固定在右侧 · 可独立滚动完成当前 Passage 全部题目" : "按官方题号填写，提交前不会显示答案"}</small></div>
                 <b className={taskSubmitted ? "is-scored" : ""}>{taskSubmitted ? `${correctAnswerCount} / ${taskAnswers.length}` : `${answeredCount} / ${taskAnswers.length}`}</b>
               </header>
               <div className="official-answer-grid">

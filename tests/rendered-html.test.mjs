@@ -213,7 +213,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /正确答案：/);
   assert.match(app, /answer\.explanation/);
   assert.match(app, />解析</);
-  assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet \{ max-height:none; overflow:visible; position:static; \}/);
+  assert.match(app, /固定在右侧 · 可独立滚动完成当前 Passage 全部题目/);
+  assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet \{ max-height:calc\(100vh - 24px\); overflow-y:auto; position:sticky/);
+  assert.match(styles, /\.official-reading-booklet \{ min-width:0; max-height:calc\(100vh - 24px\)/);
+  assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet>footer \{[^}]*position:sticky; bottom:-15px/);
   assert.match(app, /仅显示当前 Passage/);
   assert.match(app, /只包含本 Passage 的题目页/);
   assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
