@@ -45,6 +45,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /speakingPart3Turns/);
   assert.match(state, /listeningScore/);
   assert.match(state, /localDayKey/);
+  assert.match(state, /dailyVocabularyCompleted/);
+  assert.match(state, /dailyDictationCompleted/);
+  assert.match(state, /dailyDictationSeen/);
 
   const dailySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\)/);
   assert.ok(dailySource, "daily vocabulary source should exist");
@@ -61,6 +64,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(data, /matchingHeadings|matchingInformation|trueFalseNotGiven|summary/);
   assert.match(data, /Two-way discussion|questions:/);
   assert.match(data, /formCompletion|multipleSelect|matching|multipleChoice/);
+  assert.match(app, /fullyCompleted/);
+  assert.match(app, /answeredCount < 10/);
+  assert.match(app, /answeredCount < totalQuestions/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
 });

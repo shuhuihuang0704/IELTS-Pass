@@ -147,6 +147,7 @@ button { cursor: pointer; }
 .vocabulary-mode-switch { width:max-content; margin:0 0 12px; padding:5px; display:flex; gap:4px; border-radius:14px; background:#e5e0da; }
 .vocabulary-mode-switch button { min-height:37px; padding:0 16px; border:0; border-radius:10px; color:#756f76; background:transparent; font-size:11px; }
 .vocabulary-mode-switch button.is-active { color:#473cab; background:white; box-shadow:0 4px 12px rgba(35,30,48,.06); font-weight:650; }
+.completion-requirement { margin:-3px 0 15px; color:var(--muted); font-size:10px; }
 .exercise-layout { display:grid; grid-template-columns:minmax(0,1.75fr) minmax(240px,.65fr); gap:14px; }
 .exercise-main,.exercise-context,.reading-passage,.reading-questions { border-radius:25px; background:white; }
 .exercise-main { min-height:520px; padding:30px; }

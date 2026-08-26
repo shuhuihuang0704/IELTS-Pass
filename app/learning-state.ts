@@ -7,6 +7,9 @@ export type LearningProgress = {
   dailyVocabularyDate: string;
   dailyVocabularySeen: string[];
   dailyVocabularyKnown: string[];
+  dailyDictationSeen: string[];
+  dailyVocabularyCompleted: boolean;
+  dailyDictationCompleted: boolean;
   listeningCorrect: boolean | null;
   listeningScore: number | null;
   readingScore: number | null;
@@ -30,6 +33,9 @@ export const defaultProgress: LearningProgress = {
   dailyVocabularyDate: localDayKey(),
   dailyVocabularySeen: [],
   dailyVocabularyKnown: [],
+  dailyDictationSeen: [],
+  dailyVocabularyCompleted: false,
+  dailyDictationCompleted: false,
   listeningCorrect: null,
   listeningScore: null,
   readingScore: null,
@@ -49,14 +55,28 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   const stored = value as Partial<LearningProgress>;
   const today = localDayKey();
   const isCurrentVocabularyDay = stored.dailyVocabularyDate === today;
+  const completed = isCurrentVocabularyDay
+    ? { ...defaultProgress.completed, ...(stored.completed ?? {}) }
+    : { ...defaultProgress.completed };
+  completed.vocabulary = Boolean(
+    isCurrentVocabularyDay && stored.dailyVocabularyCompleted && stored.dailyDictationCompleted,
+  );
   return {
     ...defaultProgress,
     ...stored,
-    completed: { ...defaultProgress.completed, ...(stored.completed ?? {}) },
+    completed,
     masteredWords: Array.isArray(stored.masteredWords) ? stored.masteredWords : [],
     reviewWords: Array.isArray(stored.reviewWords) ? stored.reviewWords : [],
     dailyVocabularyDate: today,
     dailyVocabularySeen: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularySeen) ? stored.dailyVocabularySeen : [],
     dailyVocabularyKnown: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularyKnown) ? stored.dailyVocabularyKnown : [],
+    dailyDictationSeen: isCurrentVocabularyDay && Array.isArray(stored.dailyDictationSeen) ? stored.dailyDictationSeen : [],
+    dailyVocabularyCompleted: isCurrentVocabularyDay ? Boolean(stored.dailyVocabularyCompleted) : false,
+    dailyDictationCompleted: isCurrentVocabularyDay ? Boolean(stored.dailyDictationCompleted) : false,
+    listeningCorrect: isCurrentVocabularyDay ? (stored.listeningCorrect ?? null) : null,
+    listeningScore: isCurrentVocabularyDay ? (stored.listeningScore ?? null) : null,
+    readingScore: isCurrentVocabularyDay ? (stored.readingScore ?? null) : null,
+    speakingTurns: isCurrentVocabularyDay ? (stored.speakingTurns ?? 0) : 0,
+    speakingPart3Turns: isCurrentVocabularyDay ? (stored.speakingPart3Turns ?? 0) : 0,
   };
 }

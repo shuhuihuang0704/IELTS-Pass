@@ -287,6 +287,20 @@ function SceneView({
     reading: { eyebrow: "ACADEMIC READING", title: "按真实题型，", accent: "完成定位。" },
   };
   const header = headers[activeSkill];
+  const completeVocabularySection = (section: "daily" | "dictation") => {
+    updateProgress((current) => {
+      const dailyVocabularyCompleted = section === "daily" || current.dailyVocabularyCompleted;
+      const dailyDictationCompleted = section === "dictation" || current.dailyDictationCompleted;
+      const fullyCompleted = dailyVocabularyCompleted && dailyDictationCompleted;
+      return {
+        ...current,
+        dailyVocabularyCompleted,
+        dailyDictationCompleted,
+        completed: { ...current.completed, vocabulary: fullyCompleted },
+        minutes: fullyCompleted && !current.completed.vocabulary ? current.minutes + 15 : current.minutes,
+      };
+    });
+  };
   return (
     <>
       <PageHeader eyebrow={header.eyebrow} title={header.title} accent={header.accent} />
@@ -302,7 +316,7 @@ function SceneView({
         ))}
       </div>
       <section className="exercise-surface">
-        {activeSkill === "vocabulary" && <VocabularyPractice progress={progress} onComplete={() => onComplete("vocabulary", 15)} updateProgress={updateProgress} />}
+        {activeSkill === "vocabulary" && <VocabularyPractice progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
         {activeSkill === "listening" && <ListeningPractice onComplete={(score) => {
           updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
           onComplete("listening", 12);
@@ -319,15 +333,18 @@ function SceneView({
 
 function VocabularyPractice({
   progress,
-  onComplete,
+  onSectionComplete,
   updateProgress,
 }: {
   progress: LearningProgress;
-  onComplete: () => void;
+  onSectionComplete: (section: "daily" | "dictation") => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const [mode, setMode] = useState<"daily" | "typing">("daily");
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => Math.min(
+    vocabulary.filter((item) => progress.dailyDictationSeen.includes(item.word)).length,
+    vocabulary.length - 1,
+  ));
   const [value, setValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [showHint, setShowHint] = useState(false);
@@ -345,8 +362,13 @@ function VocabularyPractice({
   };
 
   const next = () => {
+    if (!feedback) return;
+    updateProgress((current) => ({
+      ...current,
+      dailyDictationSeen: Array.from(new Set([...current.dailyDictationSeen, word.word])),
+    }));
     if (index === vocabulary.length - 1) {
-      onComplete();
+      onSectionComplete("dictation");
       setFeedback({ tone: "success", text: "本组完成。结果已同步到今日进度和复习。" });
       return;
     }
@@ -357,15 +379,16 @@ function VocabularyPractice({
   return (
     <>
       <div className="vocabulary-mode-switch" role="tablist" aria-label="词汇练习模式">
-        <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 100 词</button>
-        <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写 80 词</button>
+        <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 100 词 {progress.dailyVocabularyCompleted ? "✓" : ""}</button>
+        <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写 80 词 {progress.dailyDictationCompleted ? "✓" : ""}</button>
       </div>
+      <p className="completion-requirement">完成每日 100 词和场景听写 80 词后，词汇任务才会打勾。</p>
       {mode === "daily" ? (
-        <DailyVocabularySprint progress={progress} onComplete={onComplete} updateProgress={updateProgress} />
+        <DailyVocabularySprint progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
       ) : (
         <div className="exercise-layout">
       <div className="exercise-main typing-practice">
-        <div className="exercise-kicker"><span>听音拼写 · 第 {Math.floor(index / 10) + 1} / 8 组</span><span>{index + 1} / {vocabulary.length}</span></div>
+        <div className="exercise-kicker"><span>听音拼写 · 第 {Math.floor(index / 10) + 1} / 8 组</span><span>{progress.dailyDictationSeen.length + (feedback ? 1 : 0)} / {vocabulary.length}</span></div>
         <h2>听发音，输入对应的英文单词</h2><p>电脑端直接打字并按 Enter；手机端也可以使用键盘完成。</p>
         <button className="audio-control" onClick={() => speak(word.word, 0.72)}><span>▶</span>播放英式发音</button>
         <div className="word-meaning">{word.meaning}</div>
@@ -386,7 +409,7 @@ function VocabularyPractice({
           <button type="submit">检查</button>
         </form>
         <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? (showHint ? word.hint : "先听发音，尽量不看提示。")}</div>
-        <div className="exercise-actions"><button className="text-action" onClick={() => setShowHint(true)}>显示提示</button><button className="secondary-action" onClick={next}>{index === vocabulary.length - 1 ? "完成本组" : "下一个"} →</button></div>
+        <div className="exercise-actions"><button className="text-action" onClick={() => setShowHint(true)}>显示提示</button><button className="secondary-action" disabled={!feedback} onClick={next}>{index === vocabulary.length - 1 ? "完成听写" : "下一个"} →</button></div>
       </div>
       <aside className="exercise-context">
         <span>场景例句</span><p>{word.example}</p><button onClick={() => speak(word.example)}>播放例句</button>
@@ -510,6 +533,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
   };
 
   const submit = () => {
+    if (answeredCount < 10) return;
     const formScore = listeningExercise.formCompletion.filter((question) => formCorrect(question.id)).length;
     const facilityScore = selectedFacilities.filter((answer) => listeningExercise.multipleSelect.answers.includes(answer)).length;
     const matchingScore = listeningExercise.matching.questions.filter((question) => matchingAnswers[question.id] === question.answer).length;
@@ -675,6 +699,7 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
   };
 
   const submit = () => {
+    if (answeredCount < totalQuestions) return;
     const nextScore = Object.entries(answerKey).filter(([id, answer]) => answers[id] === answer).length;
     setScore(nextScore); onComplete(nextScore);
   };
