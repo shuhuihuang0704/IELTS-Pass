@@ -201,6 +201,14 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /Task 2 引言中的立场不够明确/);
   assert.match(app, /重复较明显的词/);
   assert.match(app, /根据建议继续修改/);
+  assert.match(app, /用户原文逐句标注/);
+  assert.match(app, /buildWritingAnnotations/);
+  assert.match(app, /长句需要拆分/);
+  assert.match(app, /改写例句/);
+  assert.match(app, /Task 2 观点、论证与例证建议/);
+  assert.match(styles, /\.official-writing-annotated mark\.is-good/);
+  assert.match(styles, /\.official-writing-annotated mark\.needs-work/);
+  assert.match(styles, /\.official-writing-idea-bank/);
   assert.match(styles, /\.official-writing-feedback-metrics/);
   assert.match(app, /2 INDEPENDENT WRITING TASKS/);
   assert.match(app, /每个 Writing Task 独立保存作文与完成状态/);

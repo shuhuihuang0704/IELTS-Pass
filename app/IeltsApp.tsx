@@ -67,6 +67,16 @@ type WritingFeedback = {
   metrics: { label: string; value: string; tone: "good" | "watch" }[];
   strengths: string[];
   priorities: string[];
+  annotations: WritingAnnotation[];
+  ideaBank: { title: string; point: string; example: string }[];
+};
+type WritingAnnotation = {
+  id: string;
+  text: string;
+  tone: "good" | "improve" | "neutral";
+  label: string;
+  reason: string;
+  example: string;
 };
 type OfficialAnswer = {
   number: string;
@@ -377,6 +387,117 @@ const writingStopWords = new Set([
   "about", "after", "also", "and", "are", "because", "been", "before", "being", "between", "both", "but", "can", "children", "could", "does", "education", "families", "family", "from", "have", "into", "more", "most", "other", "people", "should", "some", "such", "than", "that", "their", "them", "there", "these", "they", "this", "those", "through", "very", "what", "when", "where", "which", "while", "will", "with", "women", "would", "your",
 ]);
 
+function writingSentenceUnits(response: string) {
+  return response.split(/\n+/).flatMap((paragraph, paragraphIndex) => {
+    const sentences = splitWritingParagraph(paragraph);
+    return sentences.map((sentence, sentenceIndex) => ({
+      id: `${paragraphIndex + 1}-${sentenceIndex + 1}`,
+      text: sentence.trim(),
+      paragraphIndex,
+    })).filter((sentence) => sentence.text);
+  });
+}
+
+function splitWritingParagraph(paragraph: string) {
+  const sentences: string[] = [];
+  let sentenceStart = 0;
+  for (let index = 0; index < paragraph.length; index += 1) {
+    const character = paragraph[index];
+    if (![".", "!", "?"].includes(character)) continue;
+    const isDecimalPoint = character === "." && /\d/.test(paragraph[index - 1] ?? "") && /\d/.test(paragraph[index + 1] ?? "");
+    if (isDecimalPoint) continue;
+    let sentenceEnd = index + 1;
+    while ([".", "!", "?"].includes(paragraph[sentenceEnd] ?? "")) sentenceEnd += 1;
+    sentences.push(paragraph.slice(sentenceStart, sentenceEnd));
+    sentenceStart = sentenceEnd;
+    index = sentenceEnd - 1;
+  }
+  if (paragraph.slice(sentenceStart).trim()) sentences.push(paragraph.slice(sentenceStart));
+  return sentences;
+}
+
+function splitLongWritingSentence(sentence: string) {
+  const splitPatterns = [", which ", ", while ", ", whereas ", ", and ", "; "];
+  const lower = sentence.toLowerCase();
+  const splitAt = splitPatterns.map((pattern) => ({ pattern, index: lower.indexOf(pattern) })).find(({ index }) => index > 24);
+  if (!splitAt) return "先保留一个中心意思，再把原因或结果移到下一句。例如：Main point. This is because [reason], which leads to [result].";
+  const first = sentence.slice(0, splitAt.index).trim().replace(/[.!?]+$/, "");
+  const second = sentence.slice(splitAt.index + splitAt.pattern.length).trim().replace(/[.!?]+$/, "");
+  return `${first}. ${second.charAt(0).toUpperCase()}${second.slice(1)}.`;
+}
+
+function buildWritingAnnotations(response: string, isTaskOne: boolean): WritingAnnotation[] {
+  return writingSentenceUnits(response).map(({ id, text }) => {
+    const words = text.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) ?? [];
+    const lower = text.toLowerCase();
+    const hasConnector = /\b(however|although|overall|therefore|moreover|furthermore|whereas|while|consequently|nevertheless|in addition|by contrast|in conclusion)\b/.test(lower);
+    const hasExample = /\b(for example|for instance|such as)\b/.test(lower);
+    const hasPosition = /\b(i agree|i disagree|i believe|in my view|i would argue|my view is)\b/.test(lower);
+    const hasComparison = /\b(whereas|while|compared|higher|lower|more than|less than|respectively)\b/.test(lower);
+    const hasData = /\b\d+(?:\.\d+)?(?:,\d{3})?\b|\b(?:million|thousand|percent|approximately|roughly)\b/.test(lower);
+    const vagueMatch = text.match(/\b(a lot of|lots of|many things|good things|bad things|very (?:good|bad|big|important)|people say|nowadays)\b/i);
+
+    if (words.length > 34) return {
+      id, text, tone: "improve", label: "长句需要拆分",
+      reason: `这句话有 ${words.length} 词，多个信息挤在一起，主干和逻辑关系容易失焦。`,
+      example: splitLongWritingSentence(text),
+    };
+    if (vagueMatch) return {
+      id, text, tone: "improve", label: "表达过于笼统",
+      reason: `“${vagueMatch[0]}”没有说明具体对象、程度或结果。雅思写作需要把抽象判断变成可验证的因果或数据。`,
+      example: isTaskOne
+        ? "可改为：The figure rose by approximately 20%, with the sharpest increase occurring in the final period."
+        : "可改为：This policy can reduce household expenditure because families spend less on transport and childcare.",
+    };
+    if (isTaskOne && (hasComparison || hasData)) return {
+      id, text, tone: "good", label: hasComparison ? "有效数据比较" : "使用具体数据",
+      reason: hasComparison ? "这句话没有孤立罗列数字，而是明确写出了组别或时间之间的关系。" : "具体数据让描述可核验；继续确保数字服务于主要趋势。",
+      example: "可沿用结构：By contrast, [A] stood at about [X], compared with [Y] for [B].",
+    };
+    if (words.length > 0 && words.length < 8) return {
+      id, text, tone: "improve", label: "观点展开不足",
+      reason: `这句话只有 ${words.length} 词，通常只给出判断，没有解释 why / how 或产生的结果。`,
+      example: isTaskOne
+        ? `${text.replace(/[.!?]+$/, "")}, rising from approximately [X] to [Y] over the period.`
+        : `${text.replace(/[.!?]+$/, "")}. This is because [具体机制], which can lead to [直接结果].`,
+    };
+    if (hasPosition) return {
+      id, text, tone: "good", label: "立场表达清楚",
+      reason: "读者可以直接识别你的中心立场，这有助于 Task Response 和全文一致性。",
+      example: "可沿用结构：In my view, [立场], primarily because [理由 1] and [理由 2].",
+    };
+    if (hasExample) return {
+      id, text, tone: "good", label: "使用例证展开",
+      reason: "这句话用具体例子支撑前面的判断，使观点不只停留在抽象层面。",
+      example: "下一步可在例子后补一句：This illustrates that [例子如何证明本段观点].",
+    };
+    if (hasConnector) return {
+      id, text, tone: "good", label: "逻辑衔接明确",
+      reason: "连接词表达了真实的转折、对比或结果关系，而不是机械堆叠。",
+      example: "保留连接词，同时确保它连接的是两个完整且逻辑相反或递进的观点。",
+    };
+    return {
+      id, text, tone: "neutral", label: "可继续展开",
+      reason: "句子结构基本清楚，但暂未检测到具体数据、例证、明确立场或显性的逻辑关系。",
+      example: isTaskOne
+        ? "下一句可补充最重要的比较或极值，并使用准确数据支持。"
+        : "下一句可按“原因 → 机制 → 结果 → 例子”的顺序展开本观点。",
+    };
+  });
+}
+
+function buildWritingIdeaBank(isTaskOne: boolean) {
+  return isTaskOne ? [
+    { title: "Overview 观点", point: "只写最显著的两项总体特征，不在总览堆细节数字。", example: "Overall, participation increased in both groups, although the rise was considerably stronger among part-time students." },
+    { title: "数据分组", point: "按趋势相似性分组，而不是按图表从左到右逐项抄写。", example: "Group the two rising categories in one paragraph, then contrast them with the stable or declining category." },
+    { title: "比较链", point: "每个主体段至少形成一次 A 与 B、起点与终点或最高与最低的直接比较。", example: "By 1990, the figure for women was roughly twice that of men, at about X and Y respectively." },
+  ] : [
+    { title: "中心立场", point: "引言直接回答题目，并预告两个支撑理由，避免只改写题干。", example: "I largely disagree because financial background is less influential than parental guidance and access to practical responsibility." },
+    { title: "论点展开", point: "主体段按“判断—原因—机制—结果—例子”推进，不要连续写多个没有解释的观点。", example: "One reason is that responsibility develops through repeated decision-making. When teenagers manage a fixed budget, they learn to prioritise needs and accept the consequences of poor choices." },
+    { title: "反方回应", point: "先承认对方合理的一部分，再解释为什么不足以推翻你的立场。", example: "Admittedly, limited income can encourage careful spending. However, this benefit is not automatic, because persistent poverty may instead restrict education and long-term planning." },
+  ];
+}
+
 function analyzeWritingResponse(response: string, minimumWords: number): WritingFeedback {
   const words = response.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) ?? [];
   const lowercaseWords = words.map((word) => word.toLowerCase());
@@ -397,6 +518,7 @@ function analyzeWritingResponse(response: string, minimumWords: number): Writing
   const strengths: string[] = [];
   const priorities: string[] = [];
   const isTaskOne = minimumWords === 150;
+  const annotations = buildWritingAnnotations(response, isTaskOne);
 
   strengths.push(`已达到最低词数要求，目前共 ${words.length} 词。`);
   if (paragraphs.length >= 4) strengths.push(`文章分为 ${paragraphs.length} 个有效段落，结构容易识别。`);
@@ -446,20 +568,39 @@ function analyzeWritingResponse(response: string, minimumWords: number): Writing
     ],
     strengths: strengths.slice(0, 6),
     priorities: priorities.slice(0, 5),
+    annotations,
+    ideaBank: buildWritingIdeaBank(isTaskOne),
   };
 }
 
 function WritingFeedbackPanel({ response, minimumWords }: { response: string; minimumWords: number }) {
   const feedback = analyzeWritingResponse(response, minimumWords);
+  const annotationMap = new Map(feedback.annotations.map((annotation) => [annotation.id, annotation]));
+  const importantAnnotations = feedback.annotations.filter((annotation) => annotation.tone !== "neutral");
+  const displayedAnnotations = (importantAnnotations.length > 0 ? importantAnnotations : feedback.annotations).slice(0, 10);
   return (
     <section className="official-writing-feedback" aria-label="个性化写作建议">
       <header><div><span>PERSONALISED WRITING REVIEW</span><b>根据本次作文生成的改进建议</b></div><small>即时诊断 · 非官方评分</small></header>
       <div className="official-writing-feedback-metrics">{feedback.metrics.map((metric) => <div className={metric.tone === "good" ? "is-good" : "needs-work"} key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong></div>)}</div>
+      <section className="official-writing-annotated">
+        <header><div><span>SENTENCE-BY-SENTENCE</span><b>用户原文逐句标注</b></div><div className="official-writing-legend"><span className="is-good">写得好</span><span className="needs-work">需要改进</span></div></header>
+        <article>{response.split(/\n+/).map((paragraph, paragraphIndex) => {
+          const sentences = splitWritingParagraph(paragraph);
+          return <p key={`annotated-paragraph-${paragraphIndex}`}>{sentences.map((sentence, sentenceIndex) => {
+            const annotation = annotationMap.get(`${paragraphIndex + 1}-${sentenceIndex + 1}`);
+            const text = sentence.trim();
+            if (!annotation || annotation.tone === "neutral") return <span key={`${paragraphIndex}-${sentenceIndex}`}>{text} </span>;
+            return <mark className={annotation.tone === "good" ? "is-good" : "needs-work"} title={annotation.label} key={`${paragraphIndex}-${sentenceIndex}`}>{text}<sup>{displayedAnnotations.findIndex((item) => item.id === annotation.id) + 1 || ""}</sup></mark>;
+          })}</p>;
+        })}</article>
+        <div className="official-writing-annotation-list">{displayedAnnotations.map((annotation, index) => <section className={annotation.tone === "good" ? "is-good" : "needs-work"} key={annotation.id}><header><span>{index + 1}</span><b>{annotation.label}</b></header><blockquote>{annotation.text}</blockquote><p>{annotation.reason}</p><div><strong>{annotation.tone === "good" ? "继续提升" : "改写例句"}</strong><span>{annotation.example}</span></div></section>)}</div>
+      </section>
       <div className="official-writing-feedback-columns">
         <section><b>这次做得好的地方</b><ul>{feedback.strengths.map((item) => <li key={item}>{item}</li>)}</ul></section>
         <section><b>下一轮优先修改</b><ol>{feedback.priorities.map((item) => <li key={item}>{item}</li>)}</ol></section>
       </div>
-      <p>说明：当前反馈根据文章结构、语言信号与可量化特征生成，可以帮助你快速复盘，但不能替代 IELTS 考官对语法准确性、论证质量和具体 Band 分数的人工判断。</p>
+      <section className="official-writing-idea-bank"><header><span>IDEA DEVELOPMENT</span><b>{minimumWords === 150 ? "Task 1 数据组织与句型建议" : "Task 2 观点、论证与例证建议"}</b></header><div>{feedback.ideaBank.map((idea) => <article key={idea.title}><strong>{idea.title}</strong><p>{idea.point}</p><blockquote>{idea.example}</blockquote></article>)}</div></section>
+      <p>说明：荧光标注来自用户本次输入的逐句结构、词汇和逻辑信号分析，可以用于快速复盘；它不能可靠识别所有语法错误，也不能替代 IELTS 考官对任务回应、准确性和 Band 分数的人工判断。</p>
     </section>
   );
 }
