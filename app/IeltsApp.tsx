@@ -610,9 +610,9 @@ function OfficialTestRunner({
     .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: (sessionTask.answers?.length ?? 0) || 1 })));
   const requiredQuestionCount = requiredTasks.reduce((total, requiredTask) => total + requiredTask.questionCount, 0);
   const submittedRequiredTaskCount = requiredTasks.filter((requiredTask) => submittedTasks[requiredTask.key]).length;
-  const materialAnswerTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0);
-  const materialQuestionCount = materialAnswerTasks.reduce((total, materialTask) => total + (materialTask.answers?.length ?? 0), 0);
-  const submittedMaterialTaskCount = materialAnswerTasks.filter((materialTask) => submittedTasks[`${material.id}:${materialTask.id}`]).length;
+  const materialRequiredTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0 || Boolean(materialTask.minimumWords));
+  const materialQuestionCount = materialRequiredTasks.reduce((total, materialTask) => total + ((materialTask.answers?.length ?? 0) || 1), 0);
+  const submittedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => submittedTasks[`${material.id}:${materialTask.id}`]).length;
   const recordId = officialPracticeRecordId(session);
   const completed = progress.officialPracticeCompleted.includes(recordId);
 
@@ -696,13 +696,14 @@ function OfficialTestRunner({
             </div>
           </div>
           <p className="official-task-note">{material.passagePdfUrl ? "这是 IELTS 官方 Modified Large Print 无障碍样题：3 篇文章、Questions 1–40 连续编号、60 分钟统一提交；App 将原文与对应题目连续展示。" : "官方 Sample Tasks 保留各自的原始题号；它们按独立 Task 使用，不与完整套题混排。"}</p>
-          {material.audioTracks && (
-            <section className="official-listening-task-map" aria-label="听力样题任务导航">
-              <header><div><span>LISTENING TASK MAP</span><b>8 个独立官方样题 · 共 {materialQuestionCount} 个作答位</b><small>题号来自不同 Sample Task，会重复；请选择 Task 逐个完成。</small></div><strong>{submittedMaterialTaskCount}/{materialAnswerTasks.length}</strong></header>
+          {material.tasks.length > 1 && (
+            <section className="official-task-map" aria-label="官方练习任务导航">
+              <header><div><span>{material.audioTracks ? "LISTENING TASK MAP" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个独立 Task{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个必做项` : ""}</b><small>{material.audioTracks ? "题号来自不同 Sample Task，会重复；请选择 Task 逐个完成。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
               <div>{material.tasks.map((materialTask, index) => {
                 const materialTaskKey = `${material.id}:${materialTask.id}`;
                 const materialTaskSubmitted = submittedTasks[materialTaskKey] ?? false;
-                return <button className={taskIndex === index ? "is-active" : materialTaskSubmitted ? "is-complete" : ""} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>Task {index + 1}</span><b>{materialTask.label}</b><small>{materialTask.answers?.length ?? 0} 题 {materialTaskSubmitted ? "· 已提交" : ""}</small></button>;
+                const materialTaskSize = (materialTask.answers?.length ?? 0) > 0 ? `${materialTask.answers?.length} 题` : materialTask.minimumWords ? `至少 ${materialTask.minimumWords} 词` : "开放练习";
+                return <button className={taskIndex === index ? "is-active" : materialTaskSubmitted ? "is-complete" : ""} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>Task {index + 1}</span><b>{materialTask.label}</b><small>{materialTaskSize} {materialTaskSubmitted ? "· 已提交" : ""}</small></button>;
               })}</div>
             </section>
           )}
@@ -762,12 +763,6 @@ function OfficialTestRunner({
               <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
             </div>
           )}
-          {task.transcriptPage && (
-            <section className={taskSubmitted ? "official-listening-transcript is-unlocked" : "official-listening-transcript"}>
-              <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>{taskSubmitted ? `已解锁 · 官方 PDF P${task.transcriptPage}` : "提交当前 Task 后解锁"}</small></header>
-              {taskSubmitted ? <iframe className="official-paper-frame" title={`${task.label} · 听力原文`} src={`${material.pdfUrl}#page=${task.transcriptPage}&toolbar=1&navpanes=0&view=FitH`} /> : <div><b>原文暂未显示</b><p>请先听完录音、填写当前 Task 的全部答案并提交；判分后这里会自动出现官方 Tapescript。</p></div>}
-            </section>
-          )}
           {material.passagePdfUrl && paperMode === "questions" ? (
             <div className="official-reading-booklet">
               <header>
@@ -783,7 +778,16 @@ function OfficialTestRunner({
               </section>
             </div>
           ) : (
-            <iframe key={`${material.id}-${task.id}-${paperMode}`} className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${displayPdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&view=FitH`} />
+            <section className="official-source-document">
+              <header><div><span>{paperMode === "answers" ? "OFFICIAL REVIEW MATERIAL" : "OFFICIAL SOURCE MATERIAL"}</span><b>{paperMode === "answers" ? task.answerLabel ?? "官方答案" : `${task.label} · 官方题目`}</b></div><small>PDF P{displayPage}</small></header>
+              <iframe key={`${material.id}-${task.id}-${paperMode}`} className="official-paper-frame" title={`${session.title} · ${task.label} · ${paperMode === "answers" ? "答案" : "题目"}`} src={`${displayPdfUrl}#page=${displayPage}&toolbar=1&navpanes=0&view=FitH`} />
+            </section>
+          )}
+          {task.transcriptPage && (
+            <section className={taskSubmitted ? "official-listening-transcript is-unlocked" : "official-listening-transcript"}>
+              <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>{taskSubmitted ? `已解锁 · 官方 PDF P${task.transcriptPage}` : "提交当前 Task 后解锁"}</small></header>
+              {taskSubmitted ? <iframe className="official-paper-frame" title={`${task.label} · 听力原文`} src={`${material.pdfUrl}#page=${task.transcriptPage}&toolbar=1&navpanes=0&view=FitH`} /> : <div><b>原文暂未显示</b><p>请先听完录音、填写当前 Task 的全部答案并提交；判分后这里会自动出现官方 Tapescript。</p></div>}
+            </section>
           )}
           </div>
         </section>
