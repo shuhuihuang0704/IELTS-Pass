@@ -208,7 +208,7 @@ function TodayView({
       <div className="dashboard-grid">
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
-          <div className="scene-heading"><span>TODAY PLAN · IELTS ACADEMIC</span><span>约 46 分钟</span></div>
+          <div className="scene-heading"><span>TODAY PLAN · IELTS ACADEMIC</span><span>约 50 分钟</span></div>
           <h2>今天完成<br />一轮雅思训练</h2><p>100 词 + 听力场景 + 口语 Part 3 + Academic Reading</p>
           <button className="voice-orb" aria-label="试听场景" onClick={() => speak("Hello, I'm calling about the room for rent.")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
@@ -300,9 +300,9 @@ function SceneView({
       </div>
       <section className="exercise-surface">
         {activeSkill === "vocabulary" && <VocabularyPractice progress={progress} onComplete={() => onComplete("vocabulary", 15)} updateProgress={updateProgress} />}
-        {activeSkill === "listening" && <ListeningPractice onComplete={(correct) => {
-          updateProgress((current) => ({ ...current, listeningCorrect: correct }));
-          onComplete("listening", 8);
+        {activeSkill === "listening" && <ListeningPractice onComplete={(score) => {
+          updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
+          onComplete("listening", 12);
         }} />}
         {activeSkill === "speaking" && <SpeakingPractice progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
         {activeSkill === "reading" && <ReadingPractice onComplete={(score) => {
@@ -355,14 +355,14 @@ function VocabularyPractice({
     <>
       <div className="vocabulary-mode-switch" role="tablist" aria-label="词汇练习模式">
         <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 100 词</button>
-        <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写</button>
+        <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写 80 词</button>
       </div>
       {mode === "daily" ? (
         <DailyVocabularySprint progress={progress} onComplete={onComplete} updateProgress={updateProgress} />
       ) : (
         <div className="exercise-layout">
       <div className="exercise-main typing-practice">
-        <div className="exercise-kicker"><span>听音拼写</span><span>{index + 1} / {vocabulary.length}</span></div>
+        <div className="exercise-kicker"><span>听音拼写 · 第 {Math.floor(index / 10) + 1} / 8 组</span><span>{index + 1} / {vocabulary.length}</span></div>
         <h2>听发音，输入对应的英文单词</h2><p>电脑端直接打字并按 Enter；手机端也可以使用键盘完成。</p>
         <button className="audio-control" onClick={() => speak(word.word, 0.72)}><span>▶</span>播放英式发音</button>
         <div className="word-meaning">{word.meaning}</div>
@@ -476,27 +476,96 @@ function DailyVocabularySprint({
   );
 }
 
-function ListeningPractice({ onComplete }: { onComplete: (correct: boolean) => void }) {
-  const [answer, setAnswer] = useState("");
-  const [checked, setChecked] = useState(false);
+function ListeningPractice({ onComplete }: { onComplete: (score: number) => void }) {
+  const [formAnswers, setFormAnswers] = useState<Record<string, string>>({});
+  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
+  const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
+  const [choiceAnswers, setChoiceAnswers] = useState<Record<string, string>>({});
+  const [score, setScore] = useState<number | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
-  const correct = answer === listeningExercise.answer;
+
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ");
+  const formCorrect = (id: string) => {
+    const question = listeningExercise.formCompletion.find((item) => item.id === id);
+    return question?.answers.includes(normalize(formAnswers[id] ?? "")) ?? false;
+  };
+  const answeredCount =
+    listeningExercise.formCompletion.filter((question) => formAnswers[question.id]?.trim()).length +
+    selectedFacilities.length +
+    listeningExercise.matching.questions.filter((question) => matchingAnswers[question.id]).length +
+    listeningExercise.multipleChoice.filter((question) => choiceAnswers[question.id]).length;
+
+  const toggleFacility = (option: string) => {
+    setScore(null);
+    setSelectedFacilities((current) => current.includes(option)
+      ? current.filter((item) => item !== option)
+      : current.length < 2 ? [...current, option] : current);
+  };
+
+  const submit = () => {
+    const formScore = listeningExercise.formCompletion.filter((question) => formCorrect(question.id)).length;
+    const facilityScore = selectedFacilities.filter((answer) => listeningExercise.multipleSelect.answers.includes(answer)).length;
+    const matchingScore = listeningExercise.matching.questions.filter((question) => matchingAnswers[question.id] === question.answer).length;
+    const choiceScore = listeningExercise.multipleChoice.filter((question) => choiceAnswers[question.id] === question.answer).length;
+    const nextScore = formScore + facilityScore + matchingScore + choiceScore;
+    setScore(nextScore);
+    onComplete(nextScore);
+  };
+
   return (
-    <div className="exercise-layout">
-      <div className="exercise-main">
-        <div className="exercise-kicker"><span>Section 1 · 单选题</span><span>01 / 01</span></div>
-        <h2>{listeningExercise.title}</h2><p>先完整听一遍，再选择答案。你可以重复播放。</p>
-        <button className="listening-player" onClick={() => speak(listeningExercise.script, 0.84)}><span>▶</span><i /><strong>播放录音</strong><small>约 24 秒</small></button>
-        <fieldset className="question-block">
-          <legend>{listeningExercise.question}</legend>
-          {listeningExercise.options.map((option) => (
-            <label className={answer === option ? "is-selected" : ""} key={option}><input type="radio" name="listening" value={option} checked={answer === option} onChange={() => { setAnswer(option); setChecked(false); }} /><span>{option}</span></label>
-          ))}
-        </fieldset>
-        {checked && <div className={`answer-feedback ${correct ? "success" : "error"}`}>{correct ? "回答正确。" : `正确答案是“${listeningExercise.answer}”。`} {listeningExercise.explanation}</div>}
-        <div className="exercise-actions"><button className="text-action" onClick={() => setShowTranscript((current) => !current)}>{showTranscript ? "隐藏原文" : "查看原文"}</button><button className="secondary-action" disabled={!answer} onClick={() => { setChecked(true); onComplete(correct); }}>提交答案 →</button></div>
+    <div className="exercise-layout listening-exam-layout">
+      <div className="exercise-main listening-exam-main">
+        <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>Questions 1–10</span></div>
+        <h2>{listeningExercise.title}</h2><p>正式考试录音只播放一次；Demo 可以重播以便精听复盘。</p>
+        <button className="listening-player" onClick={() => speak(listeningExercise.script, 0.82)}><span>▶</span><i /><strong>播放完整录音</strong><small>约 2 分钟</small></button>
+        <div className="listening-answer-progress"><i style={{ width: `${answeredCount * 10}%` }} /><span>{answeredCount}/10</span></div>
+
+        <section className="listening-question-group">
+          <div className="question-type"><span>Questions 1–4</span><strong>Form Completion</strong><p>Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.</p></div>
+          <div className="listening-form-card">
+            <h3>WESTBRIDGE RESIDENCE APPLICATION</h3>
+            {listeningExercise.formCompletion.map((question, index) => (
+              <label className={score === null ? "" : formCorrect(question.id) ? "is-correct" : "is-incorrect"} key={question.id}>
+                <span>{index + 1}. {question.label}</span>
+                <input value={formAnswers[question.id] ?? ""} onChange={(event) => { setScore(null); setFormAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 1}, ${question.label}`} />
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <section className="listening-question-group">
+          <div className="question-type"><span>Questions 5–6</span><strong>Multiple Choice · Choose TWO</strong><p>{listeningExercise.multipleSelect.prompt}</p></div>
+          <div className="listening-checkboxes">
+            {listeningExercise.multipleSelect.options.map((option, index) => {
+              const selected = selectedFacilities.includes(option);
+              const resultClass = score === null ? "" : listeningExercise.multipleSelect.answers.includes(option) ? "is-correct" : selected ? "is-incorrect" : "";
+              return <label className={`${selected ? "is-selected " : ""}${resultClass}`} key={option}><input type="checkbox" checked={selected} disabled={!selected && selectedFacilities.length >= 2} onChange={() => toggleFacility(option)} /><b>{String.fromCharCode(65 + index)}</b>{option}</label>;
+            })}
+          </div>
+          <small className="selection-count">已选择 {selectedFacilities.length} / 2 项</small>
+        </section>
+
+        <section className="listening-question-group">
+          <div className="question-type"><span>Questions 7–8</span><strong>Matching</strong><p>{listeningExercise.matching.prompt}</p></div>
+          <div className="matching-option-bank">{listeningExercise.matching.options.map((option) => <span key={option.id}><b>{option.id}</b>{option.label}</span>)}</div>
+          {listeningExercise.matching.questions.map((question, index) => {
+            const resultClass = score === null ? "" : matchingAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
+            return <label className={`matching-row ${resultClass}`} key={question.id}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { setScore(null); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>;
+          })}
+        </section>
+
+        <section className="listening-question-group">
+          <div className="question-type"><span>Questions 9–10</span><strong>Multiple Choice · Choose ONE</strong><p>Choose the correct letter, A, B or C.</p></div>
+          {listeningExercise.multipleChoice.map((question, index) => {
+            const resultClass = score === null ? "" : choiceAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
+            return <fieldset className={`question-block ${resultClass}`} key={question.id}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { setScore(null); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}</fieldset>;
+          })}
+        </section>
+
+        {score !== null && <div className={`answer-feedback ${score >= 8 ? "success" : "neutral"}`}>得分 {score} / 10。{score < 8 ? "建议打开原文，重点检查拼写、同义替换和转折后的信息。" : "细节定位和拼写表现良好。"}</div>}
+        <div className="exercise-actions"><button className="text-action" onClick={() => setShowTranscript((current) => !current)}>{showTranscript ? "隐藏原文" : "查看原文复盘"}</button><button className="secondary-action" disabled={answeredCount < 10} onClick={submit}>提交 10 道答案 →</button></div>
       </div>
-      <aside className="exercise-context transcript-panel"><span>听力原文</span><p>{showTranscript ? listeningExercise.script : "提交前可以选择不看原文，模拟真实考试。"}</p></aside>
+      <aside className="exercise-context transcript-panel listening-transcript"><span>听力原文</span><p>{showTranscript ? listeningExercise.script : "正式训练建议只听一次并完成全部答案。提交后再打开原文，标记没有听到的拼写和同义替换。"}</p></aside>
     </div>
   );
 }

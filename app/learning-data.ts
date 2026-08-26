@@ -7,42 +7,105 @@ export const skills: Array<{
   description: string;
   duration: string;
 }> = [
-  { id: "vocabulary", short: "词", label: "每日 100 词", description: "5 × 20 高频词速刷 + 场景听写", duration: "15 分钟" },
-  { id: "listening", short: "听", label: "听力精练", description: "Section 1 租房咨询", duration: "8 分钟" },
+  { id: "vocabulary", short: "词", label: "每日 100 词", description: "5 × 20 高频词速刷 + 80 词场景听写", duration: "15 分钟" },
+  { id: "listening", short: "听", label: "听力精练", description: "Section 1 填空、多选、匹配与单选", duration: "12 分钟" },
   { id: "speaking", short: "说", label: "口语 Part 3", description: "真人考官式抽象讨论与追问", duration: "5 分钟" },
   { id: "reading", short: "读", label: "阅读套题", description: "匹配、单选、判断与摘要填空", duration: "18 分钟" },
 ];
 
-export const vocabulary = [
-  {
-    word: "deposit",
-    meaning: "押金；保证金",
-    phonetic: "/dɪˈpɒzɪt/",
-    example: "A refundable deposit is required before you move in.",
-    hint: "7 个字母，以 de 开头",
-  },
-  {
-    word: "furnished",
-    meaning: "配有家具的",
-    phonetic: "/ˈfɜːnɪʃt/",
-    example: "The flat is fully furnished and ready to move into.",
-    hint: "9 个字母，以 fur 开头",
-  },
-  {
-    word: "landlord",
-    meaning: "房东",
-    phonetic: "/ˈlændlɔːd/",
-    example: "You should contact the landlord about the broken heater.",
-    hint: "8 个字母，由 land 和 lord 组成",
-  },
-  {
-    word: "utilities",
-    meaning: "水、电、燃气等公共费用",
-    phonetic: "/juːˈtɪlətiz/",
-    example: "Utilities are not included in the monthly rent.",
-    hint: "9 个字母，以 uti 开头",
-  },
-];
+const listeningVocabularySource = `
+deposit|押金；保证金|A refundable deposit is required.
+furnished|配有家具的|The room is fully furnished.
+landlord|房东|Please contact the landlord.
+utilities|水电燃气等费用|Utilities are included in the rent.
+tenant|租户|The tenant signed the agreement.
+balcony|阳台|The flat has a small balcony.
+garage|车库|A garage is available behind the house.
+heating|暖气；供暖|Central heating is included.
+lease|租约|The lease lasts for twelve months.
+apartment|公寓|The apartment is near the station.
+departure|出发；离开|The departure time is eight thirty.
+arrival|到达|Please confirm your arrival date.
+itinerary|行程安排|Your itinerary will arrive by email.
+luggage|行李|Large luggage must be labelled.
+platform|站台|The train leaves from platform six.
+terminal|航站楼；终点站|Meet us outside the main terminal.
+passenger|乘客|Each passenger needs a ticket.
+reservation|预订|I would like to change my reservation.
+journey|旅程|The journey takes about two hours.
+vehicle|车辆|No private vehicle is required.
+assignment|作业；任务|The assignment is due on Friday.
+lecture|讲座；课程|The lecture begins at nine.
+tutorial|辅导课；研讨课|Our tutorial meets every Tuesday.
+library|图书馆|The library closes at midnight.
+campus|校园|The residence is on the north campus.
+scholarship|奖学金|She applied for a scholarship.
+semester|学期|The first semester starts in September.
+certificate|证书|You will receive a certificate.
+laboratory|实验室|Safety glasses are required in the laboratory.
+curriculum|课程体系|The new curriculum includes fieldwork.
+appointment|预约|I need to book an appointment.
+pharmacy|药房|The pharmacy is beside the clinic.
+treatment|治疗|The treatment takes six weeks.
+insurance|保险|Travel insurance is strongly recommended.
+allergy|过敏|Please tell us about any allergy.
+exercise|锻炼|Regular exercise can reduce stress.
+nutrition|营养|The course focuses on child nutrition.
+symptom|症状|Describe each symptom carefully.
+clinic|诊所|The campus clinic opens at eight.
+surgery|手术；诊所|The surgery is closed on Sunday.
+employer|雇主|Your employer must sign the form.
+interview|面试；访谈|The interview lasts thirty minutes.
+experience|经验|Previous experience is not necessary.
+qualification|资格；学历|A teaching qualification is preferred.
+reference|推荐信；参考|Please provide one academic reference.
+salary|薪水|The starting salary is competitive.
+training|培训|All staff receive safety training.
+uniform|制服|A uniform is provided at work.
+vacancy|空缺职位|The vacancy is for a receptionist.
+volunteer|志愿者|Each volunteer works one morning.
+recycling|回收利用|Recycling bins are near the entrance.
+pollution|污染|Traffic pollution affects the city centre.
+conservation|保护|The project supports forest conservation.
+climate|气候|The lecture examines climate change.
+habitat|栖息地|The wetland provides a natural habitat.
+energy|能源|The building uses solar energy.
+agriculture|农业|Modern agriculture needs less water.
+wildlife|野生动物|Visitors must not feed the wildlife.
+forest|森林|The path continues through the forest.
+drought|干旱|The region experienced a severe drought.
+reception|接待处|Collect your key from reception.
+restaurant|餐厅|The restaurant opens at six.
+laundry|洗衣房；洗衣|The laundry is on the ground floor.
+membership|会员资格|Annual membership costs forty pounds.
+facility|设施|The sports facility opens daily.
+entrance|入口|Use the side entrance after six.
+parking|停车场；停车|Free parking is available nearby.
+delivery|递送|The delivery will arrive on Monday.
+discount|折扣|Students receive a ten percent discount.
+receipt|收据|Keep the receipt for your records.
+museum|博物馆|The museum tour starts at eleven.
+theatre|剧院|The theatre is opposite the library.
+festival|节日；庆典|The festival takes place in June.
+exhibition|展览|The photography exhibition is free.
+competition|比赛|Entries for the competition close tomorrow.
+conference|会议|The conference lasts for three days.
+workshop|工作坊|Book the afternoon workshop online.
+photography|摄影|Photography is not allowed inside.
+swimming|游泳|Swimming lessons are held on Saturdays.
+gardening|园艺|The gardening club meets every month.
+`.trim();
+
+export const vocabulary = listeningVocabularySource.split("\n").map((line) => {
+  const [word, meaning, example] = line.split("|");
+  return {
+    word,
+    meaning,
+    example,
+    phonetic: "",
+    hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
+  };
+});
 
 const dailyVocabularySource = `
 analyse|分析；剖析|学术核心|analyse the results
@@ -153,13 +216,47 @@ export const dailyVocabulary = dailyVocabularySource.split("\n").map((line) => {
 });
 
 export const listeningExercise = {
-  title: "询问出租房信息",
+  title: "University Residence Enquiry",
+  subtitle: "Listening Section 1 · 原创考试型迷你套题",
   script:
-    "Good morning. I'm calling about the room advertised near Green Park. The rent is six hundred and eighty pounds per month, and that includes water, but electricity is separate. A deposit of one month's rent is required. The room is available from the fifteenth of September.",
-  question: "房租中包含哪一项费用？",
-  options: ["电费", "水费", "网费"],
-  answer: "水费",
-  explanation: "录音中说：the rent ... includes water, but electricity is separate。",
+    "Receptionist: Good morning, Westbridge University Residence. How can I help? Student: Hello. I'm calling to complete my accommodation application. Receptionist: Certainly. First, can I take your family name? Student: It's Chen, C H E N. Receptionist: Thank you. And when will you arrive? Student: On the fourteenth of October. I originally wrote the twelfth, but my flight changed. Receptionist: Right, the fourteenth of October. Do you want a shared room? Student: No, a single room, please. I need somewhere quiet to study. Receptionist: Any dietary requirement? Student: Yes, vegetarian. I eat dairy products, but no meat or fish. Receptionist: Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building. Student: That's fine. What documents do you need? Receptionist: Please send a copy of your passport by email. You can show the original at reception when you arrive. The deposit must be paid by bank transfer; we cannot accept cash for that. Student: I understand. What time can I collect my key? Receptionist: Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable. Student: Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes. Receptionist: That makes sense. I'll email your confirmation today.",
+  formCompletion: [
+    { id: "l1", label: "Family name", answers: ["chen"] },
+    { id: "l2", label: "Arrival date", answers: ["14 october", "14th october", "october 14", "october 14th"] },
+    { id: "l3", label: "Room requested", answers: ["single room"] },
+    { id: "l4", label: "Dietary requirement", answers: ["vegetarian"] },
+  ],
+  multipleSelect: {
+    prompt: "Which TWO facilities are included in the weekly fee?",
+    options: ["Laundry", "Gym", "Wi-Fi", "Breakfast", "Bicycle storage"],
+    answers: ["Wi-Fi", "Bicycle storage"],
+  },
+  matching: {
+    prompt: "How should the student provide each item?",
+    options: [
+      { id: "A", label: "by email" },
+      { id: "B", label: "at reception" },
+      { id: "C", label: "by bank transfer" },
+    ],
+    questions: [
+      { id: "l7", label: "copy of passport", answer: "A" },
+      { id: "l8", label: "deposit", answer: "C" },
+    ],
+  },
+  multipleChoice: [
+    {
+      id: "l9",
+      prompt: "What is the earliest check-in time?",
+      options: ["2:00 p.m.", "3:00 p.m.", "4:30 p.m."],
+      answer: "3:00 p.m.",
+    },
+    {
+      id: "l10",
+      prompt: "Why did the student choose Westbridge Residence?",
+      options: ["It is the newest residence.", "It is near the science building.", "It is in the city centre."],
+      answer: "It is near the science building.",
+    },
+  ],
 };
 
 export const speakingScenario = {

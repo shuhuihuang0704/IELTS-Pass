@@ -40,8 +40,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /DailyVocabularySprint/);
   assert.match(app, /Matching Headings|Matching Information|Summary Completion/);
   assert.match(app, /Speaking Part 3|真实考试结构|考官/);
+  assert.match(app, /Form Completion|Choose TWO|提交 10 道答案/);
   assert.match(state, /dailyVocabularyDate|dailyVocabularySeen|dailyVocabularyKnown/);
   assert.match(state, /speakingPart3Turns/);
+  assert.match(state, /listeningScore/);
   assert.match(state, /localDayKey/);
 
   const dailySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\)/);
@@ -49,8 +51,14 @@ test("ships all four learning modes and persistent progress", async () => {
   const words = dailySource[1].trim().split("\n").map((line) => line.split("|")[0]);
   assert.equal(words.length, 100);
   assert.equal(new Set(words).size, 100);
+  const listeningSource = data.match(/const listeningVocabularySource = `([\s\S]*?)`\.trim\(\)/);
+  assert.ok(listeningSource, "listening vocabulary source should exist");
+  const listeningWords = listeningSource[1].trim().split("\n").map((line) => line.split("|")[0]);
+  assert.equal(listeningWords.length, 80);
+  assert.equal(new Set(listeningWords).size, 80);
   assert.match(data, /matchingHeadings|matchingInformation|trueFalseNotGiven|summary/);
   assert.match(data, /Two-way discussion|questions:/);
+  assert.match(data, /formCompletion|multipleSelect|matching|multipleChoice/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
 });

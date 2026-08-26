@@ -8,6 +8,7 @@ export type LearningProgress = {
   dailyVocabularySeen: string[];
   dailyVocabularyKnown: string[];
   listeningCorrect: boolean | null;
+  listeningScore: number | null;
   readingScore: number | null;
   speakingTurns: number;
   speakingPart3Turns: number;
@@ -30,6 +31,7 @@ export const defaultProgress: LearningProgress = {
   dailyVocabularySeen: [],
   dailyVocabularyKnown: [],
   listeningCorrect: null,
+  listeningScore: null,
   readingScore: null,
   speakingTurns: 0,
   speakingPart3Turns: 0,
