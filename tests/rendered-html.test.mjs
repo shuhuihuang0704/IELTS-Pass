@@ -111,8 +111,16 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
   assert.match(app, /每日学习记录/);
   assert.match(app, /完整完成一项训练后/);
-  assert.match(app, /旧版累计/);
+  assert.doesNotMatch(app, /旧版累计|无法可靠拆分到具体日期/);
   assert.match(app, /showStudyHistory/);
+  assert.match(app, /最近 7 天学习时间/);
+  assert.match(app, /每日学习趋势/);
+  assert.match(app, /每月累计学习时间/);
+  assert.match(app, /linePoints/);
+  assert.match(app, /monthTotals/);
+  assert.match(styles, /\.study-history-bar-chart/);
+  assert.match(styles, /\.study-history-chart-card\.is-line-chart/);
+  assert.match(styles, /\.study-history-chart-card\.is-monthly-chart/);
   assert.match(app, /readingSourceEvidence/);
   assert.match(app, /原文荧光定位/);
   assert.match(app, /荧光笔定位原文/);

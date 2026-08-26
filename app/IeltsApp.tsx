@@ -866,16 +866,34 @@ function TodayView({
 
 function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress; onClose: () => void }) {
   const today = localDayKey();
-  const dayCount = Math.min(14, Math.max(6, progress.streak));
-  const days = Array.from({ length: dayCount }, (_, index) => {
+  const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setHours(12, 0, 0, 0);
     date.setDate(date.getDate() - index);
     const key = localDayKey(date);
-    return { key, record: progress.dailyStudyHistory[key] };
+    return { key, date, record: progress.dailyStudyHistory[key] };
+  }).reverse();
+  const maxDailyMinutes = Math.max(1, ...days.map(({ record }) => record?.minutes ?? 0));
+  const linePoints = days.map(({ record }, index) => {
+    const x = 30 + index * 90;
+    const y = 132 - ((record?.minutes ?? 0) / maxDailyMinutes) * 102;
+    return { x, y, minutes: record?.minutes ?? 0 };
   });
-  const recordedMinutes = Object.values(progress.dailyStudyHistory).reduce((total, record) => total + record.minutes, 0);
-  const legacyMinutes = Math.max(0, progress.minutes - recordedMinutes);
+  const monthTotals = Object.values(progress.dailyStudyHistory).reduce<Record<string, number>>((totals, record) => {
+    const month = record.date.slice(0, 7);
+    totals[month] = (totals[month] ?? 0) + record.minutes;
+    return totals;
+  }, {});
+  const months = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - index));
+    const key = localDayKey(date).slice(0, 7);
+    return { key, label: date.toLocaleDateString("zh-CN", { year: "numeric", month: "short" }), minutes: monthTotals[key] ?? 0 };
+  });
+  const maxMonthlyMinutes = Math.max(1, ...months.map((month) => month.minutes));
+  const currentMonthMinutes = months.at(-1)?.minutes ?? 0;
+  const activeDaysThisMonth = Object.values(progress.dailyStudyHistory).filter((record) => record.date.startsWith(today.slice(0, 7)) && record.minutes > 0).length;
 
   return (
     <div className="study-history-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -884,10 +902,36 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
           <div><span>STUDY HISTORY</span><h2 id="study-history-title">每日学习记录</h2><p>完整完成一项训练后，时间和内容才会记录到当天。</p></div>
           <button onClick={onClose} aria-label="关闭每日学习记录">×</button>
         </header>
-        {legacyMinutes > 0 && <div className="study-history-legacy"><strong>旧版累计 {legacyMinutes} 分钟</strong><p>这部分时长保存于每日明细功能上线前，无法可靠拆分到具体日期，因此不补造学习内容。</p></div>}
+        <div className="study-history-summary">
+          <div><span>本月累计</span><strong>{currentMonthMinutes}<small> 分钟</small></strong></div>
+          <div><span>本月学习天数</span><strong>{activeDaysThisMonth}<small> 天</small></strong></div>
+          <div><span>最近 7 天</span><strong>{days.reduce((total, day) => total + (day.record?.minutes ?? 0), 0)}<small> 分钟</small></strong></div>
+        </div>
+        <section className="study-history-chart-card">
+          <header><div><span>DAILY BARS</span><strong>最近 7 天学习时间</strong></div><small>柱状图 · 分钟</small></header>
+          <div className="study-history-bar-chart" aria-label="最近七天每日学习分钟柱状图">
+            {days.map(({ key, date, record }) => {
+              const minutes = record?.minutes ?? 0;
+              return <div className={minutes > 0 ? "has-study" : ""} key={`bar-${key}`}><span>{minutes}</span><i style={{ height: `${Math.max(minutes > 0 ? 8 : 2, (minutes / maxDailyMinutes) * 100)}%` }} /><small>{date.toLocaleDateString("zh-CN", { weekday: "short" })}</small></div>;
+            })}
+          </div>
+        </section>
+        <section className="study-history-chart-card is-line-chart">
+          <header><div><span>DAILY TREND</span><strong>每日学习趋势</strong></div><small>折线图 · 分钟</small></header>
+          <svg viewBox="0 0 600 165" role="img" aria-label="最近七天每日学习时间折线图">
+            <line x1="30" x2="570" y1="30" y2="30" /><line x1="30" x2="570" y1="81" y2="81" /><line x1="30" x2="570" y1="132" y2="132" />
+            <polyline points={linePoints.map(({ x, y }) => `${x},${y}`).join(" ")} />
+            {linePoints.map(({ x, y, minutes }, index) => <g key={`point-${days[index].key}`}><circle cx={x} cy={y} r="5" /><text x={x} y={Math.max(15, y - 10)} textAnchor="middle">{minutes}</text></g>)}
+          </svg>
+          <div className="study-history-line-labels">{days.map(({ key, date }) => <span key={`line-label-${key}`}>{date.toLocaleDateString("zh-CN", { weekday: "short" })}</span>)}</div>
+        </section>
+        <section className="study-history-chart-card is-monthly-chart">
+          <header><div><span>MONTHLY TOTAL</span><strong>每月累计学习时间</strong></div><small>最近 6 个月</small></header>
+          <div>{months.map((month) => <article key={month.key}><span>{month.label}</span><i><b style={{ width: `${(month.minutes / maxMonthlyMinutes) * 100}%` }} /></i><strong>{month.minutes}<small> 分钟</small></strong></article>)}</div>
+        </section>
+        <div className="study-history-list-heading"><strong>每日学习内容</strong><span>完成完整任务后写入</span></div>
         <div className="study-history-list">
-          {days.map(({ key, record }) => {
-            const date = new Date(`${key}T12:00:00`);
+          {[...days].reverse().map(({ key, date, record }) => {
             const dateLabel = date.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
             return (
               <article className={record ? "has-study" : ""} key={key}>
