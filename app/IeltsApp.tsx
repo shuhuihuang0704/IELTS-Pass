@@ -125,6 +125,7 @@ export default function IeltsApp() {
     updateProgress((current) => ({
       ...current,
       completed: { ...current.completed, [skill]: true },
+      carryoverTasks: current.carryoverTasks.filter((item) => item !== skill),
       minutes: current.completed[skill] ? current.minutes : current.minutes + minutes,
     }));
   };
@@ -159,7 +160,7 @@ export default function IeltsApp() {
             percent={percent}
             completedCount={completedCount}
             progress={progress}
-            onStart={() => openSkill(skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary")}
+            onStart={() => openSkill(progress.carryoverTasks.find((skill) => !progress.completed[skill]) ?? skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary")}
             onVocabulary={() => openSkill("vocabulary")}
             onOpenSkill={openSkill}
             onNavigate={setView}
@@ -269,7 +270,10 @@ function TodayView({
   onOpenSkill: (skill: Skill) => void;
   onNavigate: (view: View) => void;
 }) {
-  const nextSkill = skills.find((skill) => !progress.completed[skill.id]) ?? skills[0];
+  const carryoverSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]);
+  const nextSkill = skills.find((skill) => skill.id === carryoverSkill)
+    ?? skills.find((skill) => !progress.completed[skill.id])
+    ?? skills[0];
   const todayWordSet = new Set(getDailyVocabulary(progress.dailyVocabularyDate).map((word) => word.word));
   const todaySeenCount = progress.dailyVocabularyKnown.filter((word) => todayWordSet.has(word)).length;
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
@@ -282,6 +286,17 @@ function TodayView({
   return (
     <>
       <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" />
+      {progress.carryoverTasks.length > 0 ? (
+        <section className="carryover-strip">
+          <div><span>ROLLED OVER FROM YESTERDAY</span><strong>先补完昨天没有完成的任务</strong><p>补做任务不会自动打勾；完成完整专项后才会从这里移除。</p></div>
+          <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); return skill ? <button onClick={() => onOpenSkill(skill.id)} key={skill.id}><span>{skill.short}</span><strong>{skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : "昨日未完成 →"}</small></button> : null; })}</div>
+        </section>
+      ) : (
+        <section className="carryover-strip is-empty">
+          <div><span>TASK ROLLOVER</span><strong>今天没完成的任务，会自动进入明天</strong><p>目前没有昨日待补做任务；完成度不会因为任务顺延而自动增加。</p></div>
+          <div className="carryover-empty-count"><strong>0</strong><span>待补做</span></div>
+        </section>
+      )}
       <div className="dashboard-grid">
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
@@ -295,7 +310,7 @@ function TodayView({
                 key={skill.id}
                 onClick={() => onOpenSkill(skill.id)}
               >
-                <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{skill.duration}</small>
+                <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{progress.carryoverTasks.includes(skill.id) ? "昨日未完成" : skill.duration}</small>
               </button>
             ))}
           </div>
@@ -305,7 +320,7 @@ function TodayView({
           <div className="progress-intro">
             <span>今日完成度</span><strong>{percent}<small>%</small></strong>
             <div className="progress-track"><i style={{ width: `${percent}%` }} /></div>
-            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.label}。`}</p>
+            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : progress.carryoverTasks.includes(nextSkill.id) ? `已完成 ${completedCount} / 4 项，先补做昨天的${nextSkill.label}。` : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.label}。`}</p>
           </div>
           <button className="daily-word-row" onClick={onVocabulary}>
             <span><small>TODAY&apos;S WORDS</small><strong>{todaySeenCount}<b>/100</b></strong></span>
@@ -345,7 +360,7 @@ function PracticeView({
             <span className="practice-number">0{index + 1}</span><span className="practice-glyph">{skill.short}</span>
             <strong>{skill.label}</strong><p>{skill.description}</p>
             <span className={progress.completed[skill.id] ? "skill-status is-complete" : "skill-status"}>
-              {progress.completed[skill.id] ? "今日已完成" : skill.duration}
+              {progress.completed[skill.id] ? "今日已完成" : progress.carryoverTasks.includes(skill.id) ? `昨日未完成 · ${skill.duration}` : skill.duration}
             </span>
           </button>
         ))}
@@ -512,6 +527,7 @@ function SceneView({
         dailyVocabularyCompleted,
         dailyDictationCompleted,
         completed: { ...current.completed, vocabulary: fullyCompleted },
+        carryoverTasks: fullyCompleted ? current.carryoverTasks.filter((item) => item !== "vocabulary") : current.carryoverTasks,
         minutes: fullyCompleted && !current.completed.vocabulary ? current.minutes + 15 : current.minutes,
       };
     });

@@ -39,6 +39,21 @@ button { cursor: pointer; }
 .topbar h1 span { color:var(--violet); }
 .profile-button { width:40px; height:40px; border:0; border-radius:50%; color:#464048; background:#ded8d1; font-size:11px; font-weight:700; }
 .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(265px,.72fr); gap:18px; margin-top:34px; }
+.carryover-strip { margin-top:26px; padding:20px 22px; display:grid; grid-template-columns:minmax(220px,.72fr) minmax(0,1.28fr); align-items:center; gap:22px; border:1px solid #eed5cc; border-radius:23px; background:#fff8f4; }
+.carryover-strip>div:first-child>span { color:#b45d42; font-size:8px; letter-spacing:.8px; }
+.carryover-strip>div:first-child>strong { display:block; margin-top:6px; font-size:16px; }
+.carryover-strip>div:first-child>p { margin:5px 0 0; color:#8a726a; font-size:9px; line-height:1.45; }
+.carryover-task-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+.carryover-task-list button { min-height:66px; padding:9px; border:0; border-radius:13px; color:#6d554d; background:white; text-align:left; }
+.carryover-task-list span,.carryover-task-list strong,.carryover-task-list small { display:block; }
+.carryover-task-list span { color:#bf664b; font-size:9px; }
+.carryover-task-list strong { margin-top:4px; font-size:10px; }
+.carryover-task-list small { margin-top:5px; color:#9b776c; font-size:8px; }
+.carryover-strip.is-empty { grid-template-columns:1fr auto; border-color:rgba(54,46,72,.07); background:rgba(255,255,255,.58); }
+.carryover-empty-count { min-width:74px; padding-left:22px; border-left:1px solid #e5e0e4; text-align:center; }
+.carryover-empty-count strong,.carryover-empty-count span { display:block; }
+.carryover-empty-count strong { color:var(--violet); font-size:28px; }
+.carryover-empty-count span { margin-top:2px; color:var(--muted); font-size:8px; }
 .scene-stage { min-height:560px; position:relative; overflow:hidden; padding:34px; border-radius:32px; color:white; background:radial-gradient(circle at 96% 8%,rgba(255,183,219,.7),transparent 29%),radial-gradient(circle at 10% 92%,rgba(66,211,210,.4),transparent 33%),linear-gradient(145deg,#5439ad,#414ac0 50%,#263a8d); box-shadow:0 22px 52px rgba(56,45,138,.23); }
 .scene-watermark { position:absolute; right:-20px; top:66px; color:rgba(255,255,255,.07); font-size:clamp(74px,10vw,132px); line-height:.78; letter-spacing:-9px; font-weight:750; text-align:right; transform:rotate(-7deg); user-select:none; }
 .scene-heading { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; color:rgba(255,255,255,.74); font-size:10px; letter-spacing:.8px; }
@@ -101,6 +116,7 @@ button { cursor: pointer; }
   .side-rail { display:none; }
   .workspace { padding:26px 18px; }
   .dashboard-grid { grid-template-columns:1fr; }
+  .carryover-strip { grid-template-columns:1fr; }
   .progress-panel { min-height:0; display:grid; grid-template-columns:1.1fr 1fr; }
   .progress-intro { grid-row:span 2; }
   .scene-stage { min-height:535px; }
@@ -115,6 +131,8 @@ button { cursor: pointer; }
   .topbar p { font-size:9px; }
   .profile-button { width:36px; height:36px; }
   .dashboard-grid { margin-top:24px; }
+  .carryover-strip { margin-top:20px; padding:17px; }
+  .carryover-task-list { grid-template-columns:repeat(2,1fr); }
   .scene-stage { min-height:470px; padding:23px; border-radius:27px; }
   .scene-stage h2 { margin-top:24px; font-size:42px; }
   .scene-watermark { top:90px; font-size:84px; }

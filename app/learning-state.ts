@@ -29,6 +29,7 @@ export type LearningProgress = {
   speakingTurns: number;
   speakingPart3Turns: number;
   officialPracticeCompleted: string[];
+  carryoverTasks: Skill[];
   minutes: number;
   streak: number;
 };
@@ -75,6 +76,7 @@ export const defaultProgress: LearningProgress = {
   speakingTurns: 0,
   speakingPart3Turns: 0,
   officialPracticeCompleted: [],
+  carryoverTasks: [],
   minutes: 12,
   streak: 6,
 };
@@ -145,6 +147,14 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   const completed = isCurrentVocabularyDay
     ? { ...defaultProgress.completed, ...(stored.completed ?? {}) }
     : { ...defaultProgress.completed };
+  const validSkills: Skill[] = ["vocabulary", "listening", "speaking", "reading"];
+  const previousCarryover = Array.isArray(stored.carryoverTasks)
+    ? stored.carryoverTasks.filter((skill): skill is Skill => validSkills.includes(skill as Skill) && !stored.completed?.[skill as Skill])
+    : [];
+  const newlyMissedTasks = isCurrentVocabularyDay
+    ? []
+    : validSkills.filter((skill) => !stored.completed?.[skill]);
+  const carryoverTasks = Array.from(new Set([...previousCarryover, ...newlyMissedTasks]));
   completed.vocabulary = Boolean(
     isCurrentVocabularyDay && stored.dailyVocabularyCompleted && stored.dailyDictationCompleted,
   );
@@ -178,5 +188,6 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     speakingTurns: isCurrentVocabularyDay ? (stored.speakingTurns ?? 0) : 0,
     speakingPart3Turns: isCurrentVocabularyDay ? (stored.speakingPart3Turns ?? 0) : 0,
     officialPracticeCompleted: Array.isArray(stored.officialPracticeCompleted) ? stored.officialPracticeCompleted : [],
+    carryoverTasks,
   };
 }

@@ -47,6 +47,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /localDayKey/);
   assert.match(state, /localWeekKey/);
   assert.match(state, /officialPracticeCompleted/);
+  assert.match(state, /carryoverTasks/);
+  assert.match(state, /newlyMissedTasks/);
   assert.match(state, /dailyVocabularyCompleted/);
   assert.match(state, /dailyDictationCompleted/);
   assert.match(state, /dailyDictationSeen/);
@@ -105,6 +107,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /ielts-listening-sample-tasks-2023\.pdf/);
   assert.match(app, /ielts-speaking-part-3-sample-recording\.mp3/);
   assert.match(app, /official-paper-frame/);
+  assert.match(app, /ROLLED OVER FROM YESTERDAY/);
+  assert.match(app, /昨日未完成/);
+  assert.match(app, /carryoverTasks\.filter/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
 });
