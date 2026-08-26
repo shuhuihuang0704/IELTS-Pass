@@ -130,6 +130,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.deepEqual(fullReadingNumbers, Array.from({ length: 40 }, (_, index) => index + 1));
   assert.equal((fullReadingBlock.match(/id: "reading-passage-/g) ?? []).length, 3);
   assert.match(fullReadingBlock, /questionPages: \[4, 5, 6\], passagePages: \[2, 3, 4\]/);
+  assert.match(fullReadingBlock, /questionPages: \[11, 12, 13, 14\], passagePages: \[9, 10, 11, 12\]/);
+  assert.doesNotMatch(fullReadingBlock, /passagePages: \[9, 10, 11, 12, 13/);
   assert.match(app, /ielts-listening-sample-tasks-2023\.pdf/);
   const listeningBlock = app.match(/const listeningMaterial:[\s\S]*?const readingMaterial:/)?.[0] ?? "";
   assert.equal([...listeningBlock.matchAll(/number: "\d+"/g)].length, 44);

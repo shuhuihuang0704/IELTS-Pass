@@ -182,7 +182,7 @@ const readingMaterial: OfficialTestMaterial = {
       { number: "25", accepted: ["humanistic study", "historical discipline"], displayAnswer: "humanistic study / historical discipline（顺序不限）", group: "24-25" },
       { number: "26", accepted: ["scientist"], displayAnswer: "scientist" },
     ] },
-    { id: "reading-passage-3", label: "Reading Passage 3", questionLabel: "Passage 3 · Questions 27–40", questionPage: 11, questionPages: [11, 12, 13, 14, 15, 16], passagePages: [9, 10, 11, 12, 13, 14, 15, 16], answers: [
+    { id: "reading-passage-3", label: "Reading Passage 3", questionLabel: "Passage 3 · Questions 27–40", questionPage: 11, questionPages: [11, 12, 13, 14], passagePages: [9, 10, 11, 12], answers: [
       { number: "27", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
       { number: "28", accepted: ["B"], displayAnswer: "B", choices: ["A", "B", "C", "D"] },
       { number: "29", accepted: ["A"], displayAnswer: "A", choices: ["A", "B", "C", "D"] },
