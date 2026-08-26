@@ -56,6 +56,12 @@ type OfficialTestSession = {
 };
 
 type OfficialAudioTrack = { label: string; url: string };
+type ElectronicWritingModel = {
+  title: string;
+  wordCount: number;
+  paragraphs: string[];
+  analysis: string[];
+};
 type OfficialAnswer = {
   number: string;
   accepted: string[];
@@ -78,6 +84,7 @@ type OfficialTaskSegment = {
   audioTrackIndex?: number;
   answerLabel?: string;
   minimumWords?: number;
+  electronicModel?: ElectronicWritingModel;
   answers?: OfficialAnswer[];
 };
 type OfficialTestMaterial = {
@@ -207,8 +214,38 @@ const writingMaterial: OfficialTestMaterial = {
   label: "Academic Writing · Task 1 + Task 2",
   pdfUrl: "https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf",
   tasks: [
-    { id: "task-1a", label: "Writing Task 1", questionLabel: "Task 1 · Visual information", questionPage: 3, questionPages: [3], answerPage: 9, answerPages: [9, 10], answerLabel: "查看本 Task 范文与考官评语", minimumWords: 150 },
-    { id: "task-2a", label: "Writing Task 2", questionLabel: "Task 2 · Essay", questionPage: 6, questionPages: [6], answerPage: 18, answerPages: [18, 19, 20, 21, 22], answerLabel: "查看本 Task 范文与考官评语", minimumWords: 250 },
+    { id: "task-1a", label: "Writing Task 1", questionLabel: "Task 1 · Visual information", questionPage: 3, questionPages: [3], answerPage: 9, answerLabel: "查看本 Task 电子范文与解析", minimumWords: 150, electronicModel: {
+      title: "Further education in Britain",
+      wordCount: 184,
+      paragraphs: [
+        "The bar chart compares the numbers of men and women in Britain who participated in further education on either a full-time or part-time basis in 1970/71, 1980/81 and 1990/91. Figures are given in thousands.",
+        "Overall, part-time study was considerably more common than full-time education throughout the period. Male participation in part-time courses fell and then recovered slightly, whereas the corresponding figure for women rose steadily and eventually became the highest total shown. Full-time enrolments increased for both sexes.",
+        "In 1970/71, about one million men studied part-time, compared with roughly 700,000 women. The male figure declined to around 850,000 in 1980/81 before edging up to approximately 900,000 by 1990/91. By contrast, the number of female part-time students climbed from about 700,000 to just over 800,000, then reached approximately 1.1 million in the final period.",
+        "Full-time participation was much lower. The number of men rose from around 100,000 in 1970/71 to about 150,000 ten years later and roughly 250,000 in 1990/91. For women, the increase was more pronounced, from only about 50,000 at the beginning to around 200,000 in 1980/81 and approximately 250,000 by the end.",
+      ],
+      analysis: [
+        "四段结构：改写题目 → 总览 → 男性数据 → 女性及全日制数据。",
+        "总览只抓两条主趋势：非全日制始终占多数；女性参与人数增长更明显。",
+        "数据使用 about、roughly、approximately，避免把图表估值写成绝对精确数字。",
+        "关键比较表达：whereas、by contrast、compared with、the corresponding figure。",
+      ],
+    } },
+    { id: "task-2a", label: "Writing Task 2", questionLabel: "Task 2 · Essay", questionPage: 6, questionPages: [6], answerPage: 18, answerLabel: "查看本 Task 电子范文与解析", minimumWords: 250, electronicModel: {
+      title: "Family income and preparation for adult life",
+      wordCount: 295,
+      paragraphs: [
+        "It is sometimes argued that children from low-income families are better equipped to handle adult difficulties than those raised by wealthy parents. Although financial constraints can teach useful lessons, I do not agree that a family's income alone determines how well a child is prepared for later life.",
+        "There are clear reasons why growing up with limited money may encourage practical strengths. Children in such households often learn that resources are finite, so they may become careful consumers and understand the importance of saving. They may also be expected to contribute at home or take part-time work when they are older. These experiences can develop independence, patience and resilience. For example, a teenager who has to budget a small weekly allowance is likely to understand the consequences of unnecessary spending earlier than someone whose purchases are always funded by parents.",
+        "However, wealth does not inevitably produce dependence or poor judgement. Affluent parents can deliberately give their children responsibilities, require them to manage an allowance and allow them to experience the consequences of mistakes. In addition, greater financial resources may provide access to education, travel and extracurricular activities that build confidence, communication skills and problem-solving ability. Conversely, poverty can sometimes make preparation for adulthood harder: persistent financial stress may disrupt education, reduce access to opportunities and force young people to focus on immediate survival rather than long-term development.",
+        "In my view, parenting and experience are more influential than income itself. Children from any economic background can become capable adults if they are given age-appropriate responsibilities, encouraged to solve problems independently and protected from neither effort nor failure. Therefore, while a modest upbringing may offer valuable lessons about money and resilience, it does not automatically prepare a person for adult life better than a wealthy upbringing does.",
+      ],
+      analysis: [
+        "立场在引言和结论中保持一致：承认贫困可能培养能力，但反对收入决定论。",
+        "主体一解释支持题干的理由；主体二反驳绝对化结论，并讨论贫困可能带来的负面影响。",
+        "每个观点都包含解释或例子，符合 Task Response 对论证展开的要求。",
+        "可借鉴表达：financial constraints、resources are finite、age-appropriate responsibilities、does not inevitably。",
+      ],
+    } },
   ],
 };
 const speakingMaterial: OfficialTestMaterial = {
@@ -768,12 +805,12 @@ function OfficialTestRunner({
           <div className={completed ? "runner-completion-status is-complete" : "runner-completion-status"}><b>{completed ? "✓ 本套已完成" : "等待完整提交"}</b><p>{completed ? `全部 ${requiredCompletionLabel} 已提交，系统已自动记录。` : requiredTasks.length > 0 ? `${submittedRequiredTaskCount}/${requiredTasks.length} 个必做 ${taskUnitLabel} 已提交；完成全部 ${requiredCompletionLabel} 后自动记录。` : "本套没有可自动判定的客观题，当前不会记录为完成。"}</p></div>
         </aside>
         <section className="official-paper-panel">
-          <header><div><strong>{task.questionLabel}</strong></div><small>官方原始题号 · 当前显示 P{displayPage}</small></header>
+          <header><div><strong>{task.questionLabel}</strong></div><small>{task.electronicModel && paperMode === "answers" ? "电子参考范文 · 清晰排版" : `官方原始题号 · 当前显示 P${displayPage}`}</small></header>
           <div className={material.tasks.length > 1 ? "official-task-controls" : "official-task-controls is-single"}>
             {material.tasks.length > 1 && <label>选择 {taskUnitLabel}<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>}
             <div className="official-paper-switch" aria-label="题目与答案切换">
               <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{questionPageLabel}</button>
-              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"} · P{answerPageLabel}</button>}
+              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"}{task.electronicModel ? "" : ` · P${answerPageLabel}`}</button>}
             </div>
           </div>
           {material.tasks.length > 1 && (
@@ -862,6 +899,13 @@ function OfficialTestRunner({
               <textarea aria-label={`${task.label} answer`} disabled={taskSubmitted} placeholder="在这里输入你的英文答案……" value={openResponse} onChange={(event) => setOfficialResponses((current) => ({ ...current, [openResponseKey]: event.target.value }))} />
               <footer><span>{taskSubmitted ? `已提交 ${openResponseWordCount} 词，可以查看官方范文进行复盘。` : openResponseWordCount >= task.minimumWords ? "已达到最低词数，可以提交本 Task。" : `还需至少 ${task.minimumWords - openResponseWordCount} 词。`}</span>{taskSubmitted ? <button type="button" onClick={continueEditingCurrentTask}>继续修改</button> : <button type="submit" disabled={openResponseWordCount < task.minimumWords}>提交本 Task</button>}</footer>
             </form>
+          ) : writingTaskMode && paperMode === "answers" && task.electronicModel ? (
+            <section className="official-writing-model">
+              <header><div><span>ELECTRONIC MODEL ANSWER</span><b>{task.label} · 电子参考范文</b><small>{task.electronicModel.title}</small></div><strong>约 {task.electronicModel.wordCount} 词</strong></header>
+              <div className="official-writing-model-note"><b>清晰电子稿</b><span>可直接选中文字阅读和复制；这是依据当前官方题目编写的原创参考范文，并非对官方手写考生稿的逐字转录。</span></div>
+              <article>{task.electronicModel.paragraphs.map((paragraph, index) => <p key={`${task.id}-model-${index}`}>{paragraph}</p>)}</article>
+              <aside><b>写作解析</b><ul>{task.electronicModel.analysis.map((point) => <li key={point}>{point}</li>)}</ul></aside>
+            </section>
           ) : (
             <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
           )}

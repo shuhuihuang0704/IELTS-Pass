@@ -172,8 +172,15 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /minimumWords: 150/);
   assert.match(app, /minimumWords: 250/);
   const writingBlock = app.match(/const writingMaterial:[\s\S]*?const speakingMaterial:/)?.[0] ?? "";
-  assert.match(writingBlock, /questionPages: \[3\], answerPage: 9, answerPages: \[9, 10\]/);
-  assert.match(writingBlock, /questionPages: \[6\], answerPage: 18, answerPages: \[18, 19, 20, 21, 22\]/);
+  assert.match(writingBlock, /questionPages: \[3\], answerPage: 9, answerLabel: "查看本 Task 电子范文与解析"/);
+  assert.match(writingBlock, /questionPages: \[6\], answerPage: 18, answerLabel: "查看本 Task 电子范文与解析"/);
+  assert.equal((writingBlock.match(/electronicModel: \{/g) ?? []).length, 2);
+  assert.match(app, /ELECTRONIC MODEL ANSWER/);
+  assert.match(app, /清晰电子稿/);
+  assert.match(app, /并非对官方手写考生稿的逐字转录/);
+  assert.match(app, /task\.electronicModel\.paragraphs\.map/);
+  assert.match(app, /task\.electronicModel\.analysis\.map/);
+  assert.match(styles, /\.official-writing-model>article/);
   assert.match(app, /2 INDEPENDENT WRITING TASKS/);
   assert.match(app, /每个 Writing Task 独立保存作文与完成状态/);
   assert.match(app, /提交后只解锁本 Task 的范文与考官评语/);
