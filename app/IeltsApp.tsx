@@ -836,16 +836,55 @@ function SpeakingPractice({
   const [answerFeedback, setAnswerFeedback] = useState("");
   const [showExaminerSubtitles, setShowExaminerSubtitles] = useState(false);
   const [speakingStarted, setSpeakingStarted] = useState(false);
+  const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
+  const examinerUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => `${speakingScenario.opening} ${speakingScenario.questions[questionIndex]}`);
 
   useEffect(() => () => {
+    if (examinerUtterance.current) {
+      examinerUtterance.current.onend = null;
+      examinerUtterance.current.onerror = null;
+    }
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
+
+  const playExaminerPrompt = (text: string) => {
+    if (!("speechSynthesis" in window)) return;
+    if (examinerUtterance.current) {
+      examinerUtterance.current.onend = null;
+      examinerUtterance.current.onerror = null;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-GB";
+    utterance.rate = .88;
+    examinerUtterance.current = utterance;
+    setExaminerAudioState("playing");
+    utterance.onend = () => {
+      if (examinerUtterance.current === utterance) {
+        examinerUtterance.current = null;
+        setExaminerAudioState("idle");
+      }
+    };
+    utterance.onerror = utterance.onend;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const toggleExaminerPause = () => {
+    if (!("speechSynthesis" in window)) return;
+    if (examinerAudioState === "playing") {
+      window.speechSynthesis.pause();
+      setExaminerAudioState("paused");
+    } else if (examinerAudioState === "paused") {
+      window.speechSynthesis.resume();
+      setExaminerAudioState("playing");
+    }
+  };
 
   const startSpeaking = () => {
     setSpeakingStarted(true);
     setShowExaminerSubtitles(false);
-    speak(activeExaminerPrompt, .88);
+    playExaminerPrompt(activeExaminerPrompt);
   };
 
   const send = (event?: FormEvent) => {
@@ -861,7 +900,7 @@ function SpeakingPractice({
       setAnswerFeedback("回答偏短：Part 3 需要观点 + 原因，尽量再展开 2–3 句。");
       setActiveExaminerPrompt(reply);
       setShowExaminerSubtitles(false);
-      speak(reply, .88);
+      playExaminerPrompt(reply);
       return;
     }
     const nextTurns = progress.speakingPart3Turns + 1;
@@ -877,7 +916,7 @@ function SpeakingPractice({
     updateProgress((current) => ({ ...current, speakingPart3Turns: current.speakingPart3Turns + 1 }));
     setActiveExaminerPrompt(reply);
     setShowExaminerSubtitles(false);
-    speak(reply, .88);
+    playExaminerPrompt(reply);
     if (finished) onComplete();
   };
 
@@ -903,11 +942,12 @@ function SpeakingPractice({
         <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
         <h2>{speakingScenario.title}</h2>
         <div className="speaking-audio-controls">
-          <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => speak(activeExaminerPrompt, .88) : startSpeaking}>{speakingStarted ? "▶ 重听当前问题" : "▶ 开始口语模拟"}</button>
+          <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => playExaminerPrompt(activeExaminerPrompt) : startSpeaking}>{speakingStarted ? "↺ 重听当前问题" : "▶ 开始口语模拟"}</button>
+          <button disabled={examinerAudioState === "idle"} onClick={toggleExaminerPause}>{examinerAudioState === "paused" ? "▶ 继续播放" : "Ⅱ 暂停"}</button>
           <button disabled={!speakingStarted} onClick={() => setShowExaminerSubtitles((current) => !current)}>{showExaminerSubtitles ? "隐藏字幕" : "听不懂？显示字幕"}</button>
         </div>
         <div className="conversation" aria-live="polite">
-          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p className={message.from === "ai" && !showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{message.from === "ai" && !speakingStarted ? "点击“开始口语模拟”后，考官会用语音提问" : message.from === "ai" && !showExaminerSubtitles ? "🔊 考官正在用语音提问 · 字幕已隐藏" : message.text}</p></div>)}
+          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p className={message.from === "ai" && !showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{message.from === "ai" && !speakingStarted ? "点击“开始口语模拟”后，考官会用语音提问" : message.from === "ai" && !showExaminerSubtitles ? examinerAudioState === "paused" ? "⏸ 考官音频已暂停 · 字幕已隐藏" : "🔊 考官问题 · 字幕已隐藏" : message.text}</p></div>)}
         </div>
         <form className="speaking-form" onSubmit={send}><button disabled={!speakingStarted} type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input disabled={!speakingStarted} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={speakingStarted ? "用英语回答考官，尽量说明原因并举例…" : "请先点击开始口语模拟"} aria-label="口语回答" /><button disabled={!speakingStarted} type="submit">回答</button></form>
         <div className="mic-status" aria-live="polite">{micStatus || (speakingStarted ? "支持语音输入；也可以打字模拟回答。" : "点击开始后，考官会先读出问题。")}</div>

@@ -83,6 +83,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /开始口语模拟/);
   assert.match(app, /记错了/);
   assert.match(app, /重听当前问题/);
+  assert.match(app, /继续播放/);
+  assert.match(app, /speechSynthesis\.pause/);
+  assert.match(app, /speechSynthesis\.resume/);
   assert.match(app, /字幕已隐藏/);
   assert.match(app, /提交检查前不显示中文/);
   assert.match(app, /先核对中文含义/);
