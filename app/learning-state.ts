@@ -10,6 +10,7 @@ export type LearningProgress = {
   listeningCorrect: boolean | null;
   readingScore: number | null;
   speakingTurns: number;
+  speakingPart3Turns: number;
   minutes: number;
   streak: number;
 };
@@ -31,6 +32,7 @@ export const defaultProgress: LearningProgress = {
   listeningCorrect: null,
   readingScore: null,
   speakingTurns: 0,
+  speakingPart3Turns: 0,
   minutes: 12,
   streak: 6,
 };

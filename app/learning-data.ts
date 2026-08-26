@@ -9,8 +9,8 @@ export const skills: Array<{
 }> = [
   { id: "vocabulary", short: "词", label: "每日 100 词", description: "5 × 20 高频词速刷 + 场景听写", duration: "15 分钟" },
   { id: "listening", short: "听", label: "听力精练", description: "Section 1 租房咨询", duration: "8 分钟" },
-  { id: "speaking", short: "说", label: "AI 口语", description: "与房东完成真实沟通", duration: "6 分钟" },
-  { id: "reading", short: "读", label: "阅读做题", description: "租房广告定位信息", duration: "7 分钟" },
+  { id: "speaking", short: "说", label: "口语 Part 3", description: "真人考官式抽象讨论与追问", duration: "5 分钟" },
+  { id: "reading", short: "读", label: "阅读套题", description: "匹配、单选、判断与摘要填空", duration: "18 分钟" },
 ];
 
 export const vocabulary = [
@@ -163,33 +163,97 @@ export const listeningExercise = {
 };
 
 export const speakingScenario = {
-  title: "和房东确认租房细节",
-  opening: "Hello, thanks for calling about the room. What would you like to know?",
-  goals: ["询问每月房租", "确认押金金额", "询问入住日期"],
+  title: "Housing and the future of cities",
+  part: "Speaking Part 3 · Two-way discussion",
+  duration: "官方考试约 4–5 分钟",
+  opening:
+    "Now I'd like to discuss some more general questions related to housing and cities.",
+  questions: [
+    "Why do some people prefer renting a home rather than buying one?",
+    "How has the cost of housing affected young people in recent years?",
+    "Do you think governments should provide more affordable housing? Why or why not?",
+    "In what ways can the design of a neighbourhood influence people's quality of life?",
+    "How might remote working change where people choose to live in the future?",
+    "What do you think cities will look like in thirty years' time?",
+  ],
+  goals: ["直接表达观点", "用原因或例子展开", "讨论更抽象的社会问题"],
 };
 
 export const readingExercise = {
-  title: "Riverside Studio",
-  passage:
-    "A bright, fully furnished studio is available in Riverside from 15 September. The monthly rent is £680 and includes water and high-speed internet. Electricity is paid separately. The property is a five-minute walk from Green Park Station. A refundable deposit equal to one month's rent is required. The minimum stay is six months. Students are welcome, but pets are not permitted.",
-  questions: [
+  title: "The Quiet Rise of Urban Green Roofs",
+  subtitle: "Academic Reading · 原创考试型迷你套题",
+  paragraphs: [
     {
-      id: "r1",
-      prompt: "The tenant must pay separately for electricity.",
-      options: ["True", "False", "Not Given"],
-      answer: "True",
+      label: "A",
+      text: "Covering buildings with vegetation is not a new idea. Turf roofs kept homes warm in parts of northern Europe centuries ago, while roof gardens appeared in several ancient cities. What has changed is the reason for adopting them. Rapid urban growth has left many modern cities with less absorbent ground and higher summer temperatures. In response, planners in cities such as Toronto, Singapore and Basel have introduced policies that encourage, or sometimes require, vegetation on suitable new roofs. A practice once associated with local building traditions has therefore become part of mainstream urban policy.",
     },
     {
-      id: "r2",
-      prompt: "The property is ten minutes from Green Park Station.",
+      label: "B",
+      text: "A well-designed green roof can perform several functions at the same time. Its soil and plants retain a proportion of rainfall, releasing water slowly instead of sending it immediately into crowded drainage systems. Vegetation also shades the roof surface and cools the surrounding air through evaporation. Researchers have recorded lower indoor temperatures on hot days, which can reduce demand for air conditioning. Even a relatively shallow layer of planting can provide feeding places for insects and birds. The exact gains depend on climate, depth and plant choice, but the combined effect is difficult for a conventional roof to reproduce.",
+    },
+    {
+      label: "C",
+      text: "However, success is not achieved simply by placing soil on top of a building. Engineers must first check whether the structure can carry the additional weight, particularly when the soil is wet. Waterproof layers, drainage channels and safe access for workers are also essential. Plants that flourish at ground level may fail on a roof because of stronger wind and limited shade. Although some systems need little attention, none is entirely maintenance-free: drains must be cleared and unwanted plants removed. Installation costs are usually higher than for a standard roof, and the financial return may take years to become visible.",
+    },
+    {
+      label: "D",
+      text: "Supporters increasingly argue that the next question is not only how many green roofs a city has, but who benefits from them. Many roofs improve air quality or drainage without being open to residents, and highly visible projects are often concentrated in wealthy districts. Some councils now offer larger grants to schools, social housing providers and buildings in areas with little public green space. Others require developers to publish maintenance plans so that neglected roofs do not become a burden. These measures attempt to turn a useful building technology into a resource whose benefits are distributed more fairly.",
+    },
+  ],
+  headings: [
+    { id: "i", text: "The need to replace traditional public parks" },
+    { id: "ii", text: "Several environmental gains from one surface" },
+    { id: "iii", text: "An old idea receives modern policy support" },
+    { id: "iv", text: "Practical barriers to a successful roof" },
+    { id: "v", text: "Food production as the main purpose" },
+    { id: "vi", text: "Extending the value to a wider population" },
+  ],
+  matchingHeadings: [
+    { id: "hA", paragraph: "A", answer: "iii" },
+    { id: "hB", paragraph: "B", answer: "ii" },
+    { id: "hC", paragraph: "C", answer: "iv" },
+    { id: "hD", paragraph: "D", answer: "vi" },
+  ],
+  matchingInformation: [
+    { id: "m1", prompt: "a reference to reducing pressure on city drainage", answer: "B" },
+    { id: "m2", prompt: "a check that must happen before construction begins", answer: "C" },
+  ],
+  multipleChoice: [
+    {
+      id: "mc1",
+      prompt: "What is the main purpose of the passage?",
+      options: [
+        "To argue that every roof should grow food",
+        "To explain the benefits, limits and social role of green roofs",
+        "To compare roof designs in three ancient cities",
+        "To show that green roofs are cheaper than conventional roofs",
+      ],
+      answer: "To explain the benefits, limits and social role of green roofs",
+    },
+  ],
+  trueFalseNotGiven: [
+    {
+      id: "tf1",
+      prompt: "All green roofs mentioned in the passage can be used as public spaces.",
       options: ["True", "False", "Not Given"],
       answer: "False",
     },
     {
-      id: "r3",
-      prompt: "What is the minimum rental period?",
-      options: ["One month", "Six months", "Twelve months"],
-      answer: "Six months",
+      id: "tf2",
+      prompt: "Green roofs are cheaper to install than conventional roofs.",
+      options: ["True", "False", "Not Given"],
+      answer: "False",
     },
   ],
+  summary: {
+    instruction: "Choose ONE WORD from the box for each answer.",
+    wordBank: ["maintenance", "rainfall", "concrete", "wildlife"],
+    textBeforeFirstGap: "Green roofs can hold back ",
+    textBetweenGaps: " and may support urban animals. Before installation, a building must be checked, and every system still requires some ",
+    textAfterSecondGap: ".",
+    questions: [
+      { id: "s1", answer: "rainfall" },
+      { id: "s2", answer: "maintenance" },
+    ],
+  },
 };

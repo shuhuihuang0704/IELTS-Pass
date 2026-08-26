@@ -21,7 +21,8 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
   assert.match(html, /<title>IELTS AI/);
   assert.match(html, /场景化雅思学习/);
   assert.match(html, /IELTS AI/);
-  assert.match(html, /第一次/);
+  assert.match(html, /一轮雅思训练/);
+  assert.match(html, /每日 100 词/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape|react-loading-skeleton/i);
 });
 
@@ -37,14 +38,19 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /localStorage\.setItem/);
   assert.match(app, /SpeechSynthesisUtterance/);
   assert.match(app, /DailyVocabularySprint/);
+  assert.match(app, /Matching Headings|Matching Information|Summary Completion/);
+  assert.match(app, /Speaking Part 3|真实考试结构|考官/);
   assert.match(state, /dailyVocabularyDate|dailyVocabularySeen|dailyVocabularyKnown/);
+  assert.match(state, /speakingPart3Turns/);
   assert.match(state, /localDayKey/);
 
-  const dailySource = data.match(/const dailyVocabularySource = \`([\s\S]*?)\`\.trim\(\)/);
+  const dailySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\)/);
   assert.ok(dailySource, "daily vocabulary source should exist");
   const words = dailySource[1].trim().split("\n").map((line) => line.split("|")[0]);
   assert.equal(words.length, 100);
   assert.equal(new Set(words).size, 100);
+  assert.match(data, /matchingHeadings|matchingInformation|trueFalseNotGiven|summary/);
+  assert.match(data, /Two-way discussion|questions:/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
 });

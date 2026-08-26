@@ -32,20 +32,6 @@ function speak(text: string, rate = 0.9) {
   return true;
 }
 
-function aiReply(message: string) {
-  const normalized = message.toLowerCase();
-  if (/rent|cost|price|month/.test(normalized)) {
-    return "The rent is £680 per month, including water and internet.";
-  }
-  if (/deposit|advance/.test(normalized)) {
-    return "The deposit is one month's rent, and it is refundable.";
-  }
-  if (/available|move|date|when/.test(normalized)) {
-    return "The room is available from the fifteenth of September.";
-  }
-  return "Of course. You can ask me about the rent, the deposit, or the move-in date.";
-}
-
 export default function IeltsApp() {
   const [view, setView] = useState<View>("today");
   const [activeSkill, setActiveSkill] = useState<Skill>("vocabulary");
@@ -108,6 +94,7 @@ export default function IeltsApp() {
             progress={progress}
             onStart={() => openSkill(skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary")}
             onVocabulary={() => openSkill("vocabulary")}
+            onOpenSkill={openSkill}
             onNavigate={setView}
           />
         )}
@@ -203,6 +190,7 @@ function TodayView({
   progress,
   onStart,
   onVocabulary,
+  onOpenSkill,
   onNavigate,
 }: {
   percent: number;
@@ -210,6 +198,7 @@ function TodayView({
   progress: LearningProgress;
   onStart: () => void;
   onVocabulary: () => void;
+  onOpenSkill: (skill: Skill) => void;
   onNavigate: (view: View) => void;
 }) {
   const nextSkill = skills.find((skill) => !progress.completed[skill.id]) ?? skills[0];
@@ -218,16 +207,16 @@ function TodayView({
       <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" />
       <div className="dashboard-grid">
         <section className="scene-stage">
-          <div className="scene-watermark" aria-hidden="true">RENT<br />LIFE</div>
-          <div className="scene-heading"><span>SCENE 04 · LONDON</span><span>约 36 分钟</span></div>
-          <h2>第一次<br />在英国租房</h2><p>一段真实场景，串联四项能力</p>
+          <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
+          <div className="scene-heading"><span>TODAY PLAN · IELTS ACADEMIC</span><span>约 46 分钟</span></div>
+          <h2>今天完成<br />一轮雅思训练</h2><p>100 词 + 听力场景 + 口语 Part 3 + Academic Reading</p>
           <button className="voice-orb" aria-label="试听场景" onClick={() => speak("Hello, I'm calling about the room for rent.")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
             {skills.map((skill, index) => (
               <button
                 className={`path-step ${progress.completed[skill.id] ? "is-done" : ""} ${nextSkill.id === skill.id ? "is-current" : ""}`}
                 key={skill.id}
-                onClick={() => onStart()}
+                onClick={() => onOpenSkill(skill.id)}
               >
                 <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{skill.duration}</small>
               </button>
@@ -288,9 +277,16 @@ function SceneView({
   onComplete: (skill: Skill, minutes: number) => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
+  const headers: Record<Skill, { eyebrow: string; title: string; accent: string }> = {
+    vocabulary: { eyebrow: "DAILY VOCABULARY", title: "每天 100 词，", accent: "先眼熟再记牢。" },
+    listening: { eyebrow: "LISTENING · SECTION 1", title: "听清细节，", accent: "再做选择。" },
+    speaking: { eyebrow: "SPEAKING · PART 3", title: "像面对考官一样，", accent: "展开观点。" },
+    reading: { eyebrow: "ACADEMIC READING", title: "按真实题型，", accent: "完成定位。" },
+  };
+  const header = headers[activeSkill];
   return (
     <>
-      <PageHeader eyebrow="SCENE 04 · RENTING A HOME" title="第一次在英国" accent="租房。" />
+      <PageHeader eyebrow={header.eyebrow} title={header.title} accent={header.accent} />
       <div className="scene-tabs" role="tablist" aria-label="场景训练步骤">
         {skills.map((skill, index) => (
           <button
@@ -308,10 +304,10 @@ function SceneView({
           updateProgress((current) => ({ ...current, listeningCorrect: correct }));
           onComplete("listening", 8);
         }} />}
-        {activeSkill === "speaking" && <SpeakingPractice progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 6)} />}
+        {activeSkill === "speaking" && <SpeakingPractice progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
         {activeSkill === "reading" && <ReadingPractice onComplete={(score) => {
           updateProgress((current) => ({ ...current, readingScore: score }));
-          onComplete("reading", 7);
+          onComplete("reading", 18);
         }} />}
       </section>
     </>
@@ -514,21 +510,42 @@ function SpeakingPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: () => void;
 }) {
-  const [messages, setMessages] = useState<Array<{ from: "ai" | "user"; text: string }>>([{ from: "ai", text: speakingScenario.opening }]);
+  const questionIndex = Math.min(progress.speakingPart3Turns, speakingScenario.questions.length - 1);
+  const [messages, setMessages] = useState<Array<{ from: "ai" | "user"; text: string }>>([
+    { from: "ai", text: speakingScenario.opening },
+    { from: "ai", text: speakingScenario.questions[questionIndex] },
+  ]);
   const [draft, setDraft] = useState("");
   const [micStatus, setMicStatus] = useState("");
+  const [answerFeedback, setAnswerFeedback] = useState("");
 
   const send = (event?: FormEvent) => {
     event?.preventDefault();
     const text = draft.trim();
     if (!text) return;
-    const reply = aiReply(text);
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const hasDevelopment = /because|since|for example|for instance|however|although|whereas|therefore|so that/i.test(text);
+    if (wordCount < 10) {
+      const reply = "Could you explain that in a little more detail?";
+      setMessages((current) => [...current, { from: "user", text }, { from: "ai", text: reply }]);
+      setDraft("");
+      setAnswerFeedback("回答偏短：Part 3 需要观点 + 原因，尽量再展开 2–3 句。");
+      speak(reply);
+      return;
+    }
+    const nextTurns = progress.speakingPart3Turns + 1;
+    const finished = nextTurns >= speakingScenario.questions.length;
+    const reply = finished
+      ? "Thank you. That is the end of the speaking test."
+      : speakingScenario.questions[nextTurns];
     setMessages((current) => [...current, { from: "user", text }, { from: "ai", text: reply }]);
     setDraft("");
-    const nextTurns = progress.speakingTurns + 1;
-    updateProgress((current) => ({ ...current, speakingTurns: current.speakingTurns + 1 }));
+    setAnswerFeedback(hasDevelopment
+      ? `本轮完成：${wordCount} 词，并使用了展开信号。继续保持观点—原因—例子的结构。`
+      : `本轮完成：${wordCount} 词。下一题可加入 because、for example 或 however，让论证更清楚。`);
+    updateProgress((current) => ({ ...current, speakingPart3Turns: current.speakingPart3Turns + 1 }));
     speak(reply);
-    if (nextTurns >= 3) onComplete();
+    if (finished) onComplete();
   };
 
   const startMicrophone = () => {
@@ -549,15 +566,16 @@ function SpeakingPractice({
   return (
     <div className="exercise-layout speaking-layout">
       <div className="exercise-main conversation-panel">
-        <div className="exercise-kicker"><span>AI 角色对话 · Demo</span><span>{Math.min(progress.speakingTurns, 3)} / 3 轮</span></div>
+        <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
         <h2>{speakingScenario.title}</h2>
         <div className="conversation" aria-live="polite">
-          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "AI 房东" : "你"}</span><p>{message.text}</p></div>)}
+          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p>{message.text}</p></div>)}
         </div>
-        <form className="speaking-form" onSubmit={send}><button type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="用英语询问房租、押金或入住日期…" aria-label="口语回答" /><button type="submit">发送</button></form>
-        <div className="mic-status" aria-live="polite">{micStatus || "支持语音输入；不支持时可直接打字测试对话。"}</div>
+        <form className="speaking-form" onSubmit={send}><button type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="用英语回答考官，尽量说明原因并举例…" aria-label="口语回答" /><button type="submit">回答</button></form>
+        <div className="mic-status" aria-live="polite">{micStatus || "支持语音输入；也可以打字模拟回答。"}</div>
+        {answerFeedback && <div className="speaking-feedback" aria-live="polite">{answerFeedback}</div>}
       </div>
-      <aside className="exercise-context"><span>本次任务</span><ul>{speakingScenario.goals.map((goal, index) => <li className={progress.speakingTurns > index ? "is-done" : ""} key={goal}>{progress.speakingTurns > index ? "✓" : index + 1} · {goal}</li>)}</ul><p className="demo-note">当前使用本地场景逻辑，正式 AI 接口可以替换这一层而不改变学习流程。</p></aside>
+      <aside className="exercise-context speaking-exam-card"><span>真实考试结构</span><strong>{speakingScenario.duration}</strong><p>Part 3 与 Part 2 主题相关，但问题会转向更普遍、抽象的社会讨论。考官负责提问，不扮演场景角色。</p><ul>{speakingScenario.goals.map((goal, index) => <li className={progress.speakingPart3Turns > index ? "is-done" : ""} key={goal}>{progress.speakingPart3Turns > index ? "✓" : index + 1} · {goal}</li>)}</ul><p className="demo-note">当前反馈检查回答长度和展开信号，不冒充官方 IELTS 分数。</p></aside>
     </div>
   );
 }
@@ -565,19 +583,94 @@ function SpeakingPractice({
 function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
+  const answerKey = useMemo(() => Object.fromEntries([
+    ...readingExercise.matchingHeadings,
+    ...readingExercise.matchingInformation,
+    ...readingExercise.multipleChoice,
+    ...readingExercise.trueFalseNotGiven,
+    ...readingExercise.summary.questions,
+  ].map((question) => [question.id, question.answer])), []);
+  const totalQuestions = Object.keys(answerKey).length;
+  const answeredCount = Object.keys(answers).filter((id) => answers[id]).length;
+
+  const setAnswer = (id: string, answer: string) => {
+    setAnswers((current) => ({ ...current, [id]: answer }));
+    setScore(null);
+  };
+
   const submit = () => {
-    const nextScore = readingExercise.questions.filter((question) => answers[question.id] === question.answer).length;
+    const nextScore = Object.entries(answerKey).filter(([id, answer]) => answers[id] === answer).length;
     setScore(nextScore); onComplete(nextScore);
   };
+  const answerClass = (id: string) => score === null ? "" : answers[id] === answerKey[id] ? "is-correct" : "is-incorrect";
+
   return (
     <div className="reading-layout">
-      <article className="reading-passage"><div className="exercise-kicker"><span>Reading passage</span><span>约 320 词</span></div><h2>{readingExercise.title}</h2><p>{readingExercise.passage}</p></article>
-      <section className="reading-questions"><div className="exercise-kicker"><span>Questions 1–3</span><span>建议 5 分钟</span></div>
-        {readingExercise.questions.map((question, index) => (
-          <fieldset className="reading-question" key={question.id}><legend>{index + 1}. {question.prompt}</legend>{question.options.map((option) => <label className={answers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => setAnswers((current) => ({ ...current, [question.id]: option }))} />{option}</label>)}</fieldset>
-        ))}
-        {score !== null && <div className={`answer-feedback ${score === readingExercise.questions.length ? "success" : "neutral"}`}>得分 {score} / {readingExercise.questions.length}。{score < 3 ? "重新定位文中的数字、费用和限制条件。" : "信息定位准确。"}</div>}
-        <button className="secondary-action reading-submit" disabled={Object.keys(answers).length < readingExercise.questions.length} onClick={submit}>提交全部答案 →</button>
+      <article className="reading-passage">
+        <div className="exercise-kicker"><span>Academic Reading passage</span><span>约 500 词</span></div>
+        <h2>{readingExercise.title}</h2><span className="reading-subtitle">{readingExercise.subtitle}</span>
+        <div className="reading-paragraphs">
+          {readingExercise.paragraphs.map((paragraph) => <section key={paragraph.label}><strong>{paragraph.label}</strong><p>{paragraph.text}</p></section>)}
+        </div>
+      </article>
+      <section className="reading-questions">
+        <div className="exercise-kicker"><span>Questions 1–{totalQuestions}</span><span>建议 18 分钟</span></div>
+        <div className="reading-progress-line"><i style={{ width: `${Math.round(answeredCount / totalQuestions * 100)}%` }} /><span>{answeredCount}/{totalQuestions}</span></div>
+
+        <section className="reading-question-group">
+          <div className="question-type"><span>Questions 1–4</span><strong>Matching Headings</strong><p>Choose the correct heading for paragraphs A–D. There are more headings than you need.</p></div>
+          <ol className="heading-bank">{readingExercise.headings.map((heading) => <li key={heading.id}><b>{heading.id}</b>{heading.text}</li>)}</ol>
+          {readingExercise.matchingHeadings.map((question, index) => (
+            <label className={`matching-row ${answerClass(question.id)}`} key={question.id}>
+              <span>{index + 1}. Paragraph {question.paragraph}</span>
+              <select value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} aria-label={`Question ${index + 1}, paragraph ${question.paragraph}`}>
+                <option value="">Select</option>
+                {readingExercise.headings.map((heading) => <option value={heading.id} key={heading.id}>{heading.id}</option>)}
+              </select>
+            </label>
+          ))}
+        </section>
+
+        <section className="reading-question-group">
+          <div className="question-type"><span>Questions 5–6</span><strong>Matching Information</strong><p>Which paragraph contains the following information? You may use any letter more than once.</p></div>
+          {readingExercise.matchingInformation.map((question, index) => (
+            <label className={`matching-row information-row ${answerClass(question.id)}`} key={question.id}>
+              <span>{index + 5}. {question.prompt}</span>
+              <select value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} aria-label={`Question ${index + 5}`}>
+                <option value="">Select</option>
+                {readingExercise.paragraphs.map((paragraph) => <option value={paragraph.label} key={paragraph.label}>{paragraph.label}</option>)}
+              </select>
+            </label>
+          ))}
+        </section>
+
+        <section className="reading-question-group">
+          <div className="question-type"><span>Question 7</span><strong>Multiple Choice</strong><p>Choose the correct letter, A, B, C or D.</p></div>
+          {readingExercise.multipleChoice.map((question) => <fieldset className={`reading-question ${answerClass(question.id)}`} key={question.id}><legend>7. {question.prompt}</legend>{question.options.map((option, index) => <label className={answers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => setAnswer(question.id, option)} /><b>{String.fromCharCode(65 + index)}</b>{option}</label>)}</fieldset>)}
+        </section>
+
+        <section className="reading-question-group">
+          <div className="question-type"><span>Questions 8–9</span><strong>True / False / Not Given</strong><p>Do the statements agree with the information in the passage?</p></div>
+          {readingExercise.trueFalseNotGiven.map((question, index) => <fieldset className={`reading-question ${answerClass(question.id)}`} key={question.id}><legend>{index + 8}. {question.prompt}</legend>{question.options.map((option) => <label className={answers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => setAnswer(question.id, option)} />{option}</label>)}</fieldset>)}
+        </section>
+
+        <section className="reading-question-group">
+          <div className="question-type"><span>Questions 10–11</span><strong>Summary Completion</strong><p>{readingExercise.summary.instruction}</p></div>
+          <div className="summary-word-bank">{readingExercise.summary.wordBank.map((word) => <span key={word}>{word}</span>)}</div>
+          <p className="summary-question">{readingExercise.summary.textBeforeFirstGap}
+            <select className={answerClass("s1")} value={answers.s1 ?? ""} onChange={(event) => setAnswer("s1", event.target.value)} aria-label="Question 10">
+              <option value="">10</option>{readingExercise.summary.wordBank.map((word) => <option value={word} key={word}>{word}</option>)}
+            </select>
+            {readingExercise.summary.textBetweenGaps}
+            <select className={answerClass("s2")} value={answers.s2 ?? ""} onChange={(event) => setAnswer("s2", event.target.value)} aria-label="Question 11">
+              <option value="">11</option>{readingExercise.summary.wordBank.map((word) => <option value={word} key={word}>{word}</option>)}
+            </select>
+            {readingExercise.summary.textAfterSecondGap}
+          </p>
+        </section>
+
+        {score !== null && <div className={`answer-feedback ${score >= 9 ? "success" : "neutral"}`}>得分 {score} / {totalQuestions}。{score < 9 ? "检查段落主旨与细节定位；红色项目可以重新选择后再提交。" : "主旨和细节定位都很准确。"}</div>}
+        <button className="secondary-action reading-submit" disabled={answeredCount < totalQuestions} onClick={submit}>提交 {totalQuestions} 道答案 →</button>
       </section>
     </div>
   );
