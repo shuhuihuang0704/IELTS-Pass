@@ -35,6 +35,7 @@ export type DailyStudyActivity = {
 export type DailyStudyRecord = {
   date: string;
   minutes: number;
+  activeSeconds: number;
   activities: DailyStudyActivity[];
 };
 
@@ -63,6 +64,7 @@ export type LearningProgress = {
   officialTaskAttemptHistory: Record<string, OfficialTaskResult[]>;
   dailyStudyHistory: Record<string, DailyStudyRecord>;
   carryoverTasks: Skill[];
+  activeStudySeconds: number;
   minutes: number;
   streak: number;
 };
@@ -94,7 +96,7 @@ export function calculateStudyStreak(
   today = localDayKey(),
 ) {
   const activeDays = new Set(Object.entries(history)
-    .filter(([, record]) => record.minutes > 0 || record.activities.length > 0)
+    .filter(([, record]) => (record.activeSeconds ?? record.minutes * 60) >= 60)
     .map(([date]) => date));
   let cursor = activeDays.has(today) ? today : dayKeyAfter(-1, today);
   if (!activeDays.has(cursor)) return 0;
@@ -131,7 +133,8 @@ export const defaultProgress: LearningProgress = {
   officialTaskAttemptHistory: {},
   dailyStudyHistory: {},
   carryoverTasks: [],
-  minutes: 12,
+  activeStudySeconds: 0,
+  minutes: 0,
   streak: 0,
 };
 
@@ -140,20 +143,50 @@ export function recordStudyActivity(
   activity: DailyStudyActivity,
   date = localDayKey(),
 ): LearningProgress {
-  const currentRecord = progress.dailyStudyHistory[date] ?? { date, minutes: 0, activities: [] };
+  const currentRecord = progress.dailyStudyHistory[date] ?? { date, minutes: 0, activeSeconds: 0, activities: [] };
   if (currentRecord.activities.some((item) => item.id === activity.id)) return progress;
   const dailyStudyHistory = {
     ...progress.dailyStudyHistory,
     [date]: {
-      date,
-      minutes: currentRecord.minutes + activity.minutes,
-      activities: [...currentRecord.activities, activity],
+      ...currentRecord,
+      activities: [...currentRecord.activities, { ...activity, minutes: 0 }],
     },
   };
 
   return {
     ...progress,
-    minutes: progress.minutes + activity.minutes,
+    dailyStudyHistory,
+    streak: calculateStudyStreak(dailyStudyHistory),
+  };
+}
+
+export function recordAppStudyTime(
+  progress: LearningProgress,
+  elapsedSeconds: number,
+  date = localDayKey(),
+): LearningProgress {
+  const secondsToAdd = Math.max(0, Math.floor(elapsedSeconds));
+  if (secondsToAdd === 0) return progress;
+  const currentRecord = progress.dailyStudyHistory[date] ?? { date, minutes: 0, activeSeconds: 0, activities: [] };
+  const activeSeconds = (currentRecord.activeSeconds ?? 0) + secondsToAdd;
+  const activeMinutes = Math.floor(activeSeconds / 60);
+  const timeActivity: DailyStudyActivity = { id: "app-active-time", label: "App 内有效学习", minutes: activeMinutes };
+  const dailyStudyHistory = {
+    ...progress.dailyStudyHistory,
+    [date]: {
+      ...currentRecord,
+      minutes: activeMinutes,
+      activeSeconds,
+      activities: currentRecord.activities.some((activity) => activity.id === timeActivity.id)
+        ? currentRecord.activities.map((activity) => activity.id === timeActivity.id ? timeActivity : activity)
+        : [timeActivity, ...currentRecord.activities],
+    },
+  };
+  const activeStudySeconds = (progress.activeStudySeconds ?? 0) + secondsToAdd;
+  return {
+    ...progress,
+    activeStudySeconds,
+    minutes: Math.floor(activeStudySeconds / 60),
     dailyStudyHistory,
     streak: calculateStudyStreak(dailyStudyHistory),
   };
@@ -244,7 +277,15 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     lastRating: "unfamiliar",
     lapses: 0,
   }])) as Record<string, ReviewScheduleItem>;
-  const dailyStudyHistory = stored.dailyStudyHistory && typeof stored.dailyStudyHistory === "object" ? stored.dailyStudyHistory : {};
+  const storedDailyStudyHistory = stored.dailyStudyHistory && typeof stored.dailyStudyHistory === "object" ? stored.dailyStudyHistory : {};
+  const dailyStudyHistory = Object.fromEntries(Object.entries(storedDailyStudyHistory).map(([date, record]) => {
+    const activeSeconds = typeof record.activeSeconds === "number" ? Math.max(0, Math.floor(record.activeSeconds)) : 0;
+    const activities = Array.isArray(record.activities) ? record.activities.map((activity) => activity.id === "app-active-time"
+      ? { ...activity, minutes: Math.floor(activeSeconds / 60) }
+      : { ...activity, minutes: 0 }) : [];
+    return [date, { date, activeSeconds, minutes: Math.floor(activeSeconds / 60), activities }];
+  })) as Record<string, DailyStudyRecord>;
+  const activeStudySeconds = Object.values(dailyStudyHistory).reduce((total, record) => total + record.activeSeconds, 0);
   return {
     ...defaultProgress,
     ...stored,
@@ -278,6 +319,8 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     officialTaskResults: stored.officialTaskResults && typeof stored.officialTaskResults === "object" ? stored.officialTaskResults : {},
     officialTaskAttemptHistory: stored.officialTaskAttemptHistory && typeof stored.officialTaskAttemptHistory === "object" ? stored.officialTaskAttemptHistory : {},
     dailyStudyHistory,
+    activeStudySeconds,
+    minutes: Math.floor(activeStudySeconds / 60),
     streak: calculateStudyStreak(dailyStudyHistory, today),
     carryoverTasks,
   };

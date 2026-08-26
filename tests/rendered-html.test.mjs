@@ -37,6 +37,11 @@ test("ships all four learning modes and persistent progress", async () => {
     assert.match(app, new RegExp(feature));
   }
   assert.match(app, /localStorage\.setItem/);
+  assert.match(app, /document\.visibilityState === "visible"/);
+  assert.match(app, /visibilitychange/);
+  assert.match(app, /pagehide/);
+  assert.match(app, /unsavedSeconds >= 10/);
+  assert.match(app, /页面在前台可见时累计学习时间/);
   assert.match(app, /SpeechSynthesisUtterance/);
   assert.match(app, /DailyVocabularySprint/);
   assert.match(app, /Matching Headings|Matching Information|Summary Completion/);
@@ -51,6 +56,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /DailyStudyRecord/);
   assert.match(state, /dailyStudyHistory/);
   assert.match(state, /recordStudyActivity/);
+  assert.match(state, /recordAppStudyTime/);
+  assert.match(state, /activeStudySeconds/);
+  assert.match(state, /activeSeconds: number/);
+  assert.match(state, /id: "app-active-time", label: "App 内有效学习"/);
+  assert.match(state, /minutes: Math\.floor\(activeStudySeconds \/ 60\)/);
+  assert.doesNotMatch(state, /minutes: 12/);
   assert.match(state, /calculateStudyStreak/);
   assert.match(state, /streak: 0/);
   assert.match(state, /streak: calculateStudyStreak\(dailyStudyHistory, today\)/);
@@ -114,7 +125,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /toggleNotebookEntry/);
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
   assert.match(app, /每日学习记录/);
-  assert.match(app, /完整完成一项训练后/);
+  assert.match(app, /停留时间与已完成任务/);
   assert.doesNotMatch(app, /旧版累计|无法可靠拆分到具体日期/);
   assert.match(app, /showStudyHistory/);
   assert.match(app, /最近 7 天学习时间/);

@@ -19,6 +19,7 @@ import {
   localWeekKey,
   mergeStoredProgress,
   rateReviewWord,
+  recordAppStudyTime,
   recordStudyActivity,
   reviewIntervals,
   scheduleWordForReview,
@@ -679,14 +680,18 @@ export default function IeltsApp() {
   const [activeSkill, setActiveSkill] = useState<Skill>("vocabulary");
   const [activeOfficialSessionId, setActiveOfficialSessionId] = useState(officialTestSchedule[0].id);
   const [progress, setProgress] = useState<LearningProgress>(defaultProgress);
+  const progressRef = useRef<LearningProgress>(defaultProgress);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
         const stored = window.localStorage.getItem(storageKey);
-        setProgress(mergeStoredProgress(stored ? JSON.parse(stored) : null));
+        const next = mergeStoredProgress(stored ? JSON.parse(stored) : null);
+        progressRef.current = next;
+        setProgress(next);
       } catch {
+        progressRef.current = defaultProgress;
         setProgress(defaultProgress);
       } finally {
         setHydrated(true);
@@ -695,9 +700,54 @@ export default function IeltsApp() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    let unsavedSeconds = 0;
+    let lastTick = Date.now();
+    const persistTime = () => {
+      const seconds = Math.floor(unsavedSeconds);
+      if (seconds <= 0) return;
+      unsavedSeconds -= seconds;
+      const next = recordAppStudyTime(progressRef.current, seconds);
+      progressRef.current = next;
+      setProgress(next);
+      window.localStorage.setItem(storageKey, JSON.stringify(next));
+    };
+    const captureVisibleTime = () => {
+      const now = Date.now();
+      if (document.visibilityState === "visible") unsavedSeconds += Math.min(5, Math.max(0, (now - lastTick) / 1000));
+      lastTick = now;
+      if (unsavedSeconds >= 10) persistTime();
+    };
+    const timer = window.setInterval(captureVisibleTime, 1000);
+    const handleVisibilityChange = () => {
+      captureVisibleTime();
+      if (document.visibilityState !== "visible") persistTime();
+      lastTick = Date.now();
+    };
+    const handlePageHide = () => {
+      captureVisibleTime();
+      persistTime();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      captureVisibleTime();
+      persistTime();
+    };
+  }, [hydrated]);
+
   const updateProgress = (updater: (current: LearningProgress) => LearningProgress) => {
     setProgress((current) => {
       const next = updater(current);
+      progressRef.current = next;
       window.localStorage.setItem(storageKey, JSON.stringify(next));
       return next;
     });
@@ -736,6 +786,7 @@ export default function IeltsApp() {
 
   const resetProgress = () => {
     window.localStorage.removeItem(storageKey);
+    progressRef.current = defaultProgress;
     setProgress(defaultProgress);
     setView("today");
   };
@@ -968,7 +1019,7 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
     <div className="study-history-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="study-history-dialog" role="dialog" aria-modal="true" aria-labelledby="study-history-title">
         <header>
-          <div><span>STUDY HISTORY</span><h2 id="study-history-title">每日学习记录</h2><p>完整完成一项训练后，时间和内容才会记录到当天。</p></div>
+          <div><span>STUDY HISTORY</span><h2 id="study-history-title">每日学习记录</h2><p>页面在前台可见时累计学习时间；切到后台、锁屏或关闭页面时暂停并保存。</p></div>
           <button onClick={onClose} aria-label="关闭每日学习记录">×</button>
         </header>
         <div className="study-history-summary">
@@ -998,7 +1049,7 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
           <header><div><span>MONTHLY TOTAL</span><strong>每月累计学习时间</strong></div><small>最近 6 个月</small></header>
           <div>{months.map((month) => <article key={month.key}><span>{month.label}</span><i><b style={{ width: `${(month.minutes / maxMonthlyMinutes) * 100}%` }} /></i><strong>{month.minutes}<small> 分钟</small></strong></article>)}</div>
         </section>
-        <div className="study-history-list-heading"><strong>每日学习内容</strong><span>完成完整任务后写入</span></div>
+        <div className="study-history-list-heading"><strong>每日学习内容</strong><span>停留时间与已完成任务</span></div>
         <div className="study-history-list">
           {[...days].reverse().map(({ key, date, record }) => {
             const dateLabel = date.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
@@ -1006,7 +1057,7 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
               <article className={record ? "has-study" : ""} key={key}>
                 <div className="study-history-date"><span>{key === today ? "今天" : dateLabel}</span><strong>{record?.minutes ?? 0}<small> 分钟</small></strong></div>
                 <div className="study-history-activities">
-                  {record?.activities.length ? record.activities.map((activity) => <span key={activity.id}><b>{activity.label}</b><small>{activity.minutes} 分钟</small></span>) : <p>{key === today ? "今天还没有完成完整训练" : "暂无可用的每日明细"}</p>}
+                  {record?.activities.length ? record.activities.map((activity) => <span key={activity.id}><b>{activity.label}</b><small>{activity.id === "app-active-time" ? record.activeSeconds < 60 ? "不足 1 分钟" : `${activity.minutes} 分钟` : "已完成"}</small></span>) : <p>{key === today ? "今天还没有产生有效停留时间" : "暂无可用的每日明细"}</p>}
                 </div>
               </article>
             );
