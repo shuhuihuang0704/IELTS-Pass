@@ -203,6 +203,8 @@ function TodayView({
   onNavigate: (view: View) => void;
 }) {
   const nextSkill = skills.find((skill) => !progress.completed[skill.id]) ?? skills[0];
+  const todayWordSet = new Set(getDailyVocabulary(progress.dailyVocabularyDate).map((word) => word.word));
+  const todaySeenCount = progress.dailyVocabularySeen.filter((word) => todayWordSet.has(word)).length;
   return (
     <>
       <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" />
@@ -232,7 +234,7 @@ function TodayView({
             <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.label}。`}</p>
           </div>
           <button className="daily-word-row" onClick={onVocabulary}>
-            <span><small>TODAY&apos;S WORDS</small><strong>{progress.dailyVocabularySeen.length}<b>/100</b></strong></span>
+            <span><small>TODAY&apos;S WORDS</small><strong>{todaySeenCount}<b>/100</b></strong></span>
             <span className="daily-word-copy"><strong>每日高频词</strong><small>300 词核心库轮换 · 每天 5 × 20</small></span>
             <b>→</b>
           </button>
@@ -408,7 +410,9 @@ function DailyVocabularySprint({
   const [revealed, setRevealed] = useState(false);
   const dailyWords = useMemo(() => getDailyVocabulary(progress.dailyVocabularyDate), [progress.dailyVocabularyDate]);
   const total = dailyWords.length;
-  const seenCount = Math.min(progress.dailyVocabularySeen.length, total);
+  const dailyWordSet = useMemo(() => new Set(dailyWords.map((item) => item.word)), [dailyWords]);
+  const seenCount = Math.min(progress.dailyVocabularySeen.filter((item) => dailyWordSet.has(item)).length, total);
+  const knownCount = progress.dailyVocabularyKnown.filter((item) => dailyWordSet.has(item)).length;
   const finished = seenCount >= total;
   const word = dailyWords[Math.min(seenCount, total - 1)];
 
@@ -433,7 +437,7 @@ function DailyVocabularySprint({
       <div className="daily-complete">
         <span className="daily-complete-mark">100</span>
         <div><p>DAILY VOCABULARY COMPLETE</p><h2>今天的 100 个词，已经全部眼熟。</h2>
-          <span>熟悉 {progress.dailyVocabularyKnown.length} 个 · 待强化 {total - progress.dailyVocabularyKnown.length} 个</span>
+          <span>熟悉 {knownCount} 个 · 待强化 {total - knownCount} 个</span>
         </div>
       </div>
     );
@@ -472,7 +476,7 @@ function DailyVocabularySprint({
         <strong>{seenCount}<small>/100</small></strong>
         <p>先完成快速辨认。标记“还不熟”的词会自动进入复习，不要求第一次就完全拼写正确。</p>
         <div><b>{dailyVocabulary.length}</b><small>高频核心词库</small></div>
-        <div><b>{progress.dailyVocabularyKnown.length}</b><small>已经认识</small></div>
+        <div><b>{knownCount}</b><small>已经认识</small></div>
         <div><b>{progress.reviewWords.length}</b><small>等待强化</small></div>
       </aside>
     </div>
