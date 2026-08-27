@@ -1,4 +1,6 @@
 import { env } from "cloudflare:workers";
+import { pbkdf2Async } from "@noble/hashes/pbkdf2.js";
+import { sha256 as nobleSha256 } from "@noble/hashes/sha2.js";
 
 type AuthEnvironment = {
   DB?: D1Database;
@@ -24,6 +26,8 @@ type AuthUserRow = AuthUser & { progressJson: string | null };
 const sessionCookie = "ielts_pass_session";
 const wechatStateCookieName = "ielts_pass_wechat_state";
 const sessionLifetimeSeconds = 60 * 60 * 24 * 30;
+const passwordHashIterations = 210_000;
+const maximumSupportedPasswordHashIterations = 1_000_000;
 
 function authEnvironment() {
   return env as unknown as AuthEnvironment;
@@ -119,20 +123,28 @@ export async function hashPassword(passwordValue: unknown) {
   const password = String(passwordValue ?? "");
   if (password.length < 8 || password.length > 128) throw new Error("密码需要 8–128 个字符");
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-  const iterations = 210_000;
-  const derived = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, material, 256);
-  return `pbkdf2$${iterations}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(derived))}`;
+  const derived = await pbkdf2Async(nobleSha256, password, salt, {
+    c: passwordHashIterations,
+    dkLen: 32,
+    asyncTick: 8,
+  });
+  return `pbkdf2$${passwordHashIterations}$${bytesToHex(salt)}$${bytesToHex(derived)}`;
 }
 
 export async function verifyPassword(passwordValue: unknown, storedHash: string | null) {
   if (!storedHash) return false;
   const [algorithm, iterationsText, saltHex, expectedHex] = storedHash.split("$");
   if (algorithm !== "pbkdf2" || !iterationsText || !saltHex || !expectedHex) return false;
+  const iterations = Number(iterationsText);
+  if (!Number.isSafeInteger(iterations) || iterations < 1 || iterations > maximumSupportedPasswordHashIterations) return false;
+  if (!/^[0-9a-f]{32}$/i.test(saltHex) || !/^[0-9a-f]{64}$/i.test(expectedHex)) return false;
   const password = String(passwordValue ?? "");
   const salt = new Uint8Array(saltHex.match(/.{2}/g)?.map((pair) => Number.parseInt(pair, 16)) ?? []);
-  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-  const derived = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: Number(iterationsText) }, material, 256));
+  const derived = await pbkdf2Async(nobleSha256, password, salt, {
+    c: iterations,
+    dkLen: 32,
+    asyncTick: 8,
+  });
   const expected = new Uint8Array(expectedHex.match(/.{2}/g)?.map((pair) => Number.parseInt(pair, 16)) ?? []);
   if (derived.length !== expected.length) return false;
   let difference = 0;

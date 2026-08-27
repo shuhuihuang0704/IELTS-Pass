@@ -822,7 +822,9 @@ test("ships account registration, secure sessions and score onboarding", async (
   assert.match(route, /action === "onboarding"/);
   assert.match(route, /action === "profile"/);
   assert.match(route, /wechat-callback/);
-  assert.match(authServer, /PBKDF2/);
+  assert.match(authServer, /pbkdf2Async/);
+  assert.match(authServer, /passwordHashIterations = 210_000/);
+  assert.doesNotMatch(authServer, /deriveBits/);
   assert.match(authServer, /HttpOnly; Path=\/; SameSite=Lax/);
   assert.equal(JSON.parse(hosting).d1, "DB");
   assert.match(schema, /authSessions/);
