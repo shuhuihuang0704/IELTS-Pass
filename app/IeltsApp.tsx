@@ -1264,6 +1264,7 @@ function OfficialTestRunner({
   const [remainingSeconds, setRemainingSeconds] = useState(session.durationMinutes * 60);
   const [timerState, setTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
   const [showAttemptHistory, setShowAttemptHistory] = useState(false);
+  const [taskAttemptVersions, setTaskAttemptVersions] = useState<Record<string, number>>({});
   const [activeReadingQuestion, setActiveReadingQuestion] = useState<string | null>(null);
   const readingBookletRef = useRef<HTMLDivElement>(null);
   const task = material.tasks[taskIndex];
@@ -1396,8 +1397,10 @@ function OfficialTestRunner({
   };
   const redoCurrentTask = () => {
     setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
+    setTaskAttemptVersions((current) => ({ ...current, [taskKey]: (current[taskKey] ?? 0) + 1 }));
     setPaperMode("questions");
     setShowAttemptHistory(false);
+    setActiveReadingQuestion(null);
     setOfficialResponses((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${taskKey}:`))));
     updateProgress((current) => {
       const previousResult = current.officialTaskResults[taskRecordKey];
@@ -1449,7 +1452,7 @@ function OfficialTestRunner({
           )}
           <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : `official-standard-paper-body${material.audioTracks && !speakingTaskMode ? " is-listening-workspace" : ""}${writingTaskMode ? " is-writing-workspace" : ""}`}>
           {taskAnswers.length > 0 ? (
-            <form className="official-answer-sheet" onSubmit={(event) => {
+            <form key={`${taskKey}:attempt-${taskAttemptVersions[taskKey] ?? 0}`} className={`official-answer-sheet ${taskSubmitted ? "is-submitted" : "is-fresh-attempt"}`} onSubmit={(event) => {
               event.preventDefault();
               submitCurrentTask();
             }}>

@@ -399,11 +399,12 @@ button { cursor: pointer; }
 .official-answer-grid>.official-answer-item>span { color:#514959; font-size:9px; font-weight:700; }
 .official-answer-grid input,.official-answer-grid select { min-width:0; width:100%; height:34px; padding:0 8px; border:1px solid #d9d3db; border-radius:8px; color:var(--ink); background:white; font:inherit; font-size:10px; }
 .official-answer-grid input:disabled,.official-answer-grid select:disabled { opacity:1; color:var(--ink); -webkit-text-fill-color:var(--ink); background:#f7f5f2; }
-.official-answer-grid>.official-answer-item.is-correct { border-color:#a7d5c4; background:#f0f8f4; }
-.official-answer-grid>.official-answer-item.is-wrong { border-color:#e9b5ac; background:#fff4f1; }
+.official-answer-sheet.is-submitted .official-answer-grid>.official-answer-item.is-correct { border-color:#a7d5c4; background:#f0f8f4; }
+.official-answer-sheet.is-submitted .official-answer-grid>.official-answer-item.is-wrong { border-color:#e9b5ac; background:#fff4f1; }
+.official-answer-sheet.is-fresh-attempt .official-answer-grid>.official-answer-item { border-color:#e6e1e7; background:white; }
 .official-answer-grid>.official-answer-item>small { grid-column:1 / -1; padding-top:7px; display:grid; grid-template-columns:auto 1fr; align-items:start; gap:7px; border-top:1px solid rgba(90,80,92,.1); font-size:8px; line-height:1.45; }
 .official-answer-grid>.official-answer-item>small b { color:#176c4f; white-space:nowrap; }
-.official-answer-grid>.official-answer-item.is-wrong>small b { color:#a23e31; }
+.official-answer-sheet.is-submitted .official-answer-grid>.official-answer-item.is-wrong>small b { color:#a23e31; }
 .official-answer-grid>.official-answer-item>small em { color:#5f5862; text-align:right; font-style:normal; }
 .official-answer-grid>.official-answer-item>small p { grid-column:1 / -1; margin:3px 0 0; padding:8px; display:grid; grid-template-columns:32px 1fr; gap:7px; border-radius:8px; color:#5f5862; background:rgba(255,255,255,.7); line-height:1.6; }
 .official-answer-grid>.official-answer-item>small p strong { color:#5143b6; }

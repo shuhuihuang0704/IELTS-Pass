@@ -357,6 +357,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /officialTaskRecordId/);
   assert.match(app, /officialTaskResults/);
   assert.match(app, /redoCurrentTask/);
+  assert.match(app, /taskAttemptVersions/);
+  assert.match(app, /is-fresh-attempt/);
+  assert.match(app, /setActiveReadingQuestion\(null\)/);
   assert.match(app, /officialTaskAttemptHistory/);
   assert.match(app, /再做一次/);
   assert.match(app, /查看历史答案/);
@@ -478,6 +481,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet \{ max-height:calc\(100vh - 24px\); overflow-y:auto; position:sticky/);
   assert.match(styles, /\.official-reading-booklet \{ min-width:0; max-height:calc\(100vh - 24px\)/);
   assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet>footer \{[^}]*position:sticky; bottom:-15px/);
+  assert.match(styles, /\.official-answer-sheet\.is-fresh-attempt \.official-answer-grid>\.official-answer-item \{ border-color:#e6e1e7; background:white/);
   assert.match(styles, /\.reading-questions \{ position:sticky/);
   assert.match(styles, /@media \(max-width:680px\)/);
   assert.match(app, /仅显示当前 Passage/);
