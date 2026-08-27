@@ -1,4 +1,5 @@
 import { expandedVocabularyRows } from "./vocabulary-expanded";
+import { listeningCorpusMeta, listeningCorpusPhrases, listeningCorpusWords } from "./listening-corpus";
 
 export type Skill = "vocabulary" | "listening" | "speaking" | "reading";
 
@@ -9,105 +10,27 @@ export const skills: Array<{
   description: string;
   duration: string;
 }> = [
-  { id: "vocabulary", short: "词", label: "每日词汇", description: "按备考周期生成高频词速刷 + 80 词场景听写", duration: "按计划" },
+  { id: "vocabulary", short: "词", label: "每日词汇", description: "按备考周期生成高频词速刷、语料听写与连读词组", duration: "按计划" },
   { id: "listening", short: "听", label: "听力精练", description: "Section 1 填空、多选、匹配与单选", duration: "12 分钟" },
   { id: "speaking", short: "说", label: "口语 Part 3", description: "真人考官式抽象讨论与追问", duration: "5 分钟" },
   { id: "reading", short: "读", label: "阅读套题", description: "匹配、单选、判断与摘要填空", duration: "18 分钟" },
 ];
 
-const listeningVocabularySource = `
-deposit|押金；保证金|A refundable deposit is required.
-furnished|配有家具的|The room is fully furnished.
-landlord|房东|Please contact the landlord.
-utilities|水电燃气等费用|Utilities are included in the rent.
-tenant|租户|The tenant signed the agreement.
-balcony|阳台|The flat has a small balcony.
-garage|车库|A garage is available behind the house.
-heating|暖气；供暖|Central heating is included.
-lease|租约|The lease lasts for twelve months.
-apartment|公寓|The apartment is near the station.
-departure|出发；离开|The departure time is eight thirty.
-arrival|到达|Please confirm your arrival date.
-itinerary|行程安排|Your itinerary will arrive by email.
-luggage|行李|Large luggage must be labelled.
-platform|站台|The train leaves from platform six.
-terminal|航站楼；终点站|Meet us outside the main terminal.
-passenger|乘客|Each passenger needs a ticket.
-reservation|预订|I would like to change my reservation.
-journey|旅程|The journey takes about two hours.
-vehicle|车辆|No private vehicle is required.
-assignment|作业；任务|The assignment is due on Friday.
-lecture|讲座；课程|The lecture begins at nine.
-tutorial|辅导课；研讨课|Our tutorial meets every Tuesday.
-library|图书馆|The library closes at midnight.
-campus|校园|The residence is on the north campus.
-scholarship|奖学金|She applied for a scholarship.
-semester|学期|The first semester starts in September.
-certificate|证书|You will receive a certificate.
-laboratory|实验室|Safety glasses are required in the laboratory.
-curriculum|课程体系|The new curriculum includes fieldwork.
-appointment|预约|I need to book an appointment.
-pharmacy|药房|The pharmacy is beside the clinic.
-treatment|治疗|The treatment takes six weeks.
-insurance|保险|Travel insurance is strongly recommended.
-allergy|过敏|Please tell us about any allergy.
-exercise|锻炼|Regular exercise can reduce stress.
-nutrition|营养|The course focuses on child nutrition.
-symptom|症状|Describe each symptom carefully.
-clinic|诊所|The campus clinic opens at eight.
-surgery|手术；诊所|The surgery is closed on Sunday.
-employer|雇主|Your employer must sign the form.
-interview|面试；访谈|The interview lasts thirty minutes.
-experience|经验|Previous experience is not necessary.
-qualification|资格；学历|A teaching qualification is preferred.
-reference|推荐信；参考|Please provide one academic reference.
-salary|薪水|The starting salary is competitive.
-training|培训|All staff receive safety training.
-uniform|制服|A uniform is provided at work.
-vacancy|空缺职位|The vacancy is for a receptionist.
-volunteer|志愿者|Each volunteer works one morning.
-recycling|回收利用|Recycling bins are near the entrance.
-pollution|污染|Traffic pollution affects the city centre.
-conservation|保护|The project supports forest conservation.
-climate|气候|The lecture examines climate change.
-habitat|栖息地|The wetland provides a natural habitat.
-energy|能源|The building uses solar energy.
-agriculture|农业|Modern agriculture needs less water.
-wildlife|野生动物|Visitors must not feed the wildlife.
-forest|森林|The path continues through the forest.
-drought|干旱|The region experienced a severe drought.
-reception|接待处|Collect your key from reception.
-restaurant|餐厅|The restaurant opens at six.
-laundry|洗衣房；洗衣|The laundry is on the ground floor.
-membership|会员资格|Annual membership costs forty pounds.
-facility|设施|The sports facility opens daily.
-entrance|入口|Use the side entrance after six.
-parking|停车场；停车|Free parking is available nearby.
-delivery|递送|The delivery will arrive on Monday.
-discount|折扣|Students receive a ten percent discount.
-receipt|收据|Keep the receipt for your records.
-museum|博物馆|The museum tour starts at eleven.
-theatre|剧院|The theatre is opposite the library.
-festival|节日；庆典|The festival takes place in June.
-exhibition|展览|The photography exhibition is free.
-competition|比赛|Entries for the competition close tomorrow.
-conference|会议|The conference lasts for three days.
-workshop|工作坊|Book the afternoon workshop online.
-photography|摄影|Photography is not allowed inside.
-swimming|游泳|Swimming lessons are held on Saturdays.
-gardening|园艺|The gardening club meets every month.
-`.trim();
-
-export const vocabulary = listeningVocabularySource.split("\n").map((line) => {
-  const [word, meaning, example] = line.split("|");
-  return {
-    word,
-    meaning,
-    example,
-    phonetic: "",
-    hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
-  };
+const corpusPhraseExampleByWord = new Map<string, string>();
+listeningCorpusPhrases.forEach(({ term }) => {
+  term.toLowerCase().split(" ").forEach((word) => {
+    if (!corpusPhraseExampleByWord.has(word)) corpusPhraseExampleByWord.set(word, term);
+  });
 });
+
+export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }) => ({
+  word,
+  meaning,
+  section,
+  example: corpusPhraseExampleByWord.get(word.toLowerCase()) ?? `Listen carefully for the word “${word}”.`,
+  phonetic: "",
+  hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
+}));
 
 const dailyVocabularySource = `
 analyse|分析；剖析|学术核心|analyse the results
@@ -523,32 +446,51 @@ export function getDailyVocabulary(dayKey: string, count = 100) {
   );
 }
 
-export const connectedSpeechPhrases = [
-  { phrase: "could you tell me", meaning: "你能告诉我吗", feature: "连读与合音", note: "could you 中 /d/ + /j/ 常合成接近 /dʒ/ 的声音" },
-  { phrase: "would you like to", meaning: "你想要……吗", feature: "合音与弱读", note: "would you 连读；to 在句中常弱读为 /tə/" },
-  { phrase: "did you receive it", meaning: "你收到它了吗", feature: "合音与连读", note: "did you 常听起来接近 /dɪdʒə/，receive it 元辅音连读" },
-  { phrase: "do you need it", meaning: "你需要它吗", feature: "合音与连读", note: "do you 可能听起来接近 /dʒə/，need it 连读" },
-  { phrase: "a couple of days", meaning: "几天；两三天", feature: "弱读", note: "of 通常弱读为 /əv/，与前后词连在一起" },
-  { phrase: "a lot of people", meaning: "很多人", feature: "连读", note: "lot of 常连成一组，of 使用弱读形式" },
-  { phrase: "one of the reasons", meaning: "原因之一", feature: "弱读", note: "of 和 the 都很轻，重音落在 one 与 reasons" },
-  { phrase: "most of the students", meaning: "大多数学生", feature: "弱读与辅音群", note: "most of the 中间辅音密集，/t/ 可能不完全释放" },
-  { phrase: "at the end of the week", meaning: "在本周末", feature: "连读与弱读", note: "end of 元辅音连读，两个 the 都使用弱读" },
-  { phrase: "in front of the library", meaning: "在图书馆前面", feature: "失爆与弱读", note: "front of 中 /t/ 在后接元音时快速连接，of 弱读" },
-  { phrase: "next door to the bank", meaning: "银行隔壁", feature: "辅音省略", note: "next door 的 /t/ 在辅音 /d/ 前常弱化或省略" },
-  { phrase: "used to be", meaning: "过去曾经是", feature: "辅音群简化", note: "used to 常读作 /juːstə/，不要逐字分开" },
-  { phrase: "have to submit it", meaning: "必须提交它", feature: "同化与弱读", note: "have to 中 have 常读成 /hæf/，to 弱读" },
-  { phrase: "going to arrive", meaning: "将要到达", feature: "弱化", note: "自然语流中 going to 会明显压缩，但正式拼写仍是 going to" },
-  { phrase: "want to change it", meaning: "想要更改它", feature: "辅音群简化", note: "want to 中两个 /t/ 不会完整重复，change it 连读" },
-  { phrase: "as soon as possible", meaning: "尽快", feature: "连续连读", note: "as 的尾辅音会与后面的元音自然连接" },
-  { phrase: "first of all", meaning: "首先", feature: "连读与弱读", note: "first of 连读，of 通常弱读为 /əv/" },
-  { phrase: "for example", meaning: "例如", feature: "弱读", note: "for 在句中常弱读为 /fə/，重音落在 example" },
-  { phrase: "there are several options", meaning: "有几个选项", feature: "弱读与连读", note: "there are 常紧密连读，are 不单独重读" },
-  { phrase: "could have been", meaning: "本来可能已经", feature: "弱读与缩合", note: "could have 常听起来接近 /kʊdəv/，不是 could of" },
-  { phrase: "should have checked", meaning: "本应该检查", feature: "弱读与失爆", note: "should have 常压缩为 /ʃʊdəv/，checked 的尾音轻" },
-  { phrase: "might have changed", meaning: "可能已经改变", feature: "弱读与辅音群", note: "might have 中 have 弱读，词间不会明显停顿" },
-  { phrase: "can you send it", meaning: "你能发送它吗", feature: "弱读与连读", note: "can 在疑问句中通常不重读，send it 连读" },
-  { phrase: "the rest of the course", meaning: "课程剩余部分", feature: "失爆与弱读", note: "rest of 中 /t/ 快速连接，of 与 the 都弱读" },
-];
+function rotatingCorpusSlice<T>(items: T[], dayKey: string, count: number, salt: number) {
+  const dayNumber = Math.floor(new Date(`${dayKey}T00:00:00`).getTime() / 86_400_000);
+  const safeCount = Math.min(Math.max(0, Math.round(count)), items.length);
+  const start = ((dayNumber * Math.max(1, safeCount) + salt) % items.length + items.length) % items.length;
+  return Array.from({ length: safeCount }, (_, index) => items[(start + index) % items.length]);
+}
+
+export function getDailyListeningVocabulary(dayKey: string, count: number) {
+  return rotatingCorpusSlice(vocabulary, dayKey, count, 173);
+}
+
+const weakFormWords = new Set(["a", "an", "and", "are", "as", "at", "can", "for", "from", "have", "in", "of", "on", "or", "the", "to", "was", "were", "with"]);
+
+function buildConnectedSpeechGuidance(phrase: string) {
+  const words = phrase.toLowerCase().split(" ");
+  const includesWeakForm = words.some((word) => weakFormWords.has(word));
+  const hasConsonantCluster = words.slice(0, -1).some((word, index) =>
+    /[bcdfghjklmnpqrstvwxyz]$/.test(word) && /^[bcdfghjklmnpqrstvwxyz]/.test(words[index + 1]),
+  );
+  if (includesWeakForm) return {
+    feature: "弱读与连读",
+    note: "先抓内容词重音；冠词、介词和连词读轻一些，整组保持连续，不要逐词停顿。",
+  };
+  if (hasConsonantCluster) return {
+    feature: "辅音衔接与失爆",
+    note: "相邻辅音不要分别用力爆破；保留词组节奏，让前一个词的尾音自然接到后一个词。",
+  };
+  return {
+    feature: "词间连读与重音",
+    note: "重读承载信息的关键词，其余音节适度压缩；保持一个完整意群，不要把每个词切开。",
+  };
+}
+
+export const connectedSpeechPhrases = listeningCorpusPhrases.map(({ term: phrase, meaning, section }) => ({
+  phrase,
+  meaning,
+  section,
+  ...buildConnectedSpeechGuidance(phrase),
+}));
+
+export function getDailyConnectedSpeechPhrases(dayKey: string, count: number) {
+  return rotatingCorpusSlice(connectedSpeechPhrases, dayKey, count, 947);
+}
+
+export { listeningCorpusMeta };
 
 export const listeningExercise = {
   title: "University Residence Enquiry",

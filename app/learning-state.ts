@@ -73,7 +73,7 @@ export type LearningProgress = {
   streak: number;
 };
 
-export const vocabularyLibraryVersion = "3600-v1";
+export const vocabularyLibraryVersion = "3600-v2-listening-corpus";
 export const vocabularyPlanSize = 3600;
 
 export function normalizeStudyPlanDays(value: unknown) {
@@ -84,6 +84,16 @@ export function normalizeStudyPlanDays(value: unknown) {
 
 export function dailyVocabularyTarget(planDays: number) {
   return Math.ceil(vocabularyPlanSize / normalizeStudyPlanDays(planDays));
+}
+
+export function dailyDictationTarget(planDays: number) {
+  const scaledTarget = 80 * 36 / normalizeStudyPlanDays(planDays);
+  return Math.max(20, Math.min(100, Math.round(scaledTarget / 10) * 10));
+}
+
+export function dailyConnectedSpeechTarget(planDays: number) {
+  const scaledTarget = 24 * 36 / normalizeStudyPlanDays(planDays);
+  return Math.max(6, Math.min(30, Math.round(scaledTarget)));
 }
 
 export function officialSessionsPerWeek(planDays: number) {

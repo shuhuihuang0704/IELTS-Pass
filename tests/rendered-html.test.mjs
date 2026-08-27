@@ -27,10 +27,11 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
 });
 
 test("ships all four learning modes and persistent progress", async () => {
-  const [app, data, expandedVocabulary, notices, state, styles] = await Promise.all([
+  const [app, data, expandedVocabulary, listeningCorpus, notices, state, styles] = await Promise.all([
     readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/vocabulary-expanded.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/listening-corpus.ts", import.meta.url), "utf8"),
     readFile(new URL("../THIRD_PARTY_NOTICES.md", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-state.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
@@ -54,6 +55,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /studyPlanStartedAt: string/);
   assert.match(state, /targetBandScore: number/);
   assert.match(state, /dailyVocabularyTarget/);
+  assert.match(state, /dailyDictationTarget/);
+  assert.match(state, /dailyConnectedSpeechTarget/);
   assert.match(state, /officialSessionsPerWeek/);
   assert.match(state, /estimatedDailyMinutes/);
   assert.match(state, /normalizeTargetBandScore/);
@@ -68,7 +71,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /officialTestSchedule\.slice\(0, sessionsPerWeek\)/);
   assert.match(state, /completedDailyTasks/);
   assert.match(state, /officialPracticePercent/);
-  assert.match(state, /vocabularyLibraryVersion = "3600-v1"/);
+  assert.match(state, /vocabularyLibraryVersion = "3600-v2-listening-corpus"/);
   assert.match(state, /isCurrentVocabularyLibrary/);
   assert.match(state, /speakingPart3Turns/);
   assert.match(state, /listeningScore/);
@@ -113,17 +116,18 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.equal(new Set(words).size, 300);
   assert.match(data, /getDailyVocabulary/);
   assert.match(data, /AWL 学术词族/);
-  const listeningSource = data.match(/const listeningVocabularySource = `([\s\S]*?)`\.trim\(\)/);
-  assert.ok(listeningSource, "listening vocabulary source should exist");
-  const listeningWords = listeningSource[1].trim().split("\n").map((line) => line.split("|")[0]);
-  assert.equal(listeningWords.length, 80);
-  assert.equal(new Set(listeningWords).size, 80);
+  const corpusWordRows = listeningCorpus.match(/const listeningCorpusWordRows = \[([\s\S]*?)\] as const;/);
+  const corpusPhraseRows = listeningCorpus.match(/const listeningCorpusPhraseRows = \[([\s\S]*?)\] as const;/);
+  assert.ok(corpusWordRows, "imported listening word corpus should exist");
+  assert.ok(corpusPhraseRows, "imported listening phrase corpus should exist");
+  assert.equal((corpusWordRows[1].match(/^ {2}\[/gm) ?? []).length, 2684);
+  assert.equal((corpusPhraseRows[1].match(/^ {2}\[/gm) ?? []).length, 1999);
+  assert.match(data, /getDailyListeningVocabulary/);
+  assert.match(data, /getDailyConnectedSpeechPhrases/);
   assert.match(data, /matchingHeadings|matchingInformation|trueFalseNotGiven|summary/);
   assert.match(data, /Two-way discussion|questions:/);
   assert.match(data, /formCompletion|multipleSelect|matching|multipleChoice/);
-  const connectedSpeechSource = data.match(/export const connectedSpeechPhrases = \[([\s\S]*?)\];/);
-  assert.ok(connectedSpeechSource, "connected speech phrase source should exist");
-  assert.equal((connectedSpeechSource[1].match(/\{ phrase:/g) ?? []).length, 24);
+  assert.match(data, /export const connectedSpeechPhrases = listeningCorpusPhrases\.map/);
   assert.match(app, /listening-section-1\.wav/);
   assert.match(app, /listening-scrubber/);
   assert.match(app, /currentTime = nextTime/);
@@ -145,7 +149,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /拖动场景听写进度/);
   assert.match(app, /每个词后预留约 4 秒书写时间/);
   assert.doesNotMatch(app, /playDictationWord|播放当前词|自动播放下一词/);
-  assert.match(app, /一次提交本组 10 词/);
+  assert.match(app, /一次提交本组 \{dictationWords\.length\} 词/);
   assert.match(app, /moveToNextDictationInput/);
   assert.match(app, /wrongWords\.forEach/);
   assert.match(styles, /\.dictation-batch-list/);

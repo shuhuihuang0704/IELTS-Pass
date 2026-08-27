@@ -4,7 +4,10 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   connectedSpeechPhrases,
   dailyVocabulary,
+  getDailyConnectedSpeechPhrases,
+  getDailyListeningVocabulary,
   getDailyVocabulary,
+  listeningCorpusMeta,
   listeningExercise,
   readingExercise,
   skills,
@@ -14,6 +17,8 @@ import {
 } from "./learning-data";
 import {
   completionPercent,
+  dailyConnectedSpeechTarget,
+  dailyDictationTarget,
   dailyVocabularyTarget,
   defaultProgress,
   localDayKey,
@@ -2238,9 +2243,20 @@ function VocabularyPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const dictationTarget = dailyDictationTarget(progress.studyPlanDays);
+  const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays);
   const [mode, setMode] = useState<"daily" | "typing" | "phrases">("daily");
-  const completedDictationCount = vocabulary.filter((item) => progress.dailyDictationSeen.includes(item.word)).length;
-  const [dictationGroup, setDictationGroup] = useState(() => Math.min(7, Math.floor(completedDictationCount / 10)));
+  const dailyDictationWords = useMemo(
+    () => getDailyListeningVocabulary(progress.dailyVocabularyDate, dictationTarget),
+    [dictationTarget, progress.dailyVocabularyDate],
+  );
+  const dailyConnectedSpeechPhrases = useMemo(
+    () => getDailyConnectedSpeechPhrases(progress.dailyVocabularyDate, phraseTarget),
+    [phraseTarget, progress.dailyVocabularyDate],
+  );
+  const completedDictationCount = dailyDictationWords.filter((item) => progress.dailyDictationSeen.includes(item.word)).length;
+  const dictationGroupCount = Math.max(1, Math.ceil(dailyDictationWords.length / 10));
+  const [dictationGroup, setDictationGroup] = useState(() => Math.min(dictationGroupCount - 1, Math.floor(completedDictationCount / 10)));
   const [dictationAnswers, setDictationAnswers] = useState<string[]>(() => Array(10).fill(""));
   const [dictationSubmitted, setDictationSubmitted] = useState(false);
   const [activeDictationItem, setActiveDictationItem] = useState(0);
@@ -2251,12 +2267,15 @@ function VocabularyPractice({
   const dictationAnchorTimeRef = useRef(0);
   const dictationAnchorStartedRef = useRef(0);
   const dictationLastSpokenRef = useRef(-1);
-  const dictationWords = vocabulary.slice(dictationGroup * 10, dictationGroup * 10 + 10);
+  const dictationWords = useMemo(
+    () => dailyDictationWords.slice(dictationGroup * 10, dictationGroup * 10 + 10),
+    [dailyDictationWords, dictationGroup],
+  );
   const dictationSlotSeconds = 5;
   const dictationSpeechWindowSeconds = 1.6;
   const dictationAudioDuration = dictationWords.length * dictationSlotSeconds;
   const filledDictationCount = dictationAnswers.filter((answer) => answer.trim()).length;
-  const dictationCorrectCount = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word).length;
+  const dictationCorrectCount = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word.toLowerCase()).length;
 
   useEffect(() => {
     if (dictationPlayback !== "playing") return;
@@ -2275,14 +2294,14 @@ function VocabularyPractice({
       setActiveDictationItem(itemIndex);
       if (dictationLastSpokenRef.current !== itemIndex) {
         dictationInputRefs.current[itemIndex]?.focus();
-        if (slotOffset <= dictationSpeechWindowSeconds) speak(vocabulary[dictationGroup * 10 + itemIndex].word, .72);
+        if (slotOffset <= dictationSpeechWindowSeconds) speak(dictationWords[itemIndex].word, .72);
         dictationLastSpokenRef.current = itemIndex;
       }
     };
     updatePlayback();
     const timer = window.setInterval(updatePlayback, 100);
     return () => window.clearInterval(timer);
-  }, [dictationAudioDuration, dictationGroup, dictationPlayback, dictationWords.length]);
+  }, [dictationAudioDuration, dictationPlayback, dictationWords]);
 
   useEffect(() => () => {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -2353,8 +2372,8 @@ function VocabularyPractice({
     if (filledDictationCount < dictationWords.length) return;
     setDictationSubmitted(true);
     updateProgress((current) => {
-      const correctWords = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word).map((item) => item.word);
-      const wrongWords = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() !== item.word);
+      const correctWords = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word.toLowerCase()).map((item) => item.word);
+      const wrongWords = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() !== item.word.toLowerCase());
       let next: LearningProgress = {
         ...current,
         dailyDictationSeen: Array.from(new Set([...current.dailyDictationSeen, ...dictationWords.map((item) => item.word)])),
@@ -2363,25 +2382,25 @@ function VocabularyPractice({
       wrongWords.forEach((item) => { next = scheduleWordForReview(next, item.word, "unfamiliar", 0); });
       return next;
     });
-    if (dictationGroup === 7) onSectionComplete("dictation");
+    if (dictationGroup === dictationGroupCount - 1) onSectionComplete("dictation");
   };
 
   return (
     <>
       <div className="vocabulary-mode-switch" role="tablist" aria-label="词汇练习模式">
         <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 {vocabularyTarget} 词 {progress.dailyVocabularyCompleted ? "✓" : ""}</button>
-        <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写 80 词 {progress.dailyDictationCompleted ? "✓" : ""}</button>
-        <button role="tab" aria-selected={mode === "phrases"} className={mode === "phrases" ? "is-active" : ""} onClick={() => setMode("phrases")}>吞音词组 {connectedSpeechPhrases.length}</button>
+        <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写 {dictationTarget} 词 {progress.dailyDictationCompleted ? "✓" : ""}</button>
+        <button role="tab" aria-selected={mode === "phrases"} className={mode === "phrases" ? "is-active" : ""} onClick={() => setMode("phrases")}>吞音词组 {phraseTarget}</button>
       </div>
-      <p className="completion-requirement">完成每日 {vocabularyTarget} 词和场景听写 80 词后，词汇任务才会打勾；吞音词组为专项加练。</p>
+      <p className="completion-requirement">当前 {progress.studyPlanDays} 天计划：每日 {vocabularyTarget} 个核心词、{dictationTarget} 个语料听写词与 {phraseTarget} 个连读词组；完成核心词和场景听写后，词汇任务才会打勾。</p>
       {mode === "daily" ? (
         <DailyVocabularySprint progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
       ) : mode === "typing" ? (
         <div className="exercise-layout">
           <div className="exercise-main dictation-batch-practice">
-            <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / 8 组</span><span>{completedDictationCount} / {vocabulary.length}</span></div>
+            <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / {dictationGroupCount} 组</span><span>{completedDictationCount} / {dailyDictationWords.length}</span></div>
             <h2>一段音频，连续听写 10 个词</h2><p>每个词后预留约 4 秒书写时间；可以随时暂停、继续或拖动进度，整组提交前不显示答案和中文。</p>
-            <section className="dictation-sequence-player" aria-label={`第 ${dictationGroup + 1} 组连续听写播放器`}>
+            <section className="dictation-sequence-player" aria-label={`第 ${dictationGroup + 1} 组连续听写播放器；语料来源 ${listeningCorpusMeta.source}`}>
               <button type="button" className="dictation-sequence-toggle" onClick={toggleDictationSequence} aria-label={dictationPlayback === "playing" ? "暂停本组听写" : "播放本组听写"}>{dictationPlayback === "playing" ? "Ⅱ" : "▶"}</button>
               <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 个词` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 个词` : dictationPlayback === "ended" ? "本组音频播放完毕" : "播放本组 10 词录音"}</strong><small>10 个词 · 每词约 1 秒 · 间隔约 4 秒</small></div>
               <input type="range" min="0" max={dictationAudioDuration} step="0.1" value={dictationAudioTime} onChange={(event) => seekDictationSequence(Number(event.target.value))} aria-label="拖动场景听写进度" />
@@ -2392,7 +2411,7 @@ function VocabularyPractice({
               <div className="dictation-batch-list">
                 {dictationWords.map((item, itemIndex) => {
                   const answer = dictationAnswers[itemIndex] ?? "";
-                  const correct = answer.trim().toLowerCase() === item.word;
+                  const correct = answer.trim().toLowerCase() === item.word.toLowerCase();
                   const saved = progress.notebook.some((entry) => entry.id === `word:${item.word.toLowerCase()}`);
                   return <article className={`${activeDictationItem === itemIndex ? "is-active " : ""}${dictationSubmitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={item.word}>
                     <span className="dictation-item-number">{dictationGroup * 10 + itemIndex + 1}</span>
@@ -2402,8 +2421,8 @@ function VocabularyPractice({
                 })}
               </div>
               <footer className="dictation-batch-footer">
-                <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / 10 正确` : `${filledDictationCount} / 10 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 连续作答，最后统一检查"}</span></div>
-                {!dictationSubmitted ? <button type="submit" disabled={filledDictationCount < dictationWords.length}>一次提交本组 10 词</button> : <div><button type="button" className="is-secondary" onClick={() => { resetDictationPlayer(); setDictationAnswers(Array(10).fill("")); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < 7 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
+                <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / ${dictationWords.length} 正确` : `${filledDictationCount} / ${dictationWords.length} 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 连续作答，最后统一检查"}</span></div>
+                {!dictationSubmitted ? <button type="submit" disabled={filledDictationCount < dictationWords.length}>一次提交本组 {dictationWords.length} 词</button> : <div><button type="button" className="is-secondary" onClick={() => { resetDictationPlayer(); setDictationAnswers(Array(dictationWords.length).fill("")); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < dictationGroupCount - 1 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
               </footer>
             </form>
           </div>
@@ -2416,25 +2435,27 @@ function VocabularyPractice({
           </aside>
         </div>
       ) : (
-        <ConnectedSpeechPractice progress={progress} updateProgress={updateProgress} />
+        <ConnectedSpeechPractice phrases={dailyConnectedSpeechPhrases} progress={progress} updateProgress={updateProgress} />
       )}
     </>
   );
 }
 
 function ConnectedSpeechPractice({
+  phrases,
   progress,
   updateProgress,
 }: {
+  phrases: typeof connectedSpeechPhrases;
   progress: LearningProgress;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const completedCount = connectedSpeechPhrases.filter((item) => progress.connectedSpeechSeen.includes(item.phrase)).length;
-  const [index, setIndex] = useState(() => Math.min(completedCount, connectedSpeechPhrases.length - 1));
+  const completedCount = phrases.filter((item) => progress.connectedSpeechSeen.includes(item.phrase)).length;
+  const [index, setIndex] = useState(() => Math.min(completedCount, phrases.length - 1));
   const [value, setValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const phrase = connectedSpeechPhrases[index];
-  const finished = completedCount >= connectedSpeechPhrases.length;
+  const phrase = phrases[index];
+  const finished = completedCount >= phrases.length;
   const normalize = (text: string) => text.trim().toLowerCase().replace(/[.,?!]/g, "").replace(/\s+/g, " ");
 
   const check = (event?: FormEvent) => {
@@ -2454,27 +2475,27 @@ function ConnectedSpeechPractice({
   const next = () => {
     if (!feedback) return;
     updateProgress((current) => ({ ...current, connectedSpeechSeen: Array.from(new Set([...current.connectedSpeechSeen, phrase.phrase])) }));
-    if (index < connectedSpeechPhrases.length - 1) setIndex((current) => current + 1);
+    if (index < phrases.length - 1) setIndex((current) => current + 1);
     setValue("");
     setFeedback(null);
   };
 
   if (finished) {
-    return <div className="daily-complete"><span className="daily-complete-mark">{connectedSpeechPhrases.length}</span><div><p>CONNECTED SPEECH COMPLETE</p><h2>今天的连读与吞音词组已经练完。</h2><span>拼错的词组已经进入复习，可以随时回听。</span></div></div>;
+    return <div className="daily-complete"><span className="daily-complete-mark">{phrases.length}</span><div><p>CONNECTED SPEECH COMPLETE</p><h2>今天的连读与吞音词组已经练完。</h2><span>拼错的词组已经进入复习，可以随时回听。</span></div></div>;
   }
 
   return (
     <div className="exercise-layout connected-speech-layout">
       <div className="exercise-main typing-practice">
-        <div className="exercise-kicker"><span>连读 / 弱读 / 失爆</span><span>{completedCount + (feedback ? 1 : 0)} / {connectedSpeechPhrases.length}</span></div>
+        <div className="exercise-kicker"><span>连读 / 弱读 / 失爆 · 已导入语料库</span><span>{completedCount + (feedback ? 1 : 0)} / {phrases.length}</span></div>
         <h2>听自然语流，写出完整词组</h2><p>先听自然语速；需要时再听慢速，不显示文字提示。</p>
         <div className="phrase-audio-actions"><button className="audio-control" onClick={() => speak(phrase.phrase, .98)}><span>▶</span>自然语速</button><button className="audio-control" onClick={() => speak(phrase.phrase, .62)}>慢速拆听</button></div>
         <form className="typing-form" onSubmit={check}><input value={value} onChange={(event) => setValue(event.target.value)} spellCheck={false} placeholder="输入听到的完整词组…" aria-label="输入听到的完整词组" /><button type="submit">检查</button></form>
         <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? "检查后显示完整词组、中文和语流现象。"}</div>
         {feedback && <div className="dictation-reveal phrase-reveal"><span>{phrase.feature}</span><strong>{phrase.phrase}</strong><p>{phrase.meaning}</p><small>{phrase.note}</small><button className={progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "inline-note-button is-saved" : "inline-note-button"} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${phrase.phrase.toLowerCase()}`, kind: "word", title: phrase.phrase, detail: `${phrase.meaning}\n${phrase.note}`, source: `吞音词组 · ${phrase.feature}` }))}>{progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div>}
-        <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === connectedSpeechPhrases.length - 1 ? "完成加练" : "下一个"} →</button></div>
+        <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === phrases.length - 1 ? "完成加练" : "下一个"} →</button></div>
       </div>
-      <aside className="exercise-context"><span>听音重点</span><p>{feedback ? phrase.note : "不要尝试把每个词切开听。先抓重读词，再从弱读、连读和辅音变化中还原完整词组。"}</p><div className="context-stat"><strong>{connectedSpeechPhrases.length}</strong><span>真实场景高频词组</span></div></aside>
+      <aside className="exercise-context"><span>听音重点</span><p>{feedback ? phrase.note : "不要尝试把每个词切开听。先抓重读词，再从弱读、连读和辅音变化中还原完整词组。"}</p><div className="context-stat"><strong>{phrases.length}</strong><span>今日语料词组</span></div></aside>
     </div>
   );
 }
@@ -3192,7 +3213,7 @@ const wordbookEntries: WordbookEntry[] = Array.from(new Map([
     meaning: entry.meaning,
     partOfSpeech: inferPartOfSpeech(entry.word, entry.meaning),
     example: entry.example,
-    category: "场景听写",
+    category: `语料听写 · ${entry.section}`,
     collection: "listening" as const,
   })),
 ].map((entry) => [entry.word.toLowerCase(), entry])).values()).sort((a, b) => a.word.localeCompare(b.word));
@@ -3251,7 +3272,7 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
       <button className="wordbook-back" onClick={onBack}>← 返回“我的”</button>
       <PageHeader eyebrow="MY WORDBOOK" title="把全部词汇，装进" accent="一本单词本。" />
       <section className="wordbook-hero">
-        <div><span>IELTS LEARNING LIBRARY</span><strong>{wordbookEntries.length}<small> 个待学习词汇</small></strong><p>包含 {coreCount} 个高频核心词与 {listeningCount} 个去重后的场景听写补充词。</p></div>
+        <div><span>IELTS LEARNING LIBRARY</span><strong>{wordbookEntries.length}<small> 个待学习词汇</small></strong><p>包含 {coreCount} 个高频核心词与 {listeningCount} 个来自已导入语料库的场景听写词。</p></div>
         <div className="wordbook-hero-stats"><span><b>{progress.reviewWords.length}</b>待复习</span><span><b>{progress.masteredWords.length}</b>已掌握</span></div>
       </section>
       <section className="wordbook-toolbar" aria-label="单词本筛选与全词典搜索">
@@ -3372,6 +3393,8 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
   const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const planDictationTarget = dailyDictationTarget(progress.studyPlanDays);
+  const planPhraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays);
   const planSessions = targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore);
   const planProgress = overallPlanProgress(progress);
   const planDay = planProgress.planDay;
@@ -3393,12 +3416,15 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
     updateProgress((current) => {
       if (current.studyPlanDays === nextDays) return current;
       const targetWords = getDailyVocabulary(current.dailyVocabularyDate, dailyVocabularyTarget(nextDays));
+      const targetDictationWords = getDailyListeningVocabulary(current.dailyVocabularyDate, dailyDictationTarget(nextDays));
       const dailyVocabularyCompleted = targetWords.every((item) => current.dailyVocabularyKnown.includes(item.word));
+      const dailyDictationCompleted = targetDictationWords.every((item) => current.dailyDictationSeen.includes(item.word));
       return {
         ...current,
         studyPlanDays: nextDays,
         dailyVocabularyCompleted,
-        completed: { ...current.completed, vocabulary: dailyVocabularyCompleted && current.dailyDictationCompleted },
+        dailyDictationCompleted,
+        completed: { ...current.completed, vocabulary: dailyVocabularyCompleted && dailyDictationCompleted },
       };
     });
   };
@@ -3421,13 +3447,15 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
         <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>水位根据目标难度、计划日期、词汇掌握、每日任务、套题和坚持天数共同变化。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
         <div className="study-plan-summary">
           <article><span>目标分数</span><strong>{progress.targetBandScore.toFixed(1)}</strong></article>
-          <article><span>每日词汇</span><strong>{planVocabularyTarget}<small> 词</small></strong></article>
+          <article><span>每日核心词</span><strong>{planVocabularyTarget}<small> 词</small></strong></article>
+          <article><span>场景听写</span><strong>{planDictationTarget}<small> 词</small></strong></article>
+          <article><span>连读词组</span><strong>{planPhraseTarget}<small> 组</small></strong></article>
           <article><span>套题频率</span><strong>{planSessions}<small> 次 / 周</small></strong></article>
           <article><span>每日预计</span><strong>{targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore)}<small> 分钟</small></strong></article>
           <article><span>预计结束</span><strong>{planEndDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}</strong></article>
         </div>
         <div className="target-band-selector"><div><strong>目标分数</strong><small>分数越高，套题训练在总进度中的权重越高</small></div><div>{[5.5, 6, 6.5, 7, 7.5, 8, 8.5].map((score) => <button className={progress.targetBandScore === score ? "is-active" : ""} onClick={() => selectTargetBand(score)} key={score}>{score.toFixed(1)}</button>)}</div></div>
-        <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days)} 词 · 每周 {targetOfficialSessionsPerWeek(days, progress.targetBandScore)} 套</small></button>)}</div>
+        <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days)} 核心词 · {dailyDictationTarget(days)} 听写 · {dailyConnectedSpeechTarget(days)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
       <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>

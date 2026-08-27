@@ -1018,7 +1018,7 @@ button { cursor: pointer; }
 .study-plan-card>header p { margin:7px 0 0; color:var(--muted); font-size:10px; line-height:1.5; }
 .study-plan-card>header>strong { flex:0 0 auto; color:#5147b7; font-size:25px; }
 .study-plan-card>header>strong small { color:#88828e; font-size:10px; letter-spacing:0; }
-.study-plan-summary { margin-top:22px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+.study-plan-summary { margin-top:22px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; }
 .study-plan-summary article { min-height:86px; padding:14px; border-radius:15px; background:#f6f5f8; }
 .study-plan-summary span,.study-plan-summary strong { display:block; }
 .study-plan-summary span { color:var(--muted); font-size:8px; }
