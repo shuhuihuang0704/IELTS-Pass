@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import AuthFlow from "./AuthFlow";
+import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 import type { AuthUser } from "./auth-server";
 import {
   connectedSpeechPhrases,
@@ -1138,7 +1139,7 @@ export default function IeltsApp() {
     }
   };
 
-  const completeAccountOnboarding = async (score: number) => {
+  const completeAccountOnboarding = async (score: number, displayName: string, avatarUrl: string) => {
     const targetBandScore = normalizeTargetBandScore(score);
     const studyPlanDays = 90;
     const nextProgress = {
@@ -1150,7 +1151,7 @@ export default function IeltsApp() {
     const response = await fetch("/api/auth", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "onboarding", targetBandScore, studyPlanDays, progress: nextProgress }),
+      body: JSON.stringify({ action: "onboarding", displayName, avatarUrl, targetBandScore, studyPlanDays, progress: nextProgress }),
     });
     const result = await response.json() as { user?: AuthUser; message?: string };
     if (!response.ok || !result.user) throw new Error(result.message || "计划创建失败，请重试");
@@ -1160,6 +1161,19 @@ export default function IeltsApp() {
     authUserRef.current = result.user;
     setAuthUser(result.user);
     setView("today");
+  };
+
+  const updateAccountProfile = async (displayName: string, avatarUrl: string) => {
+    const response = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "profile", displayName, avatarUrl }),
+    });
+    const result = await response.json() as { user?: AuthUser; message?: string };
+    if (!response.ok || !result.user) throw new Error(result.message || "资料保存失败，请重试");
+    authUserRef.current = result.user;
+    setAuthUser(result.user);
+    return result.user;
   };
 
   const completeSkill = (skill: Skill, minutes: number) => {
@@ -1274,7 +1288,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView account={authUser} progress={progress} onReset={resetProgress} onSignOut={signOut} updateProgress={updateProgress} />}
+        {view === "profile" && <ProfileView account={authUser} progress={progress} onReset={resetProgress} onSignOut={signOut} onUpdateAccount={updateAccountProfile} updateProgress={updateProgress} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
       {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
@@ -4680,10 +4694,15 @@ function RewardCenterView({ progress, onBack }: { progress: LearningProgress; on
   );
 }
 
-function ProfileView({ account, progress, onReset, onSignOut, updateProgress }: { account: AuthUser; progress: LearningProgress; onReset: () => void; onSignOut: () => Promise<void>; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
+function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, updateProgress }: { account: AuthUser; progress: LearningProgress; onReset: () => void; onSignOut: () => Promise<void>; onUpdateAccount: (displayName: string, avatarUrl: string) => Promise<AuthUser>; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileName, setProfileName] = useState(account.displayName);
+  const [profileAvatar, setProfileAvatar] = useState(account.avatarUrl ?? defaultAccountAvatar);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
   const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
   const planDictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
@@ -4734,11 +4753,46 @@ function ProfileView({ account, progress, onReset, onSignOut, updateProgress }: 
       completed: { ...current.completed, vocabulary: dailyVocabularyCompleted && dailyDictationCompleted },
     };
   });
+  const openProfileEditor = () => {
+    setProfileName(account.displayName);
+    setProfileAvatar(account.avatarUrl ?? defaultAccountAvatar);
+    setProfileMessage("");
+    setEditingProfile(true);
+  };
+  const saveProfile = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!profileName.trim()) {
+      setProfileMessage("请输入你的名字或昵称");
+      return;
+    }
+    setProfileSaving(true);
+    setProfileMessage("");
+    try {
+      await onUpdateAccount(profileName.trim(), profileAvatar);
+      setEditingProfile(false);
+    } catch (error) {
+      setProfileMessage(error instanceof Error ? error.message : "资料保存失败，请重试");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} />;
   if (showRewards) return <RewardCenterView progress={progress} onBack={() => setShowRewards(false)} />;
   return (
     <>
       <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} />
+      <section className="profile-identity-card">
+        <AccountAvatar avatarUrl={account.avatarUrl ?? defaultAccountAvatar} displayName={account.displayName} />
+        <div><span>MY PROFILE</span><h2>{account.displayName}</h2><p>{account.provider === "wechat" ? "微信账号" : account.identifier}</p></div>
+        <button type="button" onClick={openProfileEditor}>编辑头像与名字</button>
+      </section>
+      {editingProfile && <form className="profile-editor-card" onSubmit={saveProfile}>
+        <header><div><span>EDIT PROFILE</span><h2>选择头像与名字</h2></div><button type="button" onClick={() => setEditingProfile(false)} aria-label="关闭资料编辑">×</button></header>
+        <div className="profile-editor-preview"><AccountAvatar avatarUrl={profileAvatar} displayName={profileName} /><label><span>名字或昵称</span><input value={profileName} onChange={(event) => setProfileName(event.target.value)} maxLength={40} autoComplete="name" /></label></div>
+        <AccountAvatarPicker value={profileAvatar} displayName={profileName} onChange={setProfileAvatar} />
+        {profileMessage && <p className="auth-message" role="alert">{profileMessage}</p>}
+        <footer><button type="button" onClick={() => setEditingProfile(false)}>取消</button><button type="submit" disabled={profileSaving}>{profileSaving ? "正在保存…" : "保存资料"}</button></footer>
+      </form>}
       <section className="profile-progress-dashboard">
         <div className="profile-water-card">
           <div className="profile-water-gauge" role="img" aria-label={`整体备考计划完成度 ${planProgress.percent}%`}><div className="profile-water-fill" style={{ height: `${planProgress.percent}%` }} /></div>
@@ -4770,7 +4824,7 @@ function ProfileView({ account, progress, onReset, onSignOut, updateProgress }: 
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
-      <section className="profile-settings"><div><strong>{account.displayName}</strong><p>{account.provider === "wechat" ? "微信账号" : account.identifier} · 学习目标、笔记与进度已同步到当前账号。</p></div><div className="profile-account-actions"><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
+      <section className="profile-settings"><div><strong>账号与学习数据</strong><p>学习目标、笔记与进度已同步到当前账号。</p></div><div className="profile-account-actions"><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>
   );

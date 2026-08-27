@@ -774,9 +774,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /completionPercent/);
 });
 
-test("ships account registration, secure sessions, WeChat adapter and score onboarding", async () => {
-  const [flow, route, authServer, hosting, schema, migration] = await Promise.all([
+test("ships account registration, profile avatars, secure sessions, WeChat adapter and score onboarding", async () => {
+  const [flow, avatars, route, authServer, hosting, schema, migration] = await Promise.all([
     readFile(new URL("../app/AuthFlow.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/AccountAvatar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/auth/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/auth-server.ts", import.meta.url), "utf8"),
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
@@ -786,11 +787,15 @@ test("ships account registration, secure sessions, WeChat adapter and score onbo
   assert.match(flow, /手机号/);
   assert.match(flow, /Email/);
   assert.match(flow, /使用微信继续/);
-  assert.match(flow, /你的目标分数是/);
+  assert.match(flow, /选择目标分数/);
   assert.match(flow, /5\.5, 6, 6\.5, 7, 7\.5, 8, 8\.5/);
+  assert.match(flow, /设置你的头像、名字与目标/);
+  assert.match(avatars, /accountAvatarPresets/);
+  assert.equal((avatars.match(/id: "preset:/g) ?? []).length, 6);
   assert.match(route, /action === "register"/);
   assert.match(route, /action === "login"/);
   assert.match(route, /action === "onboarding"/);
+  assert.match(route, /action === "profile"/);
   assert.match(route, /wechat-callback/);
   assert.match(authServer, /PBKDF2/);
   assert.match(authServer, /HttpOnly; Path=\/; SameSite=Lax/);

@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import type { AuthUser } from "./auth-server";
+import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 
 type AuthMethod = "phone" | "email";
 type AuthResponse = {
@@ -21,7 +22,7 @@ export default function AuthFlow({
   user: AuthUser | null;
   wechatEnabled: boolean;
   onAuthenticated: (response: AuthResponse) => void;
-  onCompleteOnboarding: (targetBandScore: number) => Promise<void>;
+  onCompleteOnboarding: (targetBandScore: number, displayName: string, avatarUrl: string) => Promise<void>;
 }) {
   const [mode, setMode] = useState<"login" | "register">("register");
   const [method, setMethod] = useState<AuthMethod>("phone");
@@ -29,6 +30,8 @@ export default function AuthFlow({
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [targetBandScore, setTargetBandScore] = useState<number | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [avatarChoice, setAvatarChoice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("auth_error") ? "微信登录没有完成，请重新尝试。" : "");
   const targetOptions = useMemo(() => [5.5, 6, 6.5, 7, 7.5, 8, 8.5], []);
@@ -55,10 +58,16 @@ export default function AuthFlow({
 
   const completeOnboarding = async () => {
     if (targetBandScore === null) return;
+    const nextDisplayName = (profileName ?? user?.displayName ?? "").trim();
+    const nextAvatar = avatarChoice ?? user?.avatarUrl ?? defaultAccountAvatar;
+    if (!nextDisplayName) {
+      setMessage("请输入你的名字或昵称");
+      return;
+    }
     setSubmitting(true);
     setMessage("");
     try {
-      await onCompleteOnboarding(targetBandScore);
+      await onCompleteOnboarding(targetBandScore, nextDisplayName, nextAvatar);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "计划创建失败，请重试");
     } finally {
@@ -71,9 +80,14 @@ export default function AuthFlow({
       <section className="onboarding-card">
         <header className="onboarding-brand"><span>IP</span><strong>IELTS PASS</strong></header>
         <div className="onboarding-progress"><i /><i className="is-active" /></div>
-        <span className="onboarding-kicker">WELCOME, {user.displayName.toUpperCase()}</span>
-        <h1>你的目标分数是？</h1>
-        <p>我们会依据目标分数调整每日词汇量、听读说难度和套题频率。之后仍可在“我的”页面修改。</p>
+        <span className="onboarding-kicker">CREATE YOUR STUDY PROFILE</span>
+        <h1>设置你的头像、名字与目标。</h1>
+        <p>这些资料会显示在“我的”页面；目标分数会调整每日词汇量、听读说难度和套题频率。</p>
+        <section className="onboarding-profile-editor">
+          <div className="onboarding-profile-preview"><AccountAvatar avatarUrl={avatarChoice ?? user.avatarUrl ?? defaultAccountAvatar} displayName={profileName ?? user.displayName} /><label><span>你的名字</span><input value={profileName ?? user.displayName} onChange={(event) => setProfileName(event.target.value)} maxLength={40} autoComplete="name" /></label></div>
+          <AccountAvatarPicker value={avatarChoice ?? user.avatarUrl ?? defaultAccountAvatar} displayName={profileName ?? user.displayName} onChange={setAvatarChoice} />
+        </section>
+        <div className="onboarding-score-heading"><strong>选择目标分数</strong><small>之后仍可在“我的”页面修改</small></div>
         <div className="onboarding-band-grid" role="radiogroup" aria-label="选择 IELTS 目标分数">
           {targetOptions.map((score) => <button type="button" role="radio" aria-checked={targetBandScore === score} className={targetBandScore === score ? "is-selected" : ""} onClick={() => setTargetBandScore(score)} key={score}><strong>{score.toFixed(1)}</strong><small>{score <= 6 ? "基础巩固" : score <= 7 ? "均衡提分" : score <= 7.5 ? "高阶强化" : "高分精炼"}</small></button>)}
         </div>

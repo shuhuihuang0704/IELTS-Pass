@@ -24,6 +24,16 @@ function errorResponse(error: unknown, status = 400) {
   return json({ message: error instanceof Error ? error.message : "请求失败，请稍后重试" }, status);
 }
 
+const avatarPresetIds = new Set(["preset:violet", "preset:ocean", "preset:mint", "preset:sunset", "preset:rose", "preset:ink"]);
+
+function profileFields(body: Record<string, unknown>, currentAvatar: string | null) {
+  const displayName = String(body.displayName ?? "").trim().slice(0, 40);
+  if (!displayName) throw new Error("请输入你的名字或昵称");
+  const requestedAvatar = String(body.avatarUrl ?? "");
+  const avatarUrl = avatarPresetIds.has(requestedAvatar) ? requestedAvatar : currentAvatar;
+  return { displayName, avatarUrl };
+}
+
 export async function GET(request: Request) {
   const action = new URL(request.url).searchParams.get("action") ?? "session";
   try {
@@ -129,10 +139,17 @@ export async function POST(request: Request) {
       const targetBandScore = Math.max(5.5, Math.min(8.5, Math.round(Number(body.targetBandScore) * 2) / 2));
       const studyPlanDays = Math.max(30, Math.min(180, Math.round(Number(body.studyPlanDays) || 90)));
       if (!Number.isFinite(targetBandScore)) throw new Error("请选择目标分数");
+      const { displayName, avatarUrl } = profileFields(body, row.avatarUrl);
       const progressJson = body.progress && typeof body.progress === "object" ? JSON.stringify(body.progress) : null;
-      await authDb().prepare("UPDATE users SET target_band_score = ?, study_plan_days = ?, progress_json = COALESCE(?, progress_json), updated_at = ? WHERE id = ?")
-        .bind(targetBandScore, studyPlanDays, progressJson, Date.now(), row.id).run();
-      return json({ user: { ...publicAuthPayload(row).user, targetBandScore, studyPlanDays }, progress: body.progress ?? publicAuthPayload(row).progress });
+      await authDb().prepare("UPDATE users SET display_name = ?, avatar_url = ?, target_band_score = ?, study_plan_days = ?, progress_json = COALESCE(?, progress_json), updated_at = ? WHERE id = ?")
+        .bind(displayName, avatarUrl, targetBandScore, studyPlanDays, progressJson, Date.now(), row.id).run();
+      return json({ user: { ...publicAuthPayload(row).user, displayName, avatarUrl, targetBandScore, studyPlanDays }, progress: body.progress ?? publicAuthPayload(row).progress });
+    }
+    if (action === "profile") {
+      const { displayName, avatarUrl } = profileFields(body, row.avatarUrl);
+      await authDb().prepare("UPDATE users SET display_name = ?, avatar_url = ?, updated_at = ? WHERE id = ?")
+        .bind(displayName, avatarUrl, Date.now(), row.id).run();
+      return json({ user: { ...publicAuthPayload(row).user, displayName, avatarUrl } });
     }
     if (action === "progress") {
       if (!body.progress || typeof body.progress !== "object") throw new Error("学习进度格式错误");
