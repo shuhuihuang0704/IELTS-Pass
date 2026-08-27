@@ -461,6 +461,28 @@ function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry 
   };
 }
 
+type ReadingNotebookReview = {
+  question: string;
+  location: string;
+  excerpt: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanation: string;
+};
+
+function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | undefined {
+  if (entry.kind !== "question" || (!entry.source.includes("阅读") && !entry.detail.includes("原文定位："))) return undefined;
+  const field = (label: string) => entry.detail.split("\n").find((line) => line.startsWith(`${label}：`))?.slice(label.length + 1).trim() ?? "";
+  return {
+    question: field("题目") || entry.title,
+    location: field("原文定位") || field("题目位置") || "当前笔记没有保存精确段落，请展开题目原页复盘。",
+    excerpt: field("原文依据") || field("原文"),
+    userAnswer: field("我的答案") || "未作答",
+    correctAnswer: field("正确答案"),
+    explanation: field("解析") || "提交题目后会补充答案解析。",
+  };
+}
+
 function officialPracticeRecordId(session: OfficialTestSession, weekKey = localWeekKey()) {
   return `${weekKey}:${session.id}:${session.setCode}`;
 }
@@ -3748,6 +3770,7 @@ function ReadingPractice({
 function ReviewView({ progress, updateProgress }: { progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [mode, setMode] = useState<"notebook" | "review">("notebook");
   const [activeNotebookAudioId, setActiveNotebookAudioId] = useState("");
+  const [revealedNotebookAnswerIds, setRevealedNotebookAnswerIds] = useState<string[]>([]);
   const notebookAudioRef = useRef<HTMLAudioElement | null>(null);
   const today = localDayKey();
   const reviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
@@ -3821,9 +3844,17 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               <div className="empty-state"><strong>笔记本还是空的</strong><p>在单词卡点击“加入笔记”，或在真题答题卡点击“标记”，内容就会保存在这里。</p></div>
             ) : progress.notebook.map((storedEntry) => {
               const entry = enrichLegacyOfficialNotebookEntry(storedEntry);
+              const readingReview = readingNotebookReview(entry);
+              const answerRevealed = revealedNotebookAnswerIds.includes(entry.id);
               return <article className="notebook-entry" key={entry.id}>
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
-                <div className="notebook-entry-body"><div><h2>{entry.title}</h2><p>{entry.detail}</p></div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
+                <div className={`notebook-entry-body${readingReview ? " is-reading-review" : ""}`}><div><h2>{entry.title}</h2>{readingReview ? <section className="notebook-reading-review">
+                  <article><span>题目</span><p>{readingReview.question}</p></article>
+                  <article className="is-location"><span>文章定位</span><p>{readingReview.location}</p>{readingReview.excerpt && <blockquote>{readingReview.excerpt}</blockquote>}</article>
+                  <article><span>我的作答</span><strong>{readingReview.userAnswer}</strong></article>
+                  <article className="is-correct-answer"><span>正确答案</span>{readingReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{readingReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
+                  <article className="is-explanation"><span>解析</span><p>{readingReview.explanation}</p></article>
+                </section> : <p>{entry.detail}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
                 {entry.reference && <details className="notebook-entry-reference"><summary>{entry.reference.label}</summary><iframe title={`${entry.title} · 题目原页`} src={`${entry.reference.url}#page=${entry.reference.page}&toolbar=0&navpanes=0&view=FitH`} /></details>}
                 <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
                   const note = event.target.value;

@@ -247,6 +247,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /toggleNotebookEntry/);
   assert.match(app, /buildOfficialQuestionNote/);
   assert.match(app, /enrichLegacyOfficialNotebookEntry/);
+  assert.match(app, /readingNotebookReview/);
+  assert.match(app, /revealedNotebookAnswerIds/);
+  assert.match(app, /点击显示正确答案/);
+  assert.match(app, /文章定位/);
+  assert.match(styles, /\.notebook-reading-review \.is-correct-answer button/);
   assert.match(app, /题目位置：题册 P/);
   assert.match(app, /原文依据：/);
   assert.match(app, /officialQuestionMedia/);
