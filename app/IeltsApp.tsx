@@ -3,6 +3,7 @@
 import { FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import AuthFlow from "./AuthFlow";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
+import RecoveryCodesCard from "./RecoveryCodesCard";
 import type { AuthUser } from "./auth-server";
 import {
   connectedSpeechPhrases,
@@ -4701,6 +4702,8 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
   const [profileAvatar, setProfileAvatar] = useState(account.avatarUrl ?? defaultAccountAvatar);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
+  const [accountRecoveryCodes, setAccountRecoveryCodes] = useState<string[]>([]);
+  const [recoveryCodesLoading, setRecoveryCodesLoading] = useState(false);
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
   const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
   const planDictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
@@ -4775,6 +4778,21 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
       setProfileSaving(false);
     }
   };
+  const generateRecoveryCodes = async () => {
+    if (!window.confirm("生成新恢复码后，以前保存的恢复码会全部失效。确定继续吗？")) return;
+    setRecoveryCodesLoading(true);
+    setProfileMessage("");
+    try {
+      const response = await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "recovery-regenerate" }) });
+      const result = await response.json() as { recoveryCodes?: string[]; message?: string };
+      if (!response.ok || !result.recoveryCodes?.length) throw new Error(result.message || "恢复码生成失败，请重试");
+      setAccountRecoveryCodes(result.recoveryCodes);
+    } catch (error) {
+      setProfileMessage(error instanceof Error ? error.message : "恢复码生成失败，请重试");
+    } finally {
+      setRecoveryCodesLoading(false);
+    }
+  };
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} />;
   if (showRewards) return <RewardCenterView progress={progress} onBack={() => setShowRewards(false)} />;
   return (
@@ -4823,7 +4841,8 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 7–365 天；重新设置天数会清除原考试日期</small></label><div><input id="custom-plan-days" type="number" min="7" max="365" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
-      <section className="profile-settings"><div><strong>账号与学习数据</strong><p>学习目标、笔记与进度已同步到当前账号。</p></div><div className="profile-account-actions"><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
+      <section className="profile-settings"><div><strong>账号与学习数据</strong><p>学习目标、笔记与进度已同步到当前账号。恢复码可在忘记密码时验证身份。</p>{profileMessage && <p className="profile-settings-message" role="alert">{profileMessage}</p>}</div><div className="profile-account-actions"><button type="button" disabled={recoveryCodesLoading} onClick={() => void generateRecoveryCodes()}>{recoveryCodesLoading ? "正在生成…" : "生成恢复码"}</button><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
+      {accountRecoveryCodes.length > 0 && <RecoveryCodesCard codes={accountRecoveryCodes} title="新的恢复码已生成" description="旧恢复码已全部失效。请立即保存这一组新代码。" onDone={() => setAccountRecoveryCodes([])} />}
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>
   );

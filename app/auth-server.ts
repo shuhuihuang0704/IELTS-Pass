@@ -66,6 +66,15 @@ export async function ensureAuthSchema() {
       created_at INTEGER NOT NULL
     )`),
     db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_sessions_token_hash ON auth_sessions(token_hash)"),
+    db.prepare(`CREATE TABLE IF NOT EXISTS auth_recovery_codes (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      code_hash TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      used_at INTEGER
+    )`),
+    db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_recovery_codes_code_hash ON auth_recovery_codes(code_hash)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_auth_recovery_codes_user_id ON auth_recovery_codes(user_id)"),
     db.prepare(`CREATE TABLE IF NOT EXISTS user_provider_identities (
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       provider TEXT NOT NULL,
@@ -101,6 +110,36 @@ function randomToken(byteLength = 32) {
 
 async function sha256(value: string) {
   return bytesToHex(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))));
+}
+
+const recoveryCodeAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+
+function recoveryCode() {
+  const random = crypto.getRandomValues(new Uint8Array(12));
+  const body = Array.from(random, (byte) => recoveryCodeAlphabet[byte % recoveryCodeAlphabet.length]).join("");
+  return `IP-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8)}`;
+}
+
+export function normalizeRecoveryCode(value: unknown) {
+  return String(value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+export async function hashRecoveryCode(value: unknown) {
+  const normalized = normalizeRecoveryCode(value);
+  if (!/^IP[2-9A-HJ-NP-Z]{12}$/.test(normalized)) return "";
+  return sha256(normalized);
+}
+
+export async function replaceRecoveryCodes(userId: string, count = 8) {
+  const codes = Array.from({ length: count }, () => recoveryCode());
+  const hashes = await Promise.all(codes.map((code) => hashRecoveryCode(code)));
+  const now = Date.now();
+  const db = database();
+  await db.batch([
+    db.prepare("DELETE FROM auth_recovery_codes WHERE user_id = ?").bind(userId),
+    ...hashes.map((hash) => db.prepare("INSERT INTO auth_recovery_codes (id, user_id, code_hash, created_at) VALUES (?, ?, ?, ?)").bind(crypto.randomUUID(), userId, hash, now)),
+  ]);
+  return codes;
 }
 
 export function normalizeIdentifier(provider: "email" | "phone", value: unknown) {

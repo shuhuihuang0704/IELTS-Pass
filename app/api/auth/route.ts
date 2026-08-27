@@ -6,8 +6,10 @@ import {
   deleteCurrentSession,
   ensureAuthSchema,
   hashPassword,
+  hashRecoveryCode,
   normalizeIdentifier,
   publicAuthPayload,
+  replaceRecoveryCodes,
   requestWechatState,
   verifyPassword,
   wechatIsConfigured,
@@ -124,8 +126,15 @@ export async function POST(request: Request) {
       const now = Date.now();
       await authDb().prepare("INSERT INTO users (id, provider, identifier, password_hash, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(id, provider, identifier, passwordHash, displayName, now, now).run();
+      let recoveryCodes: string[];
+      try {
+        recoveryCodes = await replaceRecoveryCodes(id);
+      } catch (error) {
+        await authDb().prepare("DELETE FROM users WHERE id = ?").bind(id).run();
+        throw error;
+      }
       const cookie = await createSession(request, id);
-      return json({ user: { id, provider, identifier, displayName, avatarUrl: null, targetBandScore: null, studyPlanDays: null, examDate: null }, progress: null, isNew: true, wechatEnabled: wechatIsConfigured() }, 201, { "set-cookie": cookie });
+      return json({ user: { id, provider, identifier, displayName, avatarUrl: null, targetBandScore: null, studyPlanDays: null, examDate: null }, progress: null, recoveryCodes, isNew: true, wechatEnabled: wechatIsConfigured() }, 201, { "set-cookie": cookie });
     }
     if (action === "login") {
       const provider = String(body.provider ?? "") as AuthProvider;
@@ -136,6 +145,33 @@ export async function POST(request: Request) {
       if (!row || !await verifyPassword(body.password, typeof row.passwordHash === "string" ? row.passwordHash : null)) return errorResponse(new Error("手机号、Email 或密码错误，无法登录"), 401);
       const cookie = await createSession(request, String(row.id));
       return json({ ...publicAuthPayload(row as never), isNew: false, wechatEnabled: wechatIsConfigured() }, 200, { "set-cookie": cookie });
+    }
+    if (action === "recover") {
+      const provider = String(body.provider ?? "") as AuthProvider;
+      if (provider !== "email" && provider !== "phone") throw new Error("请选择手机号或 Email 找回密码");
+      const identifier = normalizeIdentifier(provider, body.identifier);
+      const codeHash = await hashRecoveryCode(body.recoveryCode);
+      const invalidRecovery = () => errorResponse(new Error("账号或恢复码不正确，无法重设密码"), 401);
+      if (!codeHash) return invalidRecovery();
+      const consumed = await authDb().prepare(`UPDATE auth_recovery_codes
+        SET used_at = ?
+        WHERE id = (
+          SELECT auth_recovery_codes.id
+          FROM auth_recovery_codes
+          JOIN users ON users.id = auth_recovery_codes.user_id
+          WHERE users.provider = ? AND users.identifier = ?
+            AND auth_recovery_codes.code_hash = ? AND auth_recovery_codes.used_at IS NULL
+          LIMIT 1
+        ) AND used_at IS NULL
+        RETURNING user_id AS userId`)
+        .bind(Date.now(), provider, identifier, codeHash).first<{ userId: string }>();
+      if (!consumed?.userId) return invalidRecovery();
+      const passwordHash = await hashPassword(body.password);
+      await authDb().batch([
+        authDb().prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").bind(passwordHash, Date.now(), consumed.userId),
+        authDb().prepare("DELETE FROM auth_sessions WHERE user_id = ?").bind(consumed.userId),
+      ]);
+      return json({ ok: true, message: "密码已重设，请使用新密码登录" }, 200, { "set-cookie": clearSessionCookie(request) });
     }
     if (action === "logout") {
       await deleteCurrentSession(request);
@@ -159,6 +195,10 @@ export async function POST(request: Request) {
       await authDb().prepare("UPDATE users SET display_name = ?, avatar_url = ?, updated_at = ? WHERE id = ?")
         .bind(displayName, avatarUrl, Date.now(), row.id).run();
       return json({ user: { ...publicAuthPayload(row).user, displayName, avatarUrl } });
+    }
+    if (action === "recovery-regenerate") {
+      const recoveryCodes = await replaceRecoveryCodes(row.id);
+      return json({ recoveryCodes });
     }
     if (action === "progress") {
       if (!body.progress || typeof body.progress !== "object") throw new Error("学习进度格式错误");

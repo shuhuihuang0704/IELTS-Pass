@@ -279,6 +279,10 @@ button { cursor: pointer; }
 .auth-method-tabs button.is-active { border-color:#cfc9eb; }
 .auth-form { margin-top:15px; display:grid; gap:12px; }
 .auth-form label>span { display:block; margin:0 0 6px 2px; color:#6d6873; font-size:8px; font-weight:700; }
+.auth-password-heading { margin:0 2px 6px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.auth-password-heading>span { color:#6d6873; font-size:8px; font-weight:700; }
+.auth-password-heading>button,.auth-recovery-back { border:0; color:#574dbb; background:transparent; font-size:8px; font-weight:750; }
+.auth-recovery-back { margin:18px 0 12px; padding:0; }
 .auth-form input { width:100%; min-height:47px; padding:0 13px; border:1px solid #ddd9e1; border-radius:12px; color:#29262d; background:white; font:inherit; font-size:11px; outline:none; }
 .auth-form input:focus { border-color:#7067d5; box-shadow:0 0 0 4px rgba(92,83,202,.09); }
 .auth-submit,.onboarding-submit { width:100%; min-height:49px; border:0; border-radius:13px; color:white; background:linear-gradient(135deg,#6258d2,#4b45b0); box-shadow:0 12px 26px rgba(71,62,170,.2); font-size:10px; font-weight:750; }
@@ -351,6 +355,19 @@ button { cursor: pointer; }
 .onboarding-card>.auth-message { margin-top:14px; }
 .onboarding-submit { margin-top:19px; }
 .onboarding-footnote { margin-top:11px; display:block; color:#9b959f; font-size:8px; text-align:center; }
+.recovery-onboarding-card { max-width:690px; }
+.recovery-codes-card { margin-top:18px; padding:25px; border:1px solid rgba(82,70,167,.13); border-radius:22px; background:linear-gradient(145deg,#fbfaff,#f2f0fc); box-shadow:0 14px 34px rgba(52,42,107,.07); }
+.recovery-codes-card>header>span { color:#5f55c4; font-size:8px; font-weight:800; letter-spacing:1px; }
+.recovery-codes-card>header h2 { margin:7px 0 0; font-size:24px; letter-spacing:-.8px; }
+.recovery-codes-card>header p { max-width:590px; margin:7px 0 0; color:#77717d; font-size:10px; line-height:1.55; }
+.recovery-code-grid { margin-top:18px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.recovery-code-grid code { min-height:42px; padding:0 12px; display:flex; align-items:center; justify-content:center; border:1px solid #ded9ec; border-radius:11px; color:#342e78; background:white; font-size:11px; font-weight:750; letter-spacing:.65px; user-select:all; }
+.recovery-code-warning { margin-top:15px; padding:12px 14px; display:flex; align-items:flex-start; gap:10px; border-radius:12px; color:#75532b; background:#fbf0df; }
+.recovery-code-warning strong { flex:0 0 auto; font-size:9px; }
+.recovery-code-warning p { margin:0; font-size:8px; line-height:1.5; }
+.recovery-code-actions { margin-top:16px; display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.recovery-code-actions button { min-height:38px; padding:0 13px; border:1px solid #d9d4e8; border-radius:10px; color:#5b53ae; background:white; font-size:8px; font-weight:750; }
+.recovery-code-actions button.is-primary { color:white; border-color:#5a51c3; background:#5a51c3; }
 
 @media (max-width:760px) {
   .auth-shell { grid-template-columns:1fr; }
@@ -372,6 +389,9 @@ button { cursor: pointer; }
   .onboarding-days-selector { grid-template-columns:1fr; }
   .onboarding-days-selector>div { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .onboarding-exam-date { grid-template-columns:1fr; }
+  .recovery-codes-card { padding:20px 16px; }
+  .recovery-code-grid { grid-template-columns:1fr; }
+  .recovery-code-actions button { flex:1; }
 }
 @media (prefers-reduced-motion:no-preference) {
   .primary-action,.memory-row,.streak-row,.desktop-nav button { transition:transform .18s ease,opacity .18s ease; }
@@ -1419,6 +1439,8 @@ button { cursor: pointer; }
 .profile-settings strong { font-size:14px; }
 .profile-settings p { max-width:580px; margin:6px 0 0; color:var(--muted); font-size:11px; line-height:1.5; }
 .profile-settings button { padding:10px 12px; border:0; border-radius:11px; color:#a7403b; background:#f7e8e6; font-size:10px; }
+.profile-settings button:disabled { opacity:.55; cursor:not-allowed; }
+.profile-settings-message { color:#9a463f!important; }
 .profile-account-actions { display:flex; align-items:center; gap:8px; }
 .profile-account-actions button:first-child { color:#4e46b7; background:#eeecfb; }
 .profile-compact-identity { min-width:76px; padding:0 4px; display:grid; justify-items:center; gap:7px; border:0; color:inherit; background:transparent; }
