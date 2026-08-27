@@ -1066,9 +1066,14 @@ button { cursor: pointer; }
 .notebook-listening-review .is-audio button { width:100%; min-height:42px; margin-top:8px; border:0; border-radius:10px; color:white; background:#5849bd; font-size:9px; font-weight:750; }
 .notebook-listening-review .is-audio button.is-playing { background:#9d493f; }
 .notebook-listening-review .is-audio small { display:block; margin-top:7px; color:#777087; font-size:8px; }
-.notebook-listening-review ol { margin:8px 0 0; padding:0; display:grid; gap:5px; list-style:none; }
-.notebook-listening-review li { padding:7px 9px; border:1px solid #ece7ee; border-radius:8px; color:#5a545e; background:white; font-size:9px; }
-.notebook-listening-review li.is-user-answer { border-color:#cfc9ef; background:#f6f4ff; }
+.notebook-listening-options { margin-top:8px; display:grid; gap:6px; }
+.notebook-listening-options button { min-height:38px; padding:7px 9px; display:grid; grid-template-columns:20px 1fr; align-items:center; gap:8px; border:1px solid #e5e0e8; border-radius:9px; color:#5a545e; background:white; font-size:9px; text-align:left; }
+.notebook-listening-options button i { width:20px; height:20px; display:grid; place-items:center; border:1px solid #d8d1dc; border-radius:50%; color:white; font-size:8px; font-style:normal; }
+.notebook-listening-options button.is-selected { color:#4e43a8; border-color:#c9c2ea; background:#f5f3ff; font-weight:700; }
+.notebook-listening-options button.is-selected i { border-color:#5849bd; background:#5849bd; }
+.notebook-listening-input { margin-top:9px; display:block; }
+.notebook-listening-input>span { display:block; margin-bottom:6px; color:#837b88; font-size:8px; }
+.notebook-listening-input input { width:100%; min-height:39px; padding:0 10px; border:1px solid #ded8e1; border-radius:9px; color:#443e48; background:white; font:inherit; font-size:10px; }
 .notebook-listening-review .is-correct-answer button { width:100%; min-height:42px; margin-top:7px; padding:7px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; border:0; border-radius:9px; color:#5145b1; background:#ece9f8; text-align:left; }
 .notebook-listening-review .is-correct-answer button i { letter-spacing:3px; font-style:normal; }
 .notebook-listening-review .is-correct-answer button small { color:#746d82; font-size:8px; }

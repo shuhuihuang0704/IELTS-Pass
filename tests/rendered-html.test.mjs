@@ -255,6 +255,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /officialAnswerAudioMedia/);
   assert.match(app, /答案对应音频/);
   assert.match(app, /只回听这道题答案出现前后的片段/);
+  assert.match(app, /notebookListeningSelections/);
+  assert.match(app, /notebook-listening-options/);
+  assert.match(app, /输入你的答案/);
   assert.match(app, /!readingReview && !listeningReview && <h2>/);
   assert.match(app, /segmentDuration/);
   assert.match(app, /readingQuestionOptions/);
@@ -267,6 +270,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.notebook-reading-review \.is-correct-answer button/);
   assert.match(styles, /\.notebook-reading-review \.is-options li\.is-user-answer/);
   assert.match(styles, /\.notebook-listening-review \.is-audio button/);
+  assert.match(styles, /\.notebook-listening-options button\.is-selected/);
   assert.match(app, /dailyDifficultyBandForDate/);
   assert.match(app, /dailyDifficultyProfiles/);
   assert.match(state, /export type DailyDifficultyBand = 6 \| 7 \| 8/);

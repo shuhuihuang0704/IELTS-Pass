@@ -524,13 +524,22 @@ function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | un
 
 function notebookOptionMatchesAnswer(option: string, answer: string) {
   const normalizedOption = option.trim().toLowerCase();
-  const normalizedAnswer = answer.trim().toLowerCase();
-  return Boolean(normalizedAnswer) && (normalizedOption === normalizedAnswer || normalizedOption.startsWith(`${normalizedAnswer}.`) || normalizedOption.endsWith(`. ${normalizedAnswer}`));
+  return answer.split("、").some((answerPart) => {
+    const normalizedAnswer = answerPart.trim().toLowerCase();
+    const answerCode = normalizedAnswer.split(/[·.]/)[0].trim();
+    return Boolean(normalizedAnswer) && (
+      normalizedOption === normalizedAnswer
+      || normalizedOption.startsWith(`${normalizedAnswer}.`)
+      || normalizedOption.endsWith(`. ${normalizedAnswer}`)
+      || (answerCode.length === 1 && normalizedOption.startsWith(`${answerCode}.`))
+    );
+  });
 }
 
 type ListeningNotebookReview = {
   question: string;
   options: string[];
+  allowsMultiple: boolean;
   userAnswer: string;
   correctAnswer: string;
 };
@@ -539,9 +548,28 @@ function listeningNotebookReview(entry: NotebookEntry): ListeningNotebookReview 
   const isListeningEntry = entry.source.includes("听力") || entry.source.toLowerCase().includes("listening") || entry.detail.includes("听力复盘：");
   if (entry.kind !== "question" || entry.media?.kind !== "audio" || !isListeningEntry) return undefined;
   const field = (label: string) => entry.detail.split("\n").find((line) => line.startsWith(`${label}：`))?.slice(label.length + 1).trim() ?? "";
+  let options = field("选项").split("｜").map((option) => option.trim()).filter(Boolean);
+  let allowsMultiple = false;
+  const dailyMatch = entry.id.match(/^question:listening:([^:]+):([^:]+):(.+)$/);
+  if (dailyMatch) {
+    const [, exerciseDate, setCode, questionNumber] = dailyMatch;
+    const dailySet = getDailyListeningExercise(exerciseDate);
+    if (dailySet.code === setCode) {
+      if (questionNumber === "5–6") {
+        options = options.length > 0 ? options : dailySet.exercise.multipleSelect.options;
+        allowsMultiple = true;
+      } else if (questionNumber === "7" || questionNumber === "8") {
+        options = options.length > 0 ? options : dailySet.exercise.matching.options.map((option) => `${option.id}. ${option.label}`);
+      } else if (questionNumber === "9" || questionNumber === "10") {
+        const choice = dailySet.exercise.multipleChoice[Number(questionNumber) - 9];
+        options = options.length > 0 ? options : choice.options.map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`);
+      }
+    }
+  }
   return {
     question: field("题目") || entry.title,
-    options: field("选项").split("｜").map((option) => option.trim()).filter(Boolean),
+    options,
+    allowsMultiple,
     userAnswer: field("我的答案") || "未作答",
     correctAnswer: field("正确答案"),
   };
@@ -3288,6 +3316,7 @@ function ListeningPractice({
     prompt: string,
     userAnswer: string,
     correctAnswer: string,
+    options: string[] = [],
   ) => {
     if (score === null) return null;
     const noteId = `question:listening:${exerciseDate}:${listeningSet.code}:${number}`;
@@ -3298,7 +3327,7 @@ function ListeningPractice({
       id: noteId,
       kind: "question",
       title: `Q${number} · ${prompt}`,
-      detail: `题目：${prompt}\n我的答案：${userAnswer || "未作答"}\n正确答案：${correctAnswer}\n原文：${evidence.quote}`,
+      detail: `题目：${prompt}\n${options.length > 0 ? `选项：${options.join("｜")}\n` : ""}我的答案：${userAnswer || "未作答"}\n正确答案：${correctAnswer}\n原文：${evidence.quote}`,
       source: `听力精听 · Band ${difficulty.band}.0 · ${exerciseDate} · ${listeningSet.code}`,
       media: { kind: "audio", label: `播放 Q${number} 对应音频`, url: listeningSet.audioSrc, ...cue },
     }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含本题音频）"}</button>;
@@ -3386,7 +3415,7 @@ function ListeningPractice({
           </div>
           <small className="selection-count">{score === null ? `已选择 ${selectedFacilities.length} / 2 项` : `正确答案：${listeningExercise.multipleSelect.answers.join("、")}`}</small>
           {renderListeningAnalysis("facilities", "5–6", selectedFacilities.join("、"), listeningExercise.multipleSelect.answers.join("、"), facilitiesCorrect)}
-          {renderListeningNoteButton("facilities", "5–6", listeningExercise.multipleSelect.prompt, selectedFacilities.join("、"), listeningExercise.multipleSelect.answers.join("、"))}
+          {renderListeningNoteButton("facilities", "5–6", listeningExercise.multipleSelect.prompt, selectedFacilities.join("、"), listeningExercise.multipleSelect.answers.join("、"), listeningExercise.multipleSelect.options)}
         </section>
 
         <section className="listening-question-group">
@@ -3396,7 +3425,7 @@ function ListeningPractice({
             const resultClass = score === null ? "" : matchingAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
             const userOption = listeningExercise.matching.options.find((option) => option.id === matchingAnswers[question.id]);
             const correctOption = listeningExercise.matching.options.find((option) => option.id === question.answer);
-            return <div className="matching-answer-row" key={question.id}><label className={`matching-row ${resultClass}`}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}{renderListeningAnalysis(question.id as "l7" | "l8", String(index + 7), userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer, matchingAnswers[question.id] === question.answer)}{renderListeningNoteButton(question.id as "l7" | "l8", String(index + 7), question.label, userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer)}</div>;
+            return <div className="matching-answer-row" key={question.id}><label className={`matching-row ${resultClass}`}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}{renderListeningAnalysis(question.id as "l7" | "l8", String(index + 7), userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer, matchingAnswers[question.id] === question.answer)}{renderListeningNoteButton(question.id as "l7" | "l8", String(index + 7), question.label, userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer, listeningExercise.matching.options.map((option) => `${option.id}. ${option.label}`))}</div>;
           })}
         </section>
 
@@ -3404,7 +3433,7 @@ function ListeningPractice({
           <div className="question-type"><span>Questions 9–10</span><strong>Multiple Choice · Choose ONE</strong><p>Choose the correct letter, A, B or C.</p></div>
           {listeningExercise.multipleChoice.map((question, index) => {
             const resultClass = score === null ? "" : choiceAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <div className="listening-answer-item" key={question.id}><fieldset className={`question-block ${resultClass}`}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</fieldset>{renderListeningAnalysis(question.id as "l9" | "l10", String(index + 9), choiceAnswers[question.id] ?? "", question.answer, choiceAnswers[question.id] === question.answer)}{renderListeningNoteButton(question.id as "l9" | "l10", String(index + 9), question.prompt, choiceAnswers[question.id] ?? "", question.answer)}</div>;
+            return <div className="listening-answer-item" key={question.id}><fieldset className={`question-block ${resultClass}`}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</fieldset>{renderListeningAnalysis(question.id as "l9" | "l10", String(index + 9), choiceAnswers[question.id] ?? "", question.answer, choiceAnswers[question.id] === question.answer)}{renderListeningNoteButton(question.id as "l9" | "l10", String(index + 9), question.prompt, choiceAnswers[question.id] ?? "", question.answer, question.options.map((option, optionIndex) => `${String.fromCharCode(65 + optionIndex)}. ${option}`))}</div>;
           })}
         </section>
 
@@ -3891,6 +3920,8 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
   const [mode, setMode] = useState<"notebook" | "review">("notebook");
   const [activeNotebookAudioId, setActiveNotebookAudioId] = useState("");
   const [revealedNotebookAnswerIds, setRevealedNotebookAnswerIds] = useState<string[]>([]);
+  const [notebookListeningSelections, setNotebookListeningSelections] = useState<Record<string, string[]>>({});
+  const [notebookListeningInputs, setNotebookListeningInputs] = useState<Record<string, string>>({});
   const notebookAudioRef = useRef<HTMLAudioElement | null>(null);
   const today = localDayKey();
   const reviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
@@ -3974,6 +4005,9 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               const readingReview = readingNotebookReview(entry);
               const listeningReview = listeningNotebookReview(entry);
               const answerRevealed = revealedNotebookAnswerIds.includes(entry.id);
+              const listeningSelections = listeningReview
+                ? notebookListeningSelections[entry.id] ?? listeningReview.options.filter((option) => notebookOptionMatchesAnswer(option, listeningReview.userAnswer))
+                : [];
               return <article className="notebook-entry" key={entry.id}>
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
                 <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div>{!readingReview && !listeningReview && <h2>{entry.title}</h2>}{readingReview ? <section className="notebook-reading-review">
@@ -3984,7 +4018,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
                   <article className="is-explanation"><span>解析</span><p>{readingReview.explanation}</p></article>
                 </section> : listeningReview ? <section className="notebook-listening-review">
                   <article className="is-audio"><span>答案对应音频</span><button type="button" className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media?.label ?? "播放答案对应片段"}`}</button><small>只回听这道题答案出现前后的片段</small></article>
-                  <article><span>题目</span><p>{listeningReview.question}</p>{listeningReview.options.length > 0 && <ol>{listeningReview.options.map((option) => <li className={notebookOptionMatchesAnswer(option, listeningReview.userAnswer) ? "is-user-answer" : ""} key={option}>{option}</li>)}</ol>}</article>
+                  <article className="is-listening-question"><span>题目</span><p>{listeningReview.question}</p>{listeningReview.options.length > 0 ? <div className="notebook-listening-options" role={listeningReview.allowsMultiple ? "group" : "radiogroup"} aria-label="选择你的答案">{listeningReview.options.map((option) => { const selected = listeningSelections.includes(option); return <button type="button" role={listeningReview.allowsMultiple ? "checkbox" : "radio"} aria-checked={selected} className={selected ? "is-selected" : ""} onClick={() => setNotebookListeningSelections((current) => ({ ...current, [entry.id]: listeningReview.allowsMultiple ? selected ? listeningSelections.filter((item) => item !== option) : [...listeningSelections, option] : [option] }))} key={option}><i>{selected ? "✓" : ""}</i><span>{option}</span></button>; })}</div> : <label className="notebook-listening-input"><span>输入你的答案</span><input value={notebookListeningInputs[entry.id] ?? (listeningReview.userAnswer === "未作答" ? "" : listeningReview.userAnswer)} onChange={(event) => setNotebookListeningInputs((current) => ({ ...current, [entry.id]: event.target.value }))} placeholder="听完后输入答案" /></label>}</article>
                   <article className="is-correct-answer"><span>正确答案</span>{listeningReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{listeningReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
                 </section> : <p>{entry.detail}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && !listeningReview && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
                 {entry.reference && <details className="notebook-entry-reference"><summary>{entry.reference.label}</summary><iframe title={`${entry.title} · 题目原页`} src={`${entry.reference.url}#page=${entry.reference.page}&toolbar=0&navpanes=0&view=FitH`} /></details>}
