@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import AuthFlow from "./AuthFlow";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 import RecoveryCodesCard from "./RecoveryCodesCard";
@@ -1259,6 +1259,16 @@ export default function IeltsApp() {
 
   return (
     <main className="app-shell" data-ready={hydrated}>
+      <button
+        className={`global-account-badge${view === "profile" ? " is-current" : ""}`}
+        type="button"
+        onClick={() => { setView("profile"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+        aria-label={`${authUser.displayName}的个人主页`}
+        aria-current={view === "profile" ? "page" : undefined}
+      >
+        <AccountAvatar avatarUrl={authUser.avatarUrl ?? defaultAccountAvatar} displayName={authUser.displayName} />
+        <strong>{authUser.displayName}</strong>
+      </button>
       <Sidebar view={view} progress={progress} onNavigate={setView} />
       <section className={view === "official-test" ? "workspace is-official-test" : "workspace"}>
         {view === "today" && (
@@ -1354,7 +1364,7 @@ function MobileNavigation({ view, onNavigate }: { view: View; onNavigate: (view:
   );
 }
 
-function PageHeader({ eyebrow, title, accent, onDictionarySearch, profileSlot }: { eyebrow: string; title: string; accent?: string; onDictionarySearch?: (query: string) => void; profileSlot?: ReactNode }) {
+function PageHeader({ eyebrow, title, accent, onDictionarySearch }: { eyebrow: string; title: string; accent?: string; onDictionarySearch?: (query: string) => void }) {
   const [query, setQuery] = useState("");
   return (
     <header className={`topbar${onDictionarySearch ? " has-dictionary-search" : ""}`}>
@@ -1363,7 +1373,6 @@ function PageHeader({ eyebrow, title, accent, onDictionarySearch, profileSlot }:
         <label htmlFor="home-dictionary-search">全英语词典</label>
         <div><input id="home-dictionary-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索任意英语单词" aria-label="搜索所有英语单词" /><button type="submit">查词</button></div>
       </form>}
-      {profileSlot ?? <span className="profile-button" aria-label="当前用户">LI</span>}
     </header>
   );
 }
@@ -4797,12 +4806,7 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
   if (showRewards) return <RewardCenterView progress={progress} onBack={() => setShowRewards(false)} />;
   return (
     <>
-      <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} profileSlot={
-        <button className="profile-compact-identity" type="button" onClick={openProfileEditor} aria-label={`编辑${account.displayName}的头像与名字`}>
-          <AccountAvatar avatarUrl={account.avatarUrl ?? defaultAccountAvatar} displayName={account.displayName} />
-          <strong>{account.displayName}</strong>
-        </button>
-      } />
+      <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} />
       {editingProfile && <form className="profile-editor-card" onSubmit={saveProfile}>
         <header><div><span>EDIT PROFILE</span><h2>选择头像与名字</h2></div><button type="button" onClick={() => setEditingProfile(false)} aria-label="关闭资料编辑">×</button></header>
         <div className="profile-editor-preview"><AccountAvatar avatarUrl={profileAvatar} displayName={profileName} /><label><span>名字或昵称</span><input value={profileName} onChange={(event) => setProfileName(event.target.value)} maxLength={40} autoComplete="name" /></label></div>
@@ -4841,7 +4845,7 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 7–365 天；重新设置天数会清除原考试日期</small></label><div><input id="custom-plan-days" type="number" min="7" max="365" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
-      <section className="profile-settings"><div><strong>账号与学习数据</strong><p>学习目标、笔记与进度已同步到当前账号。恢复码可在忘记密码时验证身份。</p>{profileMessage && <p className="profile-settings-message" role="alert">{profileMessage}</p>}</div><div className="profile-account-actions"><button type="button" disabled={recoveryCodesLoading} onClick={() => void generateRecoveryCodes()}>{recoveryCodesLoading ? "正在生成…" : "生成恢复码"}</button><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
+      <section className="profile-settings"><div><strong>账号与学习数据</strong><p>学习目标、笔记与进度已同步到当前账号。恢复码可在忘记密码时验证身份。</p>{profileMessage && <p className="profile-settings-message" role="alert">{profileMessage}</p>}</div><div className="profile-account-actions"><button type="button" onClick={openProfileEditor}>编辑头像与名字</button><button type="button" disabled={recoveryCodesLoading} onClick={() => void generateRecoveryCodes()}>{recoveryCodesLoading ? "正在生成…" : "生成恢复码"}</button><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
       {accountRecoveryCodes.length > 0 && <RecoveryCodesCard codes={accountRecoveryCodes} title="新的恢复码已生成" description="旧恢复码已全部失效。请立即保存这一组新代码。" onDone={() => setAccountRecoveryCodes([])} />}
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>

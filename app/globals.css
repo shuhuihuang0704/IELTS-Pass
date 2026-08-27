@@ -1843,6 +1843,32 @@ button { -webkit-tap-highlight-color:transparent; }
 .weekly-rail-progress small { display:block; margin-top:9px; color:#5a52c3; font-size:9px; font-weight:700; }
 .workspace { padding:38px 46px 60px; }
 .profile-button { color:#fff; border-color:rgba(91,84,214,.12); background:linear-gradient(145deg,#6d66df,#4d47ad); box-shadow:0 8px 22px rgba(65,57,153,.2); }
+
+/* Logged-in identity stays visible on every product page. */
+.global-account-badge {
+  position:fixed;
+  z-index:160;
+  top:max(14px,env(safe-area-inset-top));
+  right:20px;
+  width:86px;
+  min-height:67px;
+  padding:7px 8px 6px;
+  display:grid;
+  justify-items:center;
+  gap:5px;
+  border:1px solid rgba(79,72,94,.1);
+  border-radius:19px;
+  color:var(--ink);
+  background:rgba(255,255,255,.9);
+  box-shadow:0 10px 28px rgba(35,30,49,.1);
+  backdrop-filter:blur(16px);
+}
+.global-account-badge>.account-avatar { width:39px; height:39px; border-radius:50%; box-shadow:0 6px 16px rgba(47,40,95,.16),inset 0 1px rgba(255,255,255,.32); }
+.global-account-badge>.account-avatar b { font-size:15px; }
+.global-account-badge>strong { width:100%; overflow:hidden; font-size:9px; line-height:1.2; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
+.global-account-badge:hover,.global-account-badge:focus-visible,.global-account-badge.is-current { border-color:rgba(91,84,214,.28); box-shadow:0 0 0 3px rgba(91,84,214,.08),0 12px 30px rgba(35,30,49,.12); }
+.workspace { padding-top:92px; }
+
 button { transition:transform .16s ease,box-shadow .16s ease,filter .16s ease; }
 
 @media (hover:hover) {
@@ -1872,4 +1898,12 @@ button { transition:transform .16s ease,box-shadow .16s ease,filter .16s ease; }
   .topbar-dictionary-search { border-radius:16px; }
   .scene-stage { border-radius:25px; }
   .progress-intro,.streak-row,.memory-row,.official-plan-strip { border-radius:20px; }
+}
+
+@media (max-width:760px) {
+  .global-account-badge { top:calc(8px + env(safe-area-inset-top)); right:11px; width:68px; min-height:58px; padding:5px 6px; border-radius:16px; }
+  .global-account-badge>.account-avatar { width:34px; height:34px; }
+  .global-account-badge>.account-avatar b { font-size:13px; }
+  .global-account-badge>strong { font-size:8px; }
+  .workspace,.workspace.is-official-test { padding-top:calc(78px + env(safe-area-inset-top)); }
 }

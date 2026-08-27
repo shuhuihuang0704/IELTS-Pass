@@ -774,6 +774,20 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /completionPercent/);
 });
 
+test("shows the signed-in avatar and name on every product page", async () => {
+  const [app, styles] = await Promise.all([
+    readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(app, /className={`global-account-badge/);
+  assert.match(app, /authUser\.displayName/);
+  assert.match(app, /authUser\.avatarUrl/);
+  assert.match(app, /setView\("profile"\)/);
+  assert.doesNotMatch(app, /profile-button[^\n]*>LI</);
+  assert.match(styles, /\.global-account-badge/);
+  assert.match(styles, /position:fixed/);
+});
+
 test("ships account registration, recovery-ready login, secure sessions and score onboarding", async () => {
   const [flow, avatars, route, authServer, hosting, schema, migration, planMigration] = await Promise.all([
     readFile(new URL("../app/AuthFlow.tsx", import.meta.url), "utf8"),
