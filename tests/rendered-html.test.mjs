@@ -349,6 +349,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /setChoiceAnswers\(\{\}\)/);
   assert.match(app, /↺ 再写一遍/);
   assert.match(app, /renderListeningAnalysis/);
+  assert.match(app, /personalisedListeningFeedback/);
+  assert.match(app, /isLikelySpellingMistake/);
+  assert.match(app, /需要着重加强记住/);
+  assert.match(app, /if \(correct\) return <aside className="listening-answer-analysis is-correct">/);
   assert.match(app, /原文定位/);
   assert.match(app, /怎么改进/);
   assert.match(styles, /\.listening-answer-analysis/);

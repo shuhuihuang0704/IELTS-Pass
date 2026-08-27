@@ -2927,6 +2927,36 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
   const formatAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 
   const normalize = (value: string) => value.trim().toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ");
+  const editDistance = (left: string, right: string) => {
+    const rows = Array.from({ length: left.length + 1 }, (_, index) => index);
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      let diagonal = rows[0];
+      rows[0] = rightIndex;
+      for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+        const previous = rows[leftIndex];
+        rows[leftIndex] = Math.min(
+          rows[leftIndex] + 1,
+          rows[leftIndex - 1] + 1,
+          diagonal + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
+        );
+        diagonal = previous;
+      }
+    }
+    return rows[left.length];
+  };
+  const isLikelySpellingMistake = (answer: string, target: string) => {
+    const answerParts = normalize(answer).split(" ");
+    const targetParts = normalize(target).split(" ");
+    if (answerParts.length !== targetParts.length) return false;
+    let hasDifference = false;
+    return answerParts.every((part, index) => {
+      const targetPart = targetParts[index];
+      if (part === targetPart) return true;
+      hasDifference = true;
+      if (/^\d+$/.test(part) || /^\d+$/.test(targetPart)) return false;
+      return editDistance(part, targetPart) <= Math.max(1, Math.floor(targetPart.length * 0.2));
+    }) && hasDifference;
+  };
   const formCorrect = (id: string) => {
     const question = listeningExercise.formCompletion.find((item) => item.id === id);
     return question?.answers.includes(normalize(formAnswers[id] ?? "")) ?? false;
@@ -2939,6 +2969,51 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
   const facilitiesCorrect = selectedFacilities.length === listeningExercise.multipleSelect.answers.length
     && listeningExercise.multipleSelect.answers.every((answer) => selectedFacilities.includes(answer));
 
+  const personalisedListeningFeedback = (
+    id: keyof typeof listeningReviewEvidence,
+    userAnswer: string,
+    correctAnswer: string,
+  ) => {
+    const evidence = listeningReviewEvidence[id];
+    if (!userAnswer.trim()) return {
+      diagnosis: `本题没有填写答案。原文中的关键信息是「${correctAnswer}」。${evidence.trap}`,
+      improvement: `下一轮先在播放前预测答案类型，听到定位词后立即记录「${correctAnswer}」，再回听确认。${evidence.improvement}`,
+    };
+
+    const formQuestion = listeningExercise.formCompletion.find((question) => question.id === id);
+    if (formQuestion) {
+      const closestTarget = formQuestion.answers.reduce((closest, candidate) => (
+        editDistance(normalize(userAnswer), normalize(candidate)) < editDistance(normalize(userAnswer), normalize(closest))
+          ? candidate
+          : closest
+      ), formQuestion.answers[0]);
+      if (isLikelySpellingMistake(userAnswer, closestTarget)) return {
+        diagnosis: `你已经听到了目标词，但把「${closestTarget}」拼成了「${userAnswer}」，属于单词拼写错误。`,
+        improvement: `需要着重加强记住「${closestTarget}」这个词的正确拼写。把它按音节或字母组拆开，连续正确默写 3 次，并加入错词复习。`,
+      };
+      return {
+        diagnosis: `你填写了「${userAnswer}」，但录音中的最终答案是「${correctAnswer}」。${evidence.trap}`,
+        improvement: `下一轮请针对这次混淆的「${userAnswer} → ${correctAnswer}」做对比听写。${evidence.improvement}`,
+      };
+    }
+
+    if (id === "facilities") {
+      const selected = selectedFacilities;
+      const expected = listeningExercise.multipleSelect.answers;
+      const missed = expected.filter((answer) => !selected.includes(answer));
+      const distractors = selected.filter((answer) => !expected.includes(answer));
+      return {
+        diagnosis: `本次${missed.length ? `漏选了「${missed.join("、")}」` : "没有漏选正确项"}${distractors.length ? `，并误选了「${distractors.join("、")}」` : ""}。${evidence.trap}`,
+        improvement: `重听时只保留带有 included 或 without charge 语义的项目；重点核对「${missed.join("、") || correctAnswer}」，并排除「${distractors.join("、") || "收费或不存在的项目"}」。`,
+      };
+    }
+
+    return {
+      diagnosis: `你选择了「${userAnswer}」，正确答案是「${correctAnswer}」。${evidence.trap}`,
+      improvement: `下一轮重点比较「${userAnswer}」与「${correctAnswer}」在录音中的角色，并圈出决定答案的限定词。${evidence.improvement}`,
+    };
+  };
+
   const renderListeningAnalysis = (
     id: keyof typeof listeningReviewEvidence,
     number: string,
@@ -2948,16 +3023,15 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
   ) => {
     if (score === null) return null;
     const evidence = listeningReviewEvidence[id];
-    const diagnosis = correct
-      ? "回答正确：你抓到了题目限定词与原文中的最终信息。"
-      : userAnswer
-        ? evidence.trap
-        : `本题未作答。${evidence.trap}`;
-    return <aside className={`listening-answer-analysis ${correct ? "is-correct" : "is-incorrect"}`}>
-      <header><strong>Q{number} · {correct ? "回答正确" : userAnswer ? "需要复盘" : "未作答"}</strong><span>你的答案：{userAnswer || "未作答"} · 正确答案：{correctAnswer}</span></header>
+    if (correct) return <aside className="listening-answer-analysis is-correct">
+      <header><strong>Q{number} · ✓ 回答正确</strong><span>你的答案：{userAnswer}</span></header>
+    </aside>;
+    const feedback = personalisedListeningFeedback(id, userAnswer, correctAnswer);
+    return <aside className="listening-answer-analysis is-incorrect">
+      <header><strong>Q{number} · {userAnswer ? "需要复盘" : "未作答"}</strong><span>你的答案：{userAnswer || "未作答"} · 正确答案：{correctAnswer}</span></header>
       <div><b>原文定位</b><p><mark>{evidence.quote}</mark></p></div>
-      <div><b>为什么</b><p>{diagnosis}</p></div>
-      <div><b>怎么改进</b><p>{evidence.improvement}</p></div>
+      <div><b>为什么</b><p>{feedback.diagnosis}</p></div>
+      <div><b>怎么改进</b><p>{feedback.improvement}</p></div>
     </aside>;
   };
 
