@@ -682,6 +682,8 @@ export default function IeltsApp() {
   const [progress, setProgress] = useState<LearningProgress>(defaultProgress);
   const progressRef = useRef<LearningProgress>(defaultProgress);
   const [hydrated, setHydrated] = useState(false);
+  const [dictionarySearchOpen, setDictionarySearchOpen] = useState(false);
+  const [dictionarySearchSeed, setDictionarySearchSeed] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -784,6 +786,11 @@ export default function IeltsApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openDictionarySearch = (query = "") => {
+    setDictionarySearchSeed(query.trim());
+    setDictionarySearchOpen(true);
+  };
+
   const resetProgress = () => {
     window.localStorage.removeItem(storageKey);
     progressRef.current = defaultProgress;
@@ -804,6 +811,7 @@ export default function IeltsApp() {
             onVocabulary={() => openSkill("vocabulary")}
             onOpenSkill={openSkill}
             onNavigate={setView}
+            onDictionarySearch={openDictionarySearch}
           />
         )}
         {view === "practice" && <PracticeView progress={progress} onOpen={openSkill} onOpenOfficialTest={openOfficialTest} />}
@@ -818,9 +826,10 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView progress={progress} percent={percent} onReset={resetProgress} />}
+        {view === "profile" && <ProfileView progress={progress} percent={percent} onReset={resetProgress} updateProgress={updateProgress} onDictionarySearch={openDictionarySearch} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
+      {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
     </main>
   );
 }
@@ -884,10 +893,15 @@ function MobileNavigation({ view, onNavigate }: { view: View; onNavigate: (view:
   );
 }
 
-function PageHeader({ eyebrow, title, accent }: { eyebrow: string; title: string; accent?: string }) {
+function PageHeader({ eyebrow, title, accent, onDictionarySearch }: { eyebrow: string; title: string; accent?: string; onDictionarySearch?: (query: string) => void }) {
+  const [query, setQuery] = useState("");
   return (
-    <header className="topbar">
+    <header className={`topbar${onDictionarySearch ? " has-dictionary-search" : ""}`}>
       <div><p>{eyebrow}</p><h1>{title}{accent && <span>{accent}</span>}</h1></div>
+      {onDictionarySearch && <form className="topbar-dictionary-search" onSubmit={(event) => { event.preventDefault(); onDictionarySearch(query); }}>
+        <label htmlFor="home-dictionary-search">全英语词典</label>
+        <div><input id="home-dictionary-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索任意英语单词" aria-label="搜索所有英语单词" /><button type="submit">查词</button></div>
+      </form>}
       <span className="profile-button" aria-label="当前用户">LI</span>
     </header>
   );
@@ -901,6 +915,7 @@ function TodayView({
   onVocabulary,
   onOpenSkill,
   onNavigate,
+  onDictionarySearch,
 }: {
   percent: number;
   completedCount: number;
@@ -909,6 +924,7 @@ function TodayView({
   onVocabulary: () => void;
   onOpenSkill: (skill: Skill) => void;
   onNavigate: (view: View) => void;
+  onDictionarySearch: (query?: string) => void;
 }) {
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [showExtraStudy, setShowExtraStudy] = useState(false);
@@ -927,7 +943,7 @@ function TodayView({
     ?? officialTestSchedule[0];
   return (
     <>
-      <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" />
+      <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" onDictionarySearch={onDictionarySearch} />
       {progress.carryoverTasks.length > 0 ? (
         <section className="carryover-strip">
           <div><span>ROLLED OVER FROM YESTERDAY</span><strong>先补完昨天没有完成的任务</strong><p>补做任务不会自动打勾；完成完整专项后才会从这里移除。</p></div>
@@ -2788,6 +2804,25 @@ type WordbookEntry = {
   collection: "core" | "listening";
 };
 
+type DictionaryResult = {
+  word: string;
+  phonetic?: string;
+  meanings: Array<{
+    partOfSpeech: string;
+    definitions: Array<{ definition: string; example?: string }>;
+  }>;
+};
+
+async function lookupDictionaryWord(word: string): Promise<DictionaryResult[]> {
+  const normalized = word.trim().toLowerCase();
+  if (!normalized) return [];
+  const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(normalized)}`);
+  if (response.status === 404) return [];
+  if (!response.ok) throw new Error("dictionary unavailable");
+  const entries = await response.json() as DictionaryResult[];
+  return Array.isArray(entries) ? entries.slice(0, 3) : [];
+}
+
 const mixedWordParts: Record<string, string> = {
   access: "n. / v.", alternative: "n. / adj.", approximate: "adj. / v.", attribute: "n. / v.", benefit: "n. / v.",
   code: "n. / v.", comment: "n. / v.", commission: "n. / v.", consent: "n. / v.", constant: "adj. / n.",
@@ -2833,7 +2868,7 @@ const wordbookEntries: WordbookEntry[] = Array.from(new Map([
   })),
 ].map((entry) => [entry.word.toLowerCase(), entry])).values()).sort((a, b) => a.word.localeCompare(b.word));
 
-function WordbookView({ progress, onBack }: { progress: LearningProgress; onBack: () => void }) {
+function WordbookView({ progress, onBack, updateProgress, onDictionarySearch }: { progress: LearningProgress; onBack: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onDictionarySearch: (query?: string) => void }) {
   const [query, setQuery] = useState("");
   const [collection, setCollection] = useState<"all" | "core" | "listening">("all");
   const [visibleCount, setVisibleCount] = useState(60);
@@ -2860,24 +2895,30 @@ function WordbookView({ progress, onBack }: { progress: LearningProgress; onBack
         <div><span>IELTS LEARNING LIBRARY</span><strong>{wordbookEntries.length}<small> 个待学习词汇</small></strong><p>包含 {coreCount} 个高频核心词与 {listeningCount} 个去重后的场景听写补充词。</p></div>
         <div className="wordbook-hero-stats"><span><b>{progress.reviewWords.length}</b>待复习</span><span><b>{progress.masteredWords.length}</b>已掌握</span></div>
       </section>
-      <section className="wordbook-toolbar" aria-label="单词本筛选">
-        <label><span>搜索单词或中文意思</span><input value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(60); }} placeholder="例如：environment / 环境" /></label>
-        <div role="tablist" aria-label="词库分类">
+      <section className="wordbook-toolbar" aria-label="单词本筛选与全词典搜索">
+        <form className="wordbook-search" onSubmit={(event) => { event.preventDefault(); onDictionarySearch(query); }}>
+          <label><span>搜索本单词本，或提交到全英语词典</span><input value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(60); }} placeholder="例如：environment / 环境" /></label>
+          <button type="submit">搜索全部英语词典</button>
+        </form>
+        <div className="wordbook-filters" role="tablist" aria-label="词库分类">
           <button role="tab" aria-selected={collection === "all"} className={collection === "all" ? "is-active" : ""} onClick={() => selectCollection("all")}>全部 {wordbookEntries.length}</button>
           <button role="tab" aria-selected={collection === "core"} className={collection === "core" ? "is-active" : ""} onClick={() => selectCollection("core")}>高频核心 {coreCount}</button>
           <button role="tab" aria-selected={collection === "listening"} className={collection === "listening" ? "is-active" : ""} onClick={() => selectCollection("listening")}>场景听写 {listeningCount}</button>
         </div>
       </section>
-      <div className="wordbook-result-line"><span>当前找到 {filteredWords.length} 个词</span><small>按字母顺序排列</small></div>
+      <div className="wordbook-result-line"><span>本单词本找到 {filteredWords.length} 个词</span><small>词库外单词请按 Enter 或点“搜索全部英语词典”</small></div>
       <section className="wordbook-list" aria-label="全部学习词汇">
         {visibleWords.length === 0 ? <div className="empty-state"><strong>没有找到对应单词</strong><p>试试英文、中文意思或主题名称。</p></div> : visibleWords.map((entry) => {
           const isReview = progress.reviewWords.includes(entry.word);
           const isMastered = progress.masteredWords.includes(entry.word);
+          const noteId = `word:${entry.word.toLowerCase()}`;
+          const isSaved = progress.notebook.some((item) => item.id === noteId);
           return <article className="wordbook-entry" key={entry.word}>
             <header><span>{entry.category}</span>{isReview ? <b className="needs-review">待复习</b> : isMastered ? <b className="is-mastered">已掌握</b> : <b>待学习</b>}</header>
-            <div className="wordbook-word"><div><h2>{entry.word}</h2><em>{entry.partOfSpeech}</em></div><button onClick={() => speak(entry.word, .76)} aria-label={`播放 ${entry.word}`}>▶</button></div>
+            <div className="wordbook-word"><div><h2>{entry.word}</h2><em>{entry.partOfSpeech}</em></div></div>
             <p className="wordbook-meaning">{entry.meaning}</p>
             <div className="wordbook-example"><span>例句 / 常用搭配</span><p>{entry.example}</p></div>
+            <footer className="wordbook-entry-actions"><button onClick={() => speak(entry.word, .76)} aria-label={`播放 ${entry.word}`}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `单词本 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></footer>
           </article>;
         })}
       </section>
@@ -2886,7 +2927,57 @@ function WordbookView({ progress, onBack }: { progress: LearningProgress; onBack
   );
 }
 
-function ProfileView({ progress, percent, onReset }: { progress: LearningProgress; percent: number; onReset: () => void }) {
+function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClose }: { initialQuery: string; progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onClose: () => void }) {
+  const [query, setQuery] = useState(initialQuery);
+  const [requestedQuery, setRequestedQuery] = useState(initialQuery);
+  const [requestId, setRequestId] = useState(0);
+  const [results, setResults] = useState<DictionaryResult[]>([]);
+  const [loading, setLoading] = useState(Boolean(initialQuery.trim()));
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const term = requestedQuery.trim();
+    if (!term) return;
+    let active = true;
+    lookupDictionaryWord(term).then((entries) => {
+      if (!active) return;
+      setResults(entries);
+      if (entries.length === 0) setError("没有找到这个拼写，请检查后再试一次。");
+    }).catch(() => {
+      if (!active) return;
+      setResults([]);
+      setError("在线词典暂时无法连接，请检查网络后重试。");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [requestedQuery, requestId]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return <div className="dictionary-search-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <section className="dictionary-search-dialog" role="dialog" aria-modal="true" aria-label="全英语词典搜索">
+      <header><div><span>GLOBAL ENGLISH DICTIONARY</span><h2>搜索全部英语词典</h2><p>本单词本之外的词，也可以查词性、音标、英文释义和例句。</p></div><button onClick={onClose} aria-label="关闭词典">×</button></header>
+      <form onSubmit={(event) => { event.preventDefault(); const term = query.trim(); if (!term) return; setLoading(true); setError(""); setResults([]); setRequestedQuery(term); setRequestId((current) => current + 1); }}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入一个英语单词，例如 serendipity" aria-label="输入英语单词" /><button type="submit" disabled={loading}>{loading ? "查询中…" : "查词"}</button></form>
+      <p className="dictionary-search-source">3,600 词核心库之外的结果由开放英语词典实时提供，需要联网。</p>
+      {error && <div className="dictionary-search-empty"><strong>没有查到结果</strong><p>{error}</p></div>}
+      {results.map((result, resultIndex) => {
+        const firstMeaning = result.meanings[0];
+        const firstDefinition = firstMeaning?.definitions[0];
+        const noteId = `word:${result.word.toLowerCase()}`;
+        const isSaved = progress.notebook.some((item) => item.id === noteId);
+        return <article className="dictionary-result" key={`${result.word}-${resultIndex}`}>
+          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+          <div>{result.meanings.slice(0, 4).map((meaning, meaningIndex) => <section key={`${meaning.partOfSpeech}-${meaningIndex}`}><b>{meaning.partOfSpeech}</b><ol>{meaning.definitions.slice(0, 3).map((definition, definitionIndex) => <li key={definitionIndex}><p>{definition.definition}</p>{definition.example && <blockquote>{definition.example}</blockquote>}</li>)}</ol></section>)}</div>
+        </article>;
+      })}
+    </section>
+  </div>;
+}
+
+function ProfileView({ progress, percent, onReset, updateProgress, onDictionarySearch }: { progress: LearningProgress; percent: number; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onDictionarySearch: (query?: string) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const stats = useMemo(() => [
     ["今日完成度", `${percent}%`],
@@ -2896,14 +2987,14 @@ function ProfileView({ progress, percent, onReset }: { progress: LearningProgres
     ["我的笔记", `${progress.notebook.length}`],
     ["连续学习", `${progress.streak} 天`],
   ], [percent, progress]);
-  if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} />;
+  if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} onDictionarySearch={onDictionarySearch} />;
   return (
     <>
       <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent="雅思 7.0。" />
       <div className="profile-grid">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
       <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
         <span className="profile-wordbook-mark">Aa</span>
-        <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length} 个完整学习词汇 · 中文意思、词性、例句与发音</p></span>
+        <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length} 个学习词汇 · 紧凑浏览、全英语查词与一键笔记</p></span>
         <b>进入单词本 →</b>
       </button>
       <section className="profile-settings"><div><strong>本机测试数据</strong><p>当前版本把进度保存在这个浏览器中。登录和跨设备云同步会在后续接入。</p></div><button onClick={onReset}>重置学习进度</button></section>

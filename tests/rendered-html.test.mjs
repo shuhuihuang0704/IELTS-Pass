@@ -130,10 +130,15 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
   assert.match(app, /我的单词本/);
   assert.match(app, /IELTS LEARNING LIBRARY/);
-  assert.match(app, /搜索单词或中文意思/);
+  assert.match(app, /搜索本单词本，或提交到全英语词典/);
   assert.match(app, /例句 \/ 常用搭配/);
   assert.match(app, /inferPartOfSpeech/);
   assert.match(app, /wordbookEntries/);
+  assert.match(app, /搜索全部英语词典/);
+  assert.match(app, /api\.dictionaryapi\.dev/);
+  assert.match(app, /DictionarySearchDialog/);
+  assert.match(app, /开放英语词典/);
+  assert.match(app, /单词本 ·/);
   assert.match(app, /每日学习记录/);
   assert.match(app, /继续增加学习/);
   assert.match(app, /3,600 词核心库轮换/);
@@ -169,6 +174,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.profile-wordbook/);
   assert.match(styles, /\.wordbook-list/);
   assert.match(styles, /\.wordbook-entry/);
+  assert.match(styles, /\.wordbook-entry-actions/);
+  assert.match(styles, /\.topbar-dictionary-search/);
+  assert.match(styles, /\.dictionary-search-dialog/);
   assert.match(app, /readingSourceEvidence/);
   assert.match(app, /原文荧光定位/);
   assert.match(app, /荧光笔定位原文/);
