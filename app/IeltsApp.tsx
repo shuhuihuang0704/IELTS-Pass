@@ -9,6 +9,7 @@ import {
   getDailyVocabulary,
   listeningCorpusMeta,
   listeningExercise,
+  listeningReviewEvidence,
   readingExercise,
   readingReviewEvidence,
   skills,
@@ -2916,6 +2917,30 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
     selectedFacilities.length +
     listeningExercise.matching.questions.filter((question) => matchingAnswers[question.id]).length +
     listeningExercise.multipleChoice.filter((question) => choiceAnswers[question.id]).length;
+  const facilitiesCorrect = selectedFacilities.length === listeningExercise.multipleSelect.answers.length
+    && listeningExercise.multipleSelect.answers.every((answer) => selectedFacilities.includes(answer));
+
+  const renderListeningAnalysis = (
+    id: keyof typeof listeningReviewEvidence,
+    number: string,
+    userAnswer: string,
+    correctAnswer: string,
+    correct: boolean,
+  ) => {
+    if (score === null) return null;
+    const evidence = listeningReviewEvidence[id];
+    const diagnosis = correct
+      ? "回答正确：你抓到了题目限定词与原文中的最终信息。"
+      : userAnswer
+        ? evidence.trap
+        : `本题未作答。${evidence.trap}`;
+    return <aside className={`listening-answer-analysis ${correct ? "is-correct" : "is-incorrect"}`}>
+      <header><strong>Q{number} · {correct ? "回答正确" : userAnswer ? "需要复盘" : "未作答"}</strong><span>你的答案：{userAnswer || "未作答"} · 正确答案：{correctAnswer}</span></header>
+      <div><b>原文定位</b><p><mark>{evidence.quote}</mark></p></div>
+      <div><b>为什么</b><p>{diagnosis}</p></div>
+      <div><b>怎么改进</b><p>{evidence.improvement}</p></div>
+    </aside>;
+  };
 
   const invalidateSubmission = () => {
     setScore(null);
@@ -2976,13 +3001,14 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
           <div className="question-type"><span>Questions 1–4</span><strong>Form Completion</strong><p>Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.</p></div>
           <div className="listening-form-card">
             <h3>WESTBRIDGE RESIDENCE APPLICATION</h3>
-            {listeningExercise.formCompletion.map((question, index) => (
-              <label className={score === null ? "" : formCorrect(question.id) ? "is-correct" : "is-incorrect"} key={question.id}>
+            {listeningExercise.formCompletion.map((question, index) => <div className="listening-answer-item" key={question.id}>
+              <label className={score === null ? "" : formCorrect(question.id) ? "is-correct" : "is-incorrect"}>
                 <span>{index + 1}. {question.label}</span>
                 <input value={formAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setFormAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 1}, ${question.label}`} />
                 {score !== null && <small className="submitted-correct-answer">正确答案：{question.answers[0]}</small>}
               </label>
-            ))}
+              {renderListeningAnalysis(question.id as "l1" | "l2" | "l3" | "l4", String(index + 1), formAnswers[question.id] ?? "", question.answers[0], formCorrect(question.id))}
+            </div>)}
           </div>
         </section>
 
@@ -2996,6 +3022,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
             })}
           </div>
           <small className="selection-count">{score === null ? `已选择 ${selectedFacilities.length} / 2 项` : `正确答案：${listeningExercise.multipleSelect.answers.join("、")}`}</small>
+          {renderListeningAnalysis("facilities", "5–6", selectedFacilities.join("、"), listeningExercise.multipleSelect.answers.join("、"), facilitiesCorrect)}
         </section>
 
         <section className="listening-question-group">
@@ -3003,7 +3030,9 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
           <div className="matching-option-bank">{listeningExercise.matching.options.map((option) => <span key={option.id}><b>{option.id}</b>{option.label}</span>)}</div>
           {listeningExercise.matching.questions.map((question, index) => {
             const resultClass = score === null ? "" : matchingAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <div className="matching-answer-row" key={question.id}><label className={`matching-row ${resultClass}`}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</div>;
+            const userOption = listeningExercise.matching.options.find((option) => option.id === matchingAnswers[question.id]);
+            const correctOption = listeningExercise.matching.options.find((option) => option.id === question.answer);
+            return <div className="matching-answer-row" key={question.id}><label className={`matching-row ${resultClass}`}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}{renderListeningAnalysis(question.id as "l7" | "l8", String(index + 7), userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer, matchingAnswers[question.id] === question.answer)}</div>;
           })}
         </section>
 
@@ -3011,7 +3040,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
           <div className="question-type"><span>Questions 9–10</span><strong>Multiple Choice · Choose ONE</strong><p>Choose the correct letter, A, B or C.</p></div>
           {listeningExercise.multipleChoice.map((question, index) => {
             const resultClass = score === null ? "" : choiceAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <fieldset className={`question-block ${resultClass}`} key={question.id}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</fieldset>;
+            return <div className="listening-answer-item" key={question.id}><fieldset className={`question-block ${resultClass}`}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</fieldset>{renderListeningAnalysis(question.id as "l9" | "l10", String(index + 9), choiceAnswers[question.id] ?? "", question.answer, choiceAnswers[question.id] === question.answer)}</div>;
           })}
         </section>
 

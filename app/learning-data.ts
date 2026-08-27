@@ -536,6 +536,54 @@ export const listeningExercise = {
   ],
 };
 
+export const listeningReviewEvidence = {
+  l1: {
+    quote: "Student: It's Chen. C, H, E, N.",
+    trap: "姓名只出现一次并紧接逐字母拼写；如果只记发音、没有跟住字母序列，很容易漏写或拼错。",
+    improvement: "听到 family name 后立刻准备记录专有名词；按字母分组写下 C-H-E-N，再检查是否漏字母。",
+  },
+  l2: {
+    quote: "On the fourteenth of October. I originally wrote the twelfth, but my flight changed.",
+    trap: "twelfth 是被更正的旧日期，but 后的语境确认最终日期是 14 October；只抓到第一个数字会落入修正信息干扰。",
+    improvement: "日期题不要听到数字就立即定答案；继续等 but、actually、changed、instead 等修正信号，再写最终信息。",
+  },
+  l3: {
+    quote: "Do you want a shared room? — No, a single room, please.",
+    trap: "shared room 出现在考官问题中，是典型原词干扰；学生先用 No 否定，再给出真正需要的 single room。",
+    improvement: "区分提问者的选项和答题者的最终选择，特别留意 No、not、rather、instead 后面的信息。",
+  },
+  l4: {
+    quote: "Any dietary requirement? — Yes, vegetarian.",
+    trap: "题干用 dietary requirement，录音直接给身份词 vegetarian；如果等待题干原词重复，可能错过短答案。",
+    improvement: "播放前预测这里需要饮食类别；听到 Yes 后立即抓取名词或形容词，并检查拼写结尾 -arian。",
+  },
+  facilities: {
+    quote: "Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry ... costs three pounds. Breakfast is optional, and ... there is no gym.",
+    trap: "Laundry、Breakfast 和 Gym 都被提到，但分别是收费、可选或不存在；题目问的是 included in the weekly fee。",
+    improvement: "多选题要同时核对限定词。把 included / without charge 标为肯定，把 costs / optional / no 标为排除信号。",
+  },
+  l7: {
+    quote: "Please send a copy of your passport by email. You can show the original at reception.",
+    trap: "at reception 对应的是 original，不是题目中的 copy；如果忽略 copy/original 的区别会误选 B。",
+    improvement: "匹配题先圈出对象 copy of passport，再把对象与动作 by email 绑定，避免被相邻句中的 reception 干扰。",
+  },
+  l8: {
+    quote: "The deposit must be paid by bank transfer. We cannot accept cash for that.",
+    trap: "cash 被明确否定；正确方式由 must be paid by bank transfer 给出。只记住句尾名词容易选错。",
+    improvement: "听方式类信息时记录动词搭配 paid by；遇到 cannot 立即把后面的选项划掉。",
+  },
+  l9: {
+    quote: "Check-in begins at three p.m. ... your flight lands at two, so arriving around half past four should be comfortable.",
+    trap: "2:00 是航班落地时间，4:30 是建议抵达时间；题目问 earliest check-in time，只对应 begins at 3 p.m.。",
+    improvement: "数字题要给每个数字加标签：flight 2:00、check-in 3:00、arrival 4:30，再按题目关键词选择。",
+  },
+  l10: {
+    quote: "I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.",
+    trap: "newer 和 city centre 描述的是另一处住所，并在 but 后被否定为不便；真正原因由 because 明确引出。",
+    improvement: "原因题重点追踪 because、since、so；对比较句中的另一对象单独做标记，避免把干扰项当成答案。",
+  },
+} as const;
+
 export const speakingScenario = {
   title: "Housing and the future of cities",
   part: "Speaking · Interactive discussion",

@@ -140,6 +140,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(data, /matchingHeadings|matchingInformation|trueFalseNotGiven|summary/);
   assert.match(data, /Two-way discussion|questions:/);
   assert.match(data, /formCompletion|multipleSelect|matching|multipleChoice/);
+  assert.match(data, /listeningReviewEvidence/);
+  assert.match(data, /为什么|怎么改进|修正信息干扰|多选题要同时核对限定词/);
   assert.match(data, /export const connectedSpeechPhrases = listeningCorpusPhrases\.map/);
   assert.match(app, /listening-section-1-v2\.wav/);
   assert.match(app, /英国女接待员 × 英国男学生/);
@@ -339,6 +341,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /setMatchingAnswers\(\{\}\)/);
   assert.match(app, /setChoiceAnswers\(\{\}\)/);
   assert.match(app, /↺ 再写一遍/);
+  assert.match(app, /renderListeningAnalysis/);
+  assert.match(app, /原文定位/);
+  assert.match(app, /怎么改进/);
+  assert.match(styles, /\.listening-answer-analysis/);
   assert.match(app, /const redoReading = \(\) =>/);
   assert.match(app, /setAnswers\(\{\}\)/);
   assert.match(app, /setActiveReviewId\(null\)/);

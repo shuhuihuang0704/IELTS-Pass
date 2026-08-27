@@ -853,6 +853,17 @@ button { cursor: pointer; }
 .listening-form-card label.is-incorrect input { border-color:#d87b72; background:#fff2f0; }
 .submitted-correct-answer { display:block; margin-top:7px; color:#236d50; font-size:9px; font-weight:700; line-height:1.45; }
 .listening-form-card .submitted-correct-answer { grid-column:2; margin-top:-5px; }
+.listening-answer-item+.listening-answer-item { margin-top:8px; }
+.listening-answer-analysis { margin:10px 0 4px; padding:14px; border:1px solid #ded9e0; border-radius:14px; background:white; }
+.listening-answer-analysis.is-correct { border-color:#9ccfbb; background:#f5fbf8; }
+.listening-answer-analysis.is-incorrect { border-color:#e7aba5; background:#fff8f7; }
+.listening-answer-analysis>header { padding-bottom:9px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; border-bottom:1px solid rgba(90,80,92,.1); }
+.listening-answer-analysis>header strong { color:#413b43; font-size:10px; }
+.listening-answer-analysis>header span { max-width:68%; color:#777078; font-size:8px; line-height:1.45; text-align:right; }
+.listening-answer-analysis>div { margin-top:9px; display:grid; grid-template-columns:62px 1fr; gap:8px; }
+.listening-answer-analysis b { color:#5b4fc3; font-size:8px; }
+.listening-answer-analysis p { margin:0; color:#554f57; font-size:9px; line-height:1.6; }
+.listening-answer-analysis mark { padding:1px 2px; color:inherit; background:#fff0a8; border-radius:3px; }
 .matching-answer-row { margin-top:8px; }
 .matching-answer-row .matching-row { margin-top:0; }
 .listening-checkboxes { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:14px; }
@@ -1524,6 +1535,9 @@ button { -webkit-tap-highlight-color:transparent; }
   .dictation-batch-footer { align-items:stretch; flex-direction:column; }
   .dictation-batch-footer>button,.dictation-batch-footer>div:last-child { width:100%; }
   .dictation-batch-footer>div:last-child button { flex:1; }
+  .listening-answer-analysis>header { flex-direction:column; }
+  .listening-answer-analysis>header span { max-width:none; text-align:left; }
+  .listening-answer-analysis>div { grid-template-columns:1fr; gap:3px; }
 }
 
 @media (prefers-reduced-motion:reduce) {
