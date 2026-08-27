@@ -707,14 +707,24 @@ button { cursor: pointer; }
 .dictation-group-tabs button { min-height:34px; border:0; border-radius:9px; color:#77717b; background:transparent; font-size:9px; font-weight:700; }
 .dictation-group-tabs button.is-complete { color:#267357; }
 .dictation-group-tabs button.is-active { color:white; background:var(--violet); box-shadow:0 5px 14px rgba(75,66,177,.2); }
+.dictation-sequence-player { margin-top:11px; padding:12px; display:grid; grid-template-columns:42px minmax(150px,.8fr) minmax(180px,1fr) auto; align-items:center; gap:8px 11px; border:1px solid #dfdaea; border-radius:14px; background:linear-gradient(135deg,#f8f6ff,#fff); }
+.dictation-sequence-toggle { width:42px; height:42px; grid-row:1 / 3; border:0; border-radius:13px; color:white; background:var(--violet); font-size:13px; font-weight:800; box-shadow:0 7px 18px rgba(75,66,177,.24); }
+.dictation-sequence-copy strong,.dictation-sequence-copy small { display:block; }
+.dictation-sequence-copy strong { color:#312b42; font-size:10px; }
+.dictation-sequence-copy small { margin-top:4px; color:var(--muted); font-size:7px; }
+.dictation-sequence-player>input { width:100%; accent-color:var(--violet); cursor:pointer; }
+.dictation-sequence-time { color:#746d78; font-size:8px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.dictation-sequence-markers { grid-column:2 / -1; display:grid; grid-template-columns:repeat(10,1fr); gap:3px; }
+.dictation-sequence-markers i { height:3px; position:relative; border-radius:3px; background:#ded9e8; }
+.dictation-sequence-markers i.is-active { background:#675dd1; }
+.dictation-sequence-markers span { position:absolute; top:5px; left:50%; color:#aaa4ad; font-size:6px; font-style:normal; transform:translateX(-50%); }
 .dictation-batch-form { margin-top:12px; }
 .dictation-batch-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
-.dictation-batch-list>article { min-width:0; padding:7px; display:grid; grid-template-columns:28px 34px minmax(0,1fr); align-items:center; gap:7px; border:1px solid #e5e1e8; border-radius:12px; background:#fbfafc; transition:border-color .16s ease,background .16s ease; }
+.dictation-batch-list>article { min-width:0; padding:7px; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:7px; border:1px solid #e5e1e8; border-radius:12px; background:#fbfafc; transition:border-color .16s ease,background .16s ease; }
 .dictation-batch-list>article.is-active { border-color:#8c83df; background:#f7f5ff; box-shadow:0 0 0 3px rgba(91,84,214,.08); }
 .dictation-batch-list>article.is-correct { border-color:#b9dfce; background:#f5fbf8; }
 .dictation-batch-list>article.is-wrong { border-color:#efc4bc; background:#fff8f6; }
 .dictation-item-number { color:#99939c; font-size:9px; font-variant-numeric:tabular-nums; text-align:center; }
-.dictation-play { width:34px; height:34px; border:0; border-radius:9px; color:#5149b4; background:#ece9fa; font-size:9px; }
 .dictation-batch-list label { min-width:0; }
 .dictation-batch-list label>span { width:1px; height:1px; position:absolute; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 .dictation-batch-list input { width:100%; height:38px; padding:0 10px; border:1px solid #ddd8e0; border-radius:9px; outline:0; color:var(--ink); background:white; font:inherit; font-size:12px; }
@@ -1304,6 +1314,9 @@ button { -webkit-tap-highlight-color:transparent; }
   .profile-grid strong { margin-top:26px; }
   .dictation-batch-practice { min-height:0; padding:18px; }
   .dictation-group-tabs { grid-template-columns:repeat(4,1fr); }
+  .dictation-sequence-player { grid-template-columns:42px 1fr auto; }
+  .dictation-sequence-player>input { grid-column:2 / -1; }
+  .dictation-sequence-markers { grid-column:2 / -1; }
   .dictation-batch-list { grid-template-columns:1fr; }
   .dictation-batch-footer { align-items:stretch; flex-direction:column; }
   .dictation-batch-footer>button,.dictation-batch-footer>div:last-child { width:100%; }

@@ -2106,21 +2106,101 @@ function VocabularyPractice({
   const [dictationAnswers, setDictationAnswers] = useState<string[]>(() => Array(10).fill(""));
   const [dictationSubmitted, setDictationSubmitted] = useState(false);
   const [activeDictationItem, setActiveDictationItem] = useState(0);
+  const [dictationPlayback, setDictationPlayback] = useState<"idle" | "playing" | "paused" | "ended">("idle");
+  const [dictationAudioTime, setDictationAudioTime] = useState(0);
   const dictationInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const dictationAudioTimeRef = useRef(0);
+  const dictationAnchorTimeRef = useRef(0);
+  const dictationAnchorStartedRef = useRef(0);
+  const dictationLastSpokenRef = useRef(-1);
   const dictationWords = vocabulary.slice(dictationGroup * 10, dictationGroup * 10 + 10);
+  const dictationSlotSeconds = 5;
+  const dictationSpeechWindowSeconds = 1.6;
+  const dictationAudioDuration = dictationWords.length * dictationSlotSeconds;
   const filledDictationCount = dictationAnswers.filter((answer) => answer.trim()).length;
   const dictationCorrectCount = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word).length;
 
+  useEffect(() => {
+    if (dictationPlayback !== "playing") return;
+    const updatePlayback = () => {
+      const elapsed = (performance.now() - dictationAnchorStartedRef.current) / 1000;
+      const nextTime = Math.min(dictationAudioDuration, dictationAnchorTimeRef.current + elapsed);
+      dictationAudioTimeRef.current = nextTime;
+      setDictationAudioTime(nextTime);
+      if (nextTime >= dictationAudioDuration) {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        setDictationPlayback("ended");
+        return;
+      }
+      const itemIndex = Math.min(dictationWords.length - 1, Math.floor(nextTime / dictationSlotSeconds));
+      const slotOffset = nextTime % dictationSlotSeconds;
+      setActiveDictationItem(itemIndex);
+      if (dictationLastSpokenRef.current !== itemIndex) {
+        dictationInputRefs.current[itemIndex]?.focus();
+        if (slotOffset <= dictationSpeechWindowSeconds) speak(vocabulary[dictationGroup * 10 + itemIndex].word, .72);
+        dictationLastSpokenRef.current = itemIndex;
+      }
+    };
+    updatePlayback();
+    const timer = window.setInterval(updatePlayback, 100);
+    return () => window.clearInterval(timer);
+  }, [dictationAudioDuration, dictationGroup, dictationPlayback, dictationWords.length]);
+
+  useEffect(() => () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, []);
+
+  const resetDictationPlayer = (time = 0) => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    dictationAudioTimeRef.current = time;
+    dictationAnchorTimeRef.current = time;
+    dictationAnchorStartedRef.current = 0;
+    dictationLastSpokenRef.current = -1;
+    setDictationAudioTime(time);
+    setDictationPlayback("idle");
+  };
+
   const openDictationGroup = (groupIndex: number) => {
+    resetDictationPlayer();
     setDictationGroup(groupIndex);
     setDictationAnswers(Array(10).fill(""));
     setDictationSubmitted(false);
     setActiveDictationItem(0);
   };
 
-  const playDictationWord = (itemIndex: number, rate = .72) => {
+  const toggleDictationSequence = () => {
+    if (dictationPlayback === "playing") {
+      const elapsed = (performance.now() - dictationAnchorStartedRef.current) / 1000;
+      const pausedAt = Math.min(dictationAudioDuration, dictationAnchorTimeRef.current + elapsed);
+      dictationAudioTimeRef.current = pausedAt;
+      setDictationAudioTime(pausedAt);
+      if ("speechSynthesis" in window) window.speechSynthesis.pause();
+      setDictationPlayback("paused");
+      return;
+    }
+    const startTime = dictationPlayback === "ended" ? 0 : dictationAudioTimeRef.current;
+    if (dictationPlayback === "paused" && "speechSynthesis" in window) window.speechSynthesis.resume();
+    dictationAudioTimeRef.current = startTime;
+    dictationAnchorTimeRef.current = startTime;
+    dictationAnchorStartedRef.current = performance.now();
+    const itemIndex = Math.min(dictationWords.length - 1, Math.floor(startTime / dictationSlotSeconds));
+    dictationLastSpokenRef.current = startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds ? -1 : itemIndex;
+    setDictationAudioTime(startTime);
+    setDictationPlayback("playing");
+  };
+
+  const seekDictationSequence = (nextTime: number) => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    const safeTime = Math.max(0, Math.min(dictationAudioDuration, nextTime));
+    const itemIndex = Math.min(dictationWords.length - 1, Math.floor(Math.min(safeTime, dictationAudioDuration - .01) / dictationSlotSeconds));
+    dictationAudioTimeRef.current = safeTime;
+    dictationAnchorTimeRef.current = safeTime;
+    dictationAnchorStartedRef.current = performance.now();
+    dictationLastSpokenRef.current = safeTime % dictationSlotSeconds <= dictationSpeechWindowSeconds ? -1 : itemIndex;
+    setDictationAudioTime(safeTime);
     setActiveDictationItem(itemIndex);
-    speak(dictationWords[itemIndex].word, rate);
+    dictationInputRefs.current[itemIndex]?.focus();
+    if (safeTime >= dictationAudioDuration) setDictationPlayback("ended");
   };
 
   const moveToNextDictationInput = (itemIndex: number) => {
@@ -2128,7 +2208,6 @@ function VocabularyPractice({
     const nextIndex = itemIndex + 1;
     setActiveDictationItem(nextIndex);
     dictationInputRefs.current[nextIndex]?.focus();
-    speak(dictationWords[nextIndex].word, .72);
   };
 
   const submitDictationGroup = (event: FormEvent) => {
@@ -2163,13 +2242,20 @@ function VocabularyPractice({
         <div className="exercise-layout">
           <div className="exercise-main dictation-batch-practice">
             <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / 8 组</span><span>{completedDictationCount} / {vocabulary.length}</span></div>
-            <h2>一组 10 词，连续写完再检查</h2><p>听音后直接输入，按 Enter 自动跳到下一词并播放；整组提交前不显示答案和中文。</p>
+            <h2>一段音频，连续听写 10 个词</h2><p>每个词后预留约 4 秒书写时间；可以随时暂停、继续或拖动进度，整组提交前不显示答案和中文。</p>
             <div className="dictation-group-tabs" role="tablist" aria-label="场景听写分组">
               {Array.from({ length: 8 }, (_, groupIndex) => {
                 const completed = vocabulary.slice(groupIndex * 10, groupIndex * 10 + 10).every((item) => progress.dailyDictationSeen.includes(item.word));
                 return <button type="button" role="tab" aria-selected={dictationGroup === groupIndex} className={`${dictationGroup === groupIndex ? "is-active " : ""}${completed ? "is-complete" : ""}`} onClick={() => openDictationGroup(groupIndex)} key={groupIndex}>{completed ? "✓" : groupIndex + 1}</button>;
               })}
             </div>
+            <section className="dictation-sequence-player" aria-label={`第 ${dictationGroup + 1} 组连续听写播放器`}>
+              <button type="button" className="dictation-sequence-toggle" onClick={toggleDictationSequence} aria-label={dictationPlayback === "playing" ? "暂停本组听写" : "播放本组听写"}>{dictationPlayback === "playing" ? "Ⅱ" : "▶"}</button>
+              <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 个词` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 个词` : dictationPlayback === "ended" ? "本组音频播放完毕" : "播放本组 10 词录音"}</strong><small>10 个词 · 每词约 1 秒 · 间隔约 4 秒</small></div>
+              <input type="range" min="0" max={dictationAudioDuration} step="0.1" value={dictationAudioTime} onChange={(event) => seekDictationSequence(Number(event.target.value))} aria-label="拖动场景听写进度" />
+              <span className="dictation-sequence-time">{Math.floor(dictationAudioTime / 60)}:{String(Math.floor(dictationAudioTime % 60)).padStart(2, "0")} / 0:{String(dictationAudioDuration).padStart(2, "0")}</span>
+              <div className="dictation-sequence-markers" aria-hidden="true">{dictationWords.map((item, itemIndex) => <i className={activeDictationItem === itemIndex ? "is-active" : ""} key={item.word}><span>{itemIndex + 1}</span></i>)}</div>
+            </section>
             <form className="dictation-batch-form" onSubmit={submitDictationGroup}>
               <div className="dictation-batch-list">
                 {dictationWords.map((item, itemIndex) => {
@@ -2178,7 +2264,6 @@ function VocabularyPractice({
                   const saved = progress.notebook.some((entry) => entry.id === `word:${item.word.toLowerCase()}`);
                   return <article className={`${activeDictationItem === itemIndex ? "is-active " : ""}${dictationSubmitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={item.word}>
                     <span className="dictation-item-number">{dictationGroup * 10 + itemIndex + 1}</span>
-                    <button className="dictation-play" type="button" onClick={() => playDictationWord(itemIndex)} aria-label={`播放第 ${itemIndex + 1} 个词`}>▶</button>
                     <label><span>第 {itemIndex + 1} 个词</span><input ref={(node) => { dictationInputRefs.current[itemIndex] = node; }} value={answer} disabled={dictationSubmitted} onFocus={() => setActiveDictationItem(itemIndex)} onChange={(event) => setDictationAnswers((current) => current.map((currentAnswer, answerIndex) => answerIndex === itemIndex ? event.target.value : currentAnswer))} onKeyDown={(event) => { if (event.key === "Enter" && itemIndex < dictationWords.length - 1) { event.preventDefault(); moveToNextDictationInput(itemIndex); } }} spellCheck={false} autoComplete="off" placeholder="输入听到的单词" aria-label={`第 ${itemIndex + 1} 个听写答案`} /></label>
                     {dictationSubmitted && <div className="dictation-item-result"><span>{correct ? "正确" : "需要复习"}</span><strong>{item.word}</strong><p>{item.meaning}</p><button type="button" className={saved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${item.word.toLowerCase()}`, kind: "word", title: item.word, detail: `${item.meaning}\n${item.example}`, source: "场景听写" }))}>{saved ? "★ 已在笔记" : "☆ 加入笔记"}</button></div>}
                   </article>;
@@ -2186,15 +2271,15 @@ function VocabularyPractice({
               </div>
               <footer className="dictation-batch-footer">
                 <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / 10 正确` : `${filledDictationCount} / 10 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 连续作答，最后统一检查"}</span></div>
-                {!dictationSubmitted ? <button type="submit" disabled={filledDictationCount < dictationWords.length}>一次提交本组 10 词</button> : <div><button type="button" className="is-secondary" onClick={() => { setDictationAnswers(Array(10).fill("")); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < 7 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
+                {!dictationSubmitted ? <button type="submit" disabled={filledDictationCount < dictationWords.length}>一次提交本组 10 词</button> : <div><button type="button" className="is-secondary" onClick={() => { resetDictationPlayer(); setDictationAnswers(Array(10).fill("")); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < 7 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
               </footer>
             </form>
           </div>
           <aside className="exercise-context dictation-batch-guide">
             <span>高效键盘流程</span>
-            <ol><li><b>1</b><span>点击播放或选中输入框</span></li><li><b>2</b><span>输入拼写，按 Enter</span></li><li><b>3</b><span>自动播放下一词，继续输入</span></li><li><b>4</b><span>10 词一次提交并复盘</span></li></ol>
-            <button onClick={() => playDictationWord(activeDictationItem)}>▶ 播放当前词</button>
-            <button onClick={() => playDictationWord(activeDictationItem, .55)}>慢速播放</button>
+            <ol><li><b>1</b><span>点击一次，播放整组 10 个词</span></li><li><b>2</b><span>利用词间间隔输入拼写</span></li><li><b>3</b><span>需要时暂停或拖动进度条</span></li><li><b>4</b><span>10 词一次提交并复盘</span></li></ol>
+            <button onClick={toggleDictationSequence}>{dictationPlayback === "playing" ? "Ⅱ 暂停本组音频" : "▶ 播放 / 继续本组"}</button>
+            <button onClick={() => { resetDictationPlayer(); setActiveDictationItem(0); }}>↺ 回到本组开头</button>
             <div className="context-stat"><strong>{progress.masteredWords.length}</strong><span>累计掌握词汇</span></div>
           </aside>
         </div>
