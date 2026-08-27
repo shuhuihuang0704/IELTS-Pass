@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import AuthFlow from "./AuthFlow";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 import type { AuthUser } from "./auth-server";
@@ -1356,7 +1356,7 @@ function MobileNavigation({ view, onNavigate }: { view: View; onNavigate: (view:
   );
 }
 
-function PageHeader({ eyebrow, title, accent, onDictionarySearch }: { eyebrow: string; title: string; accent?: string; onDictionarySearch?: (query: string) => void }) {
+function PageHeader({ eyebrow, title, accent, onDictionarySearch, profileSlot }: { eyebrow: string; title: string; accent?: string; onDictionarySearch?: (query: string) => void; profileSlot?: ReactNode }) {
   const [query, setQuery] = useState("");
   return (
     <header className={`topbar${onDictionarySearch ? " has-dictionary-search" : ""}`}>
@@ -1365,7 +1365,7 @@ function PageHeader({ eyebrow, title, accent, onDictionarySearch }: { eyebrow: s
         <label htmlFor="home-dictionary-search">全英语词典</label>
         <div><input id="home-dictionary-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索任意英语单词" aria-label="搜索所有英语单词" /><button type="submit">查词</button></div>
       </form>}
-      <span className="profile-button" aria-label="当前用户">LI</span>
+      {profileSlot ?? <span className="profile-button" aria-label="当前用户">LI</span>}
     </header>
   );
 }
@@ -4782,12 +4782,12 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
   if (showRewards) return <RewardCenterView progress={progress} onBack={() => setShowRewards(false)} />;
   return (
     <>
-      <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} />
-      <section className="profile-identity-card">
-        <AccountAvatar avatarUrl={account.avatarUrl ?? defaultAccountAvatar} displayName={account.displayName} />
-        <div><span>MY PROFILE</span><h2>{account.displayName}</h2><p>{account.provider === "wechat" ? "微信账号" : account.identifier}</p></div>
-        <button type="button" onClick={openProfileEditor}>编辑头像与名字</button>
-      </section>
+      <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} profileSlot={
+        <button className="profile-compact-identity" type="button" onClick={openProfileEditor} aria-label={`编辑${account.displayName}的头像与名字`}>
+          <AccountAvatar avatarUrl={account.avatarUrl ?? defaultAccountAvatar} displayName={account.displayName} />
+          <strong>{account.displayName}</strong>
+        </button>
+      } />
       {editingProfile && <form className="profile-editor-card" onSubmit={saveProfile}>
         <header><div><span>EDIT PROFILE</span><h2>选择头像与名字</h2></div><button type="button" onClick={() => setEditingProfile(false)} aria-label="关闭资料编辑">×</button></header>
         <div className="profile-editor-preview"><AccountAvatar avatarUrl={profileAvatar} displayName={profileName} /><label><span>名字或昵称</span><input value={profileName} onChange={(event) => setProfileName(event.target.value)} maxLength={40} autoComplete="name" /></label></div>

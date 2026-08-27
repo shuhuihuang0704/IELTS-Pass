@@ -1427,13 +1427,12 @@ button { cursor: pointer; }
 .profile-settings button { padding:10px 12px; border:0; border-radius:11px; color:#a7403b; background:#f7e8e6; font-size:10px; }
 .profile-account-actions { display:flex; align-items:center; gap:8px; }
 .profile-account-actions button:first-child { color:#4e46b7; background:#eeecfb; }
-.profile-identity-card { margin-bottom:14px; padding:20px 22px; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:15px; border:1px solid var(--line); border-radius:22px; background:linear-gradient(115deg,#fff,#f4f2fc); box-shadow:var(--soft-shadow); }
-.profile-identity-card>.account-avatar { width:68px; height:68px; border-radius:22px; }
-.profile-identity-card>.account-avatar b { font-size:26px; }
-.profile-identity-card>div>span,.profile-editor-card>header span { color:#6259c8; font-size:8px; font-weight:800; letter-spacing:1px; }
-.profile-identity-card h2 { margin:4px 0 0; font-size:22px; letter-spacing:-.6px; }
-.profile-identity-card p { margin:4px 0 0; color:var(--muted); font-size:9px; }
-.profile-identity-card>button { padding:10px 14px; border:1px solid #d7d2ef; border-radius:11px; color:#5149b6; background:#f0eefb; font-size:9px; font-weight:750; }
+.profile-compact-identity { min-width:76px; padding:0 4px; display:grid; justify-items:center; gap:7px; border:0; color:inherit; background:transparent; }
+.profile-compact-identity>.account-avatar { width:58px; height:58px; border-radius:50%; }
+.profile-compact-identity>.account-avatar b { font-size:21px; }
+.profile-compact-identity>strong { max-width:112px; overflow:hidden; font-size:10px; line-height:1.25; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
+.profile-compact-identity:hover>.account-avatar,.profile-compact-identity:focus-visible>.account-avatar { box-shadow:0 0 0 3px rgba(91,84,214,.14),0 9px 22px rgba(47,40,95,.16),inset 0 1px rgba(255,255,255,.32); }
+.profile-editor-card>header span { color:#6259c8; font-size:8px; font-weight:800; letter-spacing:1px; }
 .profile-editor-card { margin:-2px 0 14px; padding:21px; border:1px solid #ddd8ed; border-radius:22px; background:white; box-shadow:var(--soft-shadow); }
 .profile-editor-card>header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
 .profile-editor-card>header h2 { margin:5px 0 0; font-size:20px; }
@@ -1643,8 +1642,8 @@ button { cursor: pointer; }
   .profile-settings { align-items:flex-start; flex-direction:column; }
   .profile-account-actions { width:100%; }
   .profile-account-actions button { flex:1; }
-  .profile-identity-card { grid-template-columns:auto 1fr; }
-  .profile-identity-card>button { grid-column:1/-1; width:100%; }
+  .profile-compact-identity { min-width:66px; }
+  .profile-compact-identity>.account-avatar { width:52px; height:52px; }
 }
 
 /* 2026 visual refresh — calmer hierarchy, fewer competing surfaces */
