@@ -274,12 +274,6 @@ button { cursor: pointer; }
 .auth-mode-tabs { margin-top:24px; padding:4px; display:grid; grid-template-columns:1fr 1fr; border-radius:13px; background:#eae8ee; }
 .auth-mode-tabs button,.auth-method-tabs button { min-height:39px; border:0; border-radius:9px; color:#79747f; background:transparent; font-size:10px; }
 .auth-mode-tabs button.is-active,.auth-method-tabs button.is-active { color:#423ba1; background:white; box-shadow:0 4px 14px rgba(43,36,70,.08); font-weight:750; }
-.wechat-auth-button { width:100%; min-height:47px; margin-top:13px; display:flex; align-items:center; justify-content:center; gap:9px; border:1px solid #d9e8dc; border-radius:13px; color:#276e42; background:#f3faf5; font-size:10px; font-weight:720; }
-.wechat-auth-button span { width:25px; height:25px; display:grid; place-items:center; border-radius:9px; color:white; background:#2aae67; font-size:9px; }
-.wechat-auth-button:disabled { color:#9a969d; border-color:#e4e1e6; background:#efedf1; cursor:not-allowed; }
-.wechat-auth-button:disabled span { background:#aaa6ae; }
-.auth-divider { height:38px; display:flex; align-items:center; gap:11px; color:#aaa5ad; font-size:8px; }
-.auth-divider::before,.auth-divider::after { content:""; flex:1; height:1px; background:#e3e0e5; }
 .auth-method-tabs { display:flex; gap:5px; }
 .auth-method-tabs button { flex:1; border:1px solid #e4e0e7; }
 .auth-method-tabs button.is-active { border-color:#cfc9eb; }

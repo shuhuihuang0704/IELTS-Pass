@@ -10,7 +10,6 @@ type AuthResponse = {
   user?: AuthUser;
   progress?: unknown;
   isNew?: boolean;
-  wechatEnabled?: boolean;
   message?: string;
 };
 
@@ -35,12 +34,10 @@ function daysUntilDate(dateKey: string) {
 
 export default function AuthFlow({
   user,
-  wechatEnabled,
   onAuthenticated,
   onCompleteOnboarding,
 }: {
   user: AuthUser | null;
-  wechatEnabled: boolean;
   onAuthenticated: (response: AuthResponse) => void;
   onCompleteOnboarding: (targetBandScore: number, displayName: string, avatarUrl: string, studyPlanDays: number, examDate: string | null) => Promise<void>;
 }) {
@@ -56,7 +53,7 @@ export default function AuthFlow({
   const [studyPlanDays, setStudyPlanDays] = useState("90");
   const [examDate, setExamDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("auth_error") ? "微信登录没有完成，请重新尝试。" : "");
+  const [message, setMessage] = useState("");
   const targetOptions = useMemo(() => [5.5, 6, 6.5, 7, 7.5, 8, 8.5], []);
 
   const submitCredentials = async (event: FormEvent) => {
@@ -154,8 +151,6 @@ export default function AuthFlow({
             <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "is-active" : ""} onClick={() => { setMode("register"); setMessage(""); }}>注册</button>
             <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "is-active" : ""} onClick={() => { setMode("login"); setMessage(""); }}>登录</button>
           </div>
-          <button type="button" className="wechat-auth-button" disabled={!wechatEnabled} onClick={() => { window.location.href = "/api/auth?action=wechat-start"; }}><span>微</span>{wechatEnabled ? "使用微信继续" : "微信登录 · 等待开放平台配置"}</button>
-          <div className="auth-divider"><span>或使用账号</span></div>
           <div className="auth-method-tabs" role="tablist" aria-label="选择账号方式">
             <button type="button" role="tab" aria-selected={method === "phone"} className={method === "phone" ? "is-active" : ""} onClick={() => { setMethod("phone"); setIdentifier(""); setMessage(""); }}>手机号</button>
             <button type="button" role="tab" aria-selected={method === "email"} className={method === "email" ? "is-active" : ""} onClick={() => { setMethod("email"); setIdentifier(""); setMessage(""); }}>Email</button>

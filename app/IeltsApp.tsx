@@ -1010,7 +1010,6 @@ export default function IeltsApp() {
   const progressRef = useRef<LearningProgress>(defaultProgress);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const authUserRef = useRef<AuthUser | null>(null);
-  const [wechatEnabled, setWechatEnabled] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [dictionarySearchOpen, setDictionarySearchOpen] = useState(false);
   const [dictionarySearchSeed, setDictionarySearchSeed] = useState("");
@@ -1039,7 +1038,6 @@ export default function IeltsApp() {
         const nextUser = session.user ?? null;
         authUserRef.current = nextUser;
         setAuthUser(nextUser);
-        setWechatEnabled(Boolean(session.wechatEnabled));
       } catch {
         if (cancelled) return;
         const stored = window.localStorage.getItem(storageKey);
@@ -1126,11 +1124,10 @@ export default function IeltsApp() {
     });
   };
 
-  const handleAuthenticated = (response: { user?: AuthUser; progress?: unknown; wechatEnabled?: boolean }) => {
+  const handleAuthenticated = (response: { user?: AuthUser; progress?: unknown }) => {
     if (!response.user) return;
     authUserRef.current = response.user;
     setAuthUser(response.user);
-    if (response.wechatEnabled !== undefined) setWechatEnabled(response.wechatEnabled);
     if (response.progress) {
       const next = mergeStoredProgress(response.progress);
       progressRef.current = next;
@@ -1256,8 +1253,8 @@ export default function IeltsApp() {
     }
   };
 
-  if (!hydrated) return <AuthFlow user={null} wechatEnabled={false} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
-  if (!authUser || authUser.targetBandScore === null) return <AuthFlow user={authUser} wechatEnabled={wechatEnabled} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
+  if (!hydrated) return <AuthFlow user={null} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
+  if (!authUser || authUser.targetBandScore === null) return <AuthFlow user={authUser} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
 
   return (
     <main className="app-shell" data-ready={hydrated}>
