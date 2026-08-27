@@ -480,6 +480,7 @@ function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry 
 type ReadingNotebookReview = {
   question: string;
   options: string[];
+  sourceLabel: "原文对应句" | "原文对应段";
   location: string;
   excerpt: string;
   userAnswer: string;
@@ -496,15 +497,25 @@ function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | un
   if (entry.kind !== "question" || !isReadingEntry) return undefined;
   const field = (label: string) => entry.detail.split("\n").find((line) => line.startsWith(`${label}：`))?.slice(label.length + 1).trim() ?? "";
   let options = field("选项").split("｜").map((option) => option.trim()).filter(Boolean);
+  let sourceLabel: ReadingNotebookReview["sourceLabel"] = "原文对应句";
+  let excerpt = field("原文依据") || field("原文");
   const dailyMatch = entry.id.match(/^question:reading:([^:]+):([^:]+):([^:]+)$/);
-  if (options.length === 0 && dailyMatch) {
+  if (dailyMatch) {
     const [, exerciseDate, setCode, questionId] = dailyMatch;
     const dailySet = getDailyReadingExercise(exerciseDate);
     if (dailySet.code === setCode) {
       const exercise = dailySet.exercise;
-      if (exercise.matchingHeadings.some((question) => question.id === questionId)) options = exercise.headings.map((heading) => `${heading.id}. ${heading.text}`);
-      else if (exercise.matchingInformation.some((question) => question.id === questionId)) options = exercise.paragraphs.map((paragraph) => `${paragraph.label}. Paragraph ${paragraph.label}`);
-      else {
+      const headingQuestion = exercise.matchingHeadings.find((question) => question.id === questionId);
+      const informationQuestion = exercise.matchingInformation.find((question) => question.id === questionId);
+      const matchingParagraphLabel = headingQuestion?.paragraph ?? informationQuestion?.answer;
+      const matchingParagraph = exercise.paragraphs.find((paragraph) => paragraph.label === matchingParagraphLabel);
+      if (matchingParagraph) {
+        sourceLabel = "原文对应段";
+        excerpt = matchingParagraph.text;
+      }
+      if (options.length === 0 && headingQuestion) options = exercise.headings.map((heading) => `${heading.id}. ${heading.text}`);
+      else if (options.length === 0 && informationQuestion) options = exercise.paragraphs.map((paragraph) => `${paragraph.label}. Paragraph ${paragraph.label}`);
+      else if (options.length === 0) {
         const choiceQuestion = exercise.multipleChoice.find((question) => question.id === questionId)
           ?? exercise.trueFalseNotGiven.find((question) => question.id === questionId);
         options = choiceQuestion ? choiceQuestion.options.map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`) : exercise.summary.wordBank;
@@ -514,8 +525,9 @@ function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | un
   return {
     question: field("题目") || entry.title,
     options,
+    sourceLabel,
     location: field("原文定位") || field("题目位置") || "当前笔记没有保存精确段落，请展开题目原页复盘。",
-    excerpt: field("原文依据") || field("原文"),
+    excerpt,
     userAnswer: field("我的答案") || "未作答",
     correctAnswer: field("正确答案"),
     explanation: field("解析") || "提交题目后会补充答案解析。",
@@ -3816,6 +3828,11 @@ function ReadingPractice({
     const correct = answers[id] === answerKey[id];
     const prompt = readingQuestionPrompt(id);
     const options = readingQuestionOptions(id);
+    const headingQuestion = readingExercise.matchingHeadings.find((question) => question.id === id);
+    const informationQuestion = readingExercise.matchingInformation.find((question) => question.id === id);
+    const matchingParagraphLabel = headingQuestion?.paragraph ?? informationQuestion?.answer;
+    const matchingParagraph = readingExercise.paragraphs.find((paragraph) => paragraph.label === matchingParagraphLabel);
+    const notebookSourceText = matchingParagraph?.text ?? evidence.quotes.map((quote) => quote.text).join(" ");
     const noteId = `question:reading:${exerciseDate}:${readingSet.code}:${id}`;
     const saved = progress.notebook.some((entry) => entry.id === noteId);
     return <aside className={`reading-answer-analysis ${correct ? "is-correct" : "is-incorrect"}`}>
@@ -3828,7 +3845,7 @@ function ReadingPractice({
         id: noteId,
         kind: "question",
         title: `Q${number} · ${readingExercise.title}`,
-        detail: `题目：${prompt}\n选项：${options.join("｜")}\n我的答案：${answers[id] || "未作答"}\n正确答案：${answerKey[id]}\n原文定位：${evidence.location}\n原文：${evidence.quotes.map((quote) => quote.text).join(" ")}\n解析：${evidence.explanation}`,
+        detail: `题目：${prompt}\n选项：${options.join("｜")}\n我的答案：${answers[id] || "未作答"}\n正确答案：${answerKey[id]}\n原文定位：${evidence.location}\n原文：${notebookSourceText}\n解析：${evidence.explanation}`,
         source: `每日训练 · 阅读 · Band ${difficulty.band}.0 · ${exerciseDate} · ${readingSet.code}`,
       }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含原文定位）"}</button>
     </aside>;
@@ -4011,7 +4028,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               return <article className="notebook-entry" key={entry.id}>
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
                 <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div>{!readingReview && !listeningReview && <h2>{entry.title}</h2>}{readingReview ? <section className="notebook-reading-review">
-                  <article className="is-source"><span>原文对应句</span>{readingReview.excerpt ? <blockquote>{readingReview.excerpt}</blockquote> : <p>当前笔记没有保存对应原句，请展开题目原页复盘。</p>}<small>{readingReview.location}</small></article>
+                  <article className="is-source"><span>{readingReview.sourceLabel}</span>{readingReview.excerpt ? <blockquote>{readingReview.excerpt}</blockquote> : <p>当前笔记没有保存对应原文，请展开题目原页复盘。</p>}<small>{readingReview.location}</small></article>
                   <article><span>题目</span><p>{readingReview.question}</p></article>
                   {readingReview.options.length > 0 && <article className="is-options"><span>选项</span><ol>{readingReview.options.map((option) => { const selected = notebookOptionMatchesAnswer(option, readingReview.userAnswer); return <li className={selected ? "is-user-answer" : ""} key={option}><p>{option}</p>{selected && <small>我的选择</small>}</li>; })}</ol></article>}
                   <article className="is-correct-answer"><span>正确答案</span>{readingReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{readingReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
