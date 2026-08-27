@@ -4271,14 +4271,13 @@ function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { pr
   });
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} />;
   if (showRewards) return <RewardCenterView progress={progress} onBack={() => setShowRewards(false)} />;
-  const myExperienceRank = rewardLeaderboard(progress.points).findIndex((entry) => entry.id === "me") + 1;
   return (
     <>
       <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} />
       <section className="profile-progress-dashboard">
         <div className="profile-water-card">
           <div className="profile-water-gauge" role="img" aria-label={`整体备考计划完成度 ${planProgress.percent}%`}><div className="profile-water-fill" style={{ height: `${planProgress.percent}%` }} /></div>
-          <div className="profile-water-copy"><span>OVERALL PLAN LEVEL</span><strong>{planProgress.percent}<small>%</small></strong><p>第 {planDay} / {progress.studyPlanDays} 天 · 当前节奏 {planProgress.expectedPercent}%<br />{paceMessage}</p><div className="profile-water-breakdown"><span>词汇 {planProgress.vocabularyPercent}%</span><span>每日任务 {planProgress.dailyTaskPercent}%</span><span>套题 {planProgress.officialPracticePercent}%</span><span>坚持度 {planProgress.consistencyPercent}%</span></div></div>
+          <div className="profile-water-copy"><span>OVERALL PLAN LEVEL</span><div className="profile-water-score-row"><strong>{planProgress.percent}<small>%</small></strong><button className="profile-points-chip" onClick={() => setShowRewards(true)} aria-label={`${progress.points} 积分，进入积分排行`}><span>★</span><b>{progress.points}</b><small>积分</small><i>›</i></button></div><p>第 {planDay} / {progress.studyPlanDays} 天 · 当前节奏 {planProgress.expectedPercent}%<br />{paceMessage}</p><div className="profile-water-breakdown"><span>词汇 {planProgress.vocabularyPercent}%</span><span>每日任务 {planProgress.dailyTaskPercent}%</span><span>套题 {planProgress.officialPracticePercent}%</span><span>坚持度 {planProgress.consistencyPercent}%</span></div></div>
         </div>
         <div className="profile-overview-column">
           <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
@@ -4290,7 +4289,6 @@ function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { pr
           <div className="profile-grid"><div><span>累计学习</span><strong>{progress.minutes} 分钟</strong></div><button className="profile-notebook-card" onClick={onOpenNotebook}><span>我的笔记</span><strong>{progress.notebook.length}</strong><b>进入我的笔记 →</b></button></div>
         </div>
       </section>
-      <button className="profile-rewards-card" onClick={() => setShowRewards(true)}><span className="profile-reward-mark">★</span><span><small>POINTS & RANKING</small><strong>{progress.points} 积分</strong><p>体验榜第 {myExperienceRank} 名 · 查看积分明细与奖励规则</p></span><b>进入积分排行 →</b></button>
       <section className="study-plan-card">
         <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>当前为“{planFocus.label}”计划；目标分数会同时改变每天的训练量、复习量、训练重点与套题频率。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
         <div className="study-plan-summary">

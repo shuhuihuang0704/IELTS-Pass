@@ -335,7 +335,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /POINTS & RANKING/);
   assert.match(app, /积分排行/);
   assert.match(app, /当前版本为本机体验榜；接入账号后切换为真实用户排行/);
-  assert.match(styles, /\.profile-rewards-card/);
+  assert.match(app, /className="profile-water-score-row"/);
+  assert.match(app, /className="profile-points-chip"/);
+  assert.match(styles, /\.profile-points-chip/);
+  assert.doesNotMatch(app, /className="profile-rewards-card"|profile-reward-mark/);
+  assert.doesNotMatch(styles, /\.profile-rewards-card|\.profile-reward-mark/);
   assert.match(styles, /\.reward-ranking/);
   assert.doesNotMatch(app, /\["今日词汇"|\["待强化词汇"/);
   assert.match(styles, /\.ai-tutor-shell/);

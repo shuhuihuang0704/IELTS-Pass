@@ -1055,8 +1055,14 @@ button { cursor: pointer; }
 .profile-water-fill::after { top:-206px; border-radius:46%; background:rgba(255,255,255,.38); animation:profile-wave 10s linear infinite reverse; }
 .profile-water-copy { min-width:180px; max-width:225px; }
 .profile-water-copy>span { color:var(--violet); font-size:8px; font-weight:800; letter-spacing:.9px; }
-.profile-water-copy>strong { display:block; margin-top:12px; color:#5046b9; font-size:62px; line-height:.9; letter-spacing:-4px; }
-.profile-water-copy>strong small { font-size:17px; letter-spacing:-1px; }
+.profile-water-score-row { margin-top:12px; display:flex; align-items:center; gap:11px; }
+.profile-water-score-row>strong { color:#5046b9; font-size:62px; line-height:.9; letter-spacing:-4px; }
+.profile-water-score-row>strong small { font-size:17px; letter-spacing:-1px; }
+.profile-points-chip { min-height:38px; padding:0 10px; display:flex; align-items:center; gap:4px; border:1px solid rgba(81,72,180,.12); border-radius:12px; color:#554bb0; background:rgba(255,255,255,.78); box-shadow:0 6px 16px rgba(68,56,146,.08); white-space:nowrap; }
+.profile-points-chip>span { font-size:10px; }
+.profile-points-chip>b { font-size:13px; }
+.profile-points-chip>small { color:#77708e; font-size:8px; }
+.profile-points-chip>i { margin-left:2px; font-size:12px; font-style:normal; }
 .profile-water-copy>p { max-width:220px; margin:16px 0 0; color:var(--muted); font-size:10px; line-height:1.55; }
 .profile-water-breakdown { margin-top:13px; display:grid; grid-template-columns:1fr 1fr; gap:5px; }
 .profile-water-breakdown span { padding:6px 7px; border:1px solid rgba(80,70,170,.09); border-radius:8px; color:#5f5785; background:rgba(255,255,255,.58); font-size:7px; font-weight:700; letter-spacing:0; }
@@ -1074,13 +1080,6 @@ button { cursor: pointer; }
 .profile-grid span,.profile-grid strong { display:block; }
 .profile-grid span { color:var(--muted); font-size:10px; }
 .profile-grid strong { margin-top:36px; font-size:28px; letter-spacing:-1px; }
-.profile-rewards-card { width:100%; margin-top:14px; padding:20px 22px; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px; border:1px solid rgba(81,72,180,.14); border-radius:20px; color:inherit; background:linear-gradient(135deg,#f2efff,#fff); text-align:left; box-shadow:0 10px 28px rgba(55,45,128,.07); }
-.profile-reward-mark { width:48px; height:48px; display:grid; place-items:center; border-radius:15px; color:#fff; background:linear-gradient(145deg,#6d61e5,#4e45aa); box-shadow:0 8px 20px rgba(75,64,174,.22); }
-.profile-rewards-card>span:nth-child(2) small,.profile-rewards-card>span:nth-child(2) strong { display:block; }
-.profile-rewards-card>span:nth-child(2) small { color:#6a60ba; font-size:8px; font-weight:800; letter-spacing:.7px; }
-.profile-rewards-card>span:nth-child(2) strong { margin-top:4px; font-size:18px; }
-.profile-rewards-card p { margin:4px 0 0; color:var(--muted); font-size:9px; }
-.profile-rewards-card>b { color:#5148b4; font-size:9px; }
 .reward-back { margin:0 0 18px; padding:10px 13px; border:0; border-radius:11px; color:#5148b4; background:#ece9fa; font-size:9px; }
 .reward-overview { margin-top:25px; padding:27px; display:grid; grid-template-columns:minmax(210px,.7fr) 1.3fr; align-items:center; gap:24px; border-radius:25px; color:white; background:radial-gradient(circle at 85% 5%,rgba(255,255,255,.2),transparent 32%),linear-gradient(145deg,#393184,#6056ca); }
 .reward-overview>div:first-child>span { font-size:9px; letter-spacing:.8px; opacity:.74; }
@@ -1402,8 +1401,6 @@ button { cursor: pointer; }
   .matching-row { align-items:flex-start; flex-direction:column; }
   .matching-row select { width:100%; }
   .profile-grid { grid-template-columns:1fr 1fr; }
-  .profile-rewards-card { grid-template-columns:auto 1fr; padding:17px; }
-  .profile-rewards-card>b { grid-column:2; }
   .reward-overview { grid-template-columns:1fr; }
   .reward-rules { grid-template-columns:1fr 1fr 1fr; }
   .reward-ranking>header { align-items:flex-start; flex-direction:column; }
@@ -1571,7 +1568,8 @@ button { -webkit-tap-highlight-color:transparent; }
   .profile-water-card { min-height:0; padding:24px 19px; flex-direction:column; gap:19px; border-radius:22px; }
   .profile-water-gauge { width:148px; height:148px; border-width:7px; }
   .profile-water-copy { width:100%; min-width:0; max-width:none; text-align:center; }
-  .profile-water-copy>strong { font-size:49px; }
+  .profile-water-score-row { justify-content:center; }
+  .profile-water-score-row>strong { font-size:49px; }
   .profile-water-copy>p { max-width:none; }
   .profile-overview-column { grid-template-columns:1fr; }
   .profile-streak-card { min-height:90px; }
@@ -1625,7 +1623,7 @@ button { transition:transform .16s ease,box-shadow .16s ease,filter .16s ease; }
 
 @media (hover:hover) {
   .desktop-nav button:hover { transform:translateX(2px); background:#f0eef8; }
-  .primary-action:hover,.official-session-actions button:hover,.profile-rewards-card:hover,.profile-wordbook:hover { filter:brightness(1.025); transform:translateY(-1px); }
+  .primary-action:hover,.official-session-actions button:hover,.profile-points-chip:hover,.profile-wordbook:hover { filter:brightness(1.025); transform:translateY(-1px); }
 }
 
 @media (max-width:900px) {
@@ -1649,5 +1647,5 @@ button { transition:transform .16s ease,box-shadow .16s ease,filter .16s ease; }
   .topbar p { letter-spacing:.9px; }
   .topbar-dictionary-search { border-radius:16px; }
   .scene-stage { border-radius:25px; }
-  .progress-intro,.streak-row,.memory-row,.official-plan-strip,.profile-rewards-card { border-radius:20px; }
+  .progress-intro,.streak-row,.memory-row,.official-plan-strip { border-radius:20px; }
 }
