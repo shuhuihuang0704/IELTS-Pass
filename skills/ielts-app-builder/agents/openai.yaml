@@ -1,0 +1,4 @@
+interface:
+  display_name: "IELTS App Builder"
+  short_description: "Build and iterate a market-ready IELTS learning app"
+  default_prompt: "Use $ielts-app-builder to plan, build, test, and release an IELTS learning app feature."

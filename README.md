@@ -71,6 +71,16 @@
 - [ECDICT](https://github.com/skywind3000/ECDICT)：MIT 许可的英汉词典数据，用于生成扩展词条的中文释义。
 - 《雅思词汇真经》ISBN `978-7-5213-0455-8`：仅参考公开的规模与主题信息，不复制书中词表、释义或例句。
 
+## 可安装的开发 Skill
+
+本项目把长期迭代中形成的产品与工程经验整理成了 [`ielts-app-builder`](./skills/ielts-app-builder/SKILL.md) Skill。它适用于规划、开发、排查和发布 IELTS 学习产品，重点覆盖学习闭环、套题独立状态、跨日任务、音频交互、内容版权、账号兼容和公开发布。
+
+在 Codex 中可以直接输入：
+
+> 使用 `$skill-installer`，从 GitHub 仓库 `shuhuihuang0704/IELTS-Pass` 的 `skills/ielts-app-builder` 路径安装 Skill。
+
+安装完成后，在新的任务中使用 `$ielts-app-builder` 即可调用。
+
 ## 本地运行
 
 ### 环境要求
