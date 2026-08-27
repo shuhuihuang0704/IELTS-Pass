@@ -3946,6 +3946,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
   const [mode, setMode] = useState<"notebook" | "review">("notebook");
   const [activeNotebookAudioId, setActiveNotebookAudioId] = useState("");
   const [revealedNotebookAnswerIds, setRevealedNotebookAnswerIds] = useState<string[]>([]);
+  const [expandedNotebookIds, setExpandedNotebookIds] = useState<string[]>([]);
   const [notebookListeningSelections, setNotebookListeningSelections] = useState<Record<string, string[]>>({});
   const [notebookListeningInputs, setNotebookListeningInputs] = useState<Record<string, string>>({});
   const notebookAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -4030,12 +4031,18 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               const entry = enrichLegacyOfficialNotebookEntry(storedEntry);
               const readingReview = readingNotebookReview(entry);
               const listeningReview = listeningNotebookReview(entry);
+              const expanded = expandedNotebookIds.includes(entry.id);
               const answerRevealed = revealedNotebookAnswerIds.includes(entry.id);
               const listeningSelections = listeningReview
                 ? notebookListeningSelections[entry.id] ?? listeningReview.options.filter((option) => notebookOptionMatchesAnswer(option, listeningReview.userAnswer))
                 : [];
-              return <article className="notebook-entry" key={entry.id}>
-                <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
+              const detailPreview = entry.detail.split("\n").find((line) => line.startsWith("题目："))?.slice(3) ?? entry.detail.split("\n")[0];
+              const notebookPreview = readingReview?.question ?? listeningReview?.question ?? (entry.kind === "word" ? `${entry.title} · ${detailPreview}` : detailPreview || entry.title);
+              const notebookContentId = `notebook-content-${entry.id.replace(/[^a-z0-9_-]/gi, "-")}`;
+              return <article className={`notebook-entry${expanded ? " is-expanded" : " is-collapsed"}`} key={entry.id}>
+                <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button type="button" className="notebook-entry-toggle" aria-expanded={expanded} aria-controls={notebookContentId} onClick={() => { if (expanded && activeNotebookAudioId === entry.id) { notebookAudioRef.current?.pause(); notebookAudioRef.current = null; setActiveNotebookAudioId(""); } setExpandedNotebookIds((current) => expanded ? current.filter((id) => id !== entry.id) : [...current, entry.id]); }}>{expanded ? "收起" : "展开"}</button><button type="button" className="notebook-entry-delete" onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
+                {!expanded && <p className="notebook-entry-preview">{notebookPreview}</p>}
+                {expanded && <div id={notebookContentId} className="notebook-entry-expanded">
                 <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div>{!readingReview && !listeningReview && <h2>{entry.title}</h2>}{readingReview ? <section className="notebook-reading-review">
                   <article className="is-source"><span>{readingReview.sourceLabel}</span>{readingReview.excerpt ? <blockquote>{readingReview.excerpt}</blockquote> : <p>当前笔记没有保存对应原文，请展开题目原页复盘。</p>}<small>{readingReview.location}</small></article>
                   <article><span>题目</span><p>{readingReview.question}</p></article>
@@ -4052,6 +4059,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
                   const note = event.target.value;
                   updateProgress((current) => ({ ...current, notebook: current.notebook.map((item) => item.id === entry.id ? { ...item, note } : item) }));
                 }} /></label>
+                </div>}
               </article>;
             })}
           </div>
