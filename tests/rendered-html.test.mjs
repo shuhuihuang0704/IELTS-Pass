@@ -139,7 +139,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(data, /Two-way discussion|questions:/);
   assert.match(data, /formCompletion|multipleSelect|matching|multipleChoice/);
   assert.match(data, /export const connectedSpeechPhrases = listeningCorpusPhrases\.map/);
-  assert.match(app, /listening-section-1\.wav/);
+  assert.match(app, /listening-section-1-v2\.wav/);
+  assert.match(app, /双人英式对话/);
   assert.match(app, /listening-scrubber/);
   assert.match(app, /currentTime = nextTime/);
   assert.match(app, /听不懂？显示字幕/);
