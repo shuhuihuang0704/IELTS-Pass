@@ -42,6 +42,7 @@ import {
   targetPlanFocus,
   type LearningProgress,
   type NotebookEntry,
+  type StudyTimeCategory,
   type WordRating,
 } from "./learning-state";
 
@@ -757,6 +758,15 @@ export default function IeltsApp() {
   const [hydrated, setHydrated] = useState(false);
   const [dictionarySearchOpen, setDictionarySearchOpen] = useState(false);
   const [dictionarySearchSeed, setDictionarySearchSeed] = useState("");
+  const activeStudyCategory: StudyTimeCategory | undefined = view === "skill"
+    ? activeSkill
+    : view === "official-test"
+      ? "official-test"
+      : view === "review"
+        ? "review"
+        : view === "scene"
+          ? "ai"
+          : undefined;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -787,7 +797,7 @@ export default function IeltsApp() {
       const seconds = Math.floor(unsavedSeconds);
       if (seconds <= 0) return;
       unsavedSeconds -= seconds;
-      const next = recordAppStudyTime(progressRef.current, seconds);
+      const next = recordAppStudyTime(progressRef.current, seconds, localDayKey(), activeStudyCategory);
       progressRef.current = next;
       setProgress(next);
       window.localStorage.setItem(storageKey, JSON.stringify(next));
@@ -817,7 +827,7 @@ export default function IeltsApp() {
       captureVisibleTime();
       persistTime();
     };
-  }, [hydrated]);
+  }, [activeStudyCategory, hydrated]);
 
   const updateProgress = (updater: (current: LearningProgress) => LearningProgress) => {
     setProgress((current) => {
@@ -1100,6 +1110,22 @@ function TodayView({
   );
 }
 
+const dailySkillTimeRows = [
+  { id: "study-time:vocabulary", label: "词汇" },
+  { id: "study-time:listening", label: "听力" },
+  { id: "study-time:reading", label: "阅读" },
+  { id: "study-time:speaking", label: "口语" },
+] as const;
+
+function formatStudyDuration(seconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(seconds));
+  if (safeSeconds === 0) return "0 分钟";
+  if (safeSeconds < 60) return `${safeSeconds} 秒`;
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return remainder ? `${minutes} 分 ${remainder} 秒` : `${minutes} 分钟`;
+}
+
 function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress; onClose: () => void }) {
   const today = localDayKey();
   const days = Array.from({ length: 7 }, (_, index) => {
@@ -1165,15 +1191,29 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
           <header><div><span>MONTHLY TOTAL</span><strong>每月累计学习时间</strong></div><small>最近 6 个月</small></header>
           <div>{months.map((month) => <article key={month.key}><span>{month.label}</span><i><b style={{ width: `${(month.minutes / maxMonthlyMinutes) * 100}%` }} /></i><strong>{month.minutes}<small> 分钟</small></strong></article>)}</div>
         </section>
-        <div className="study-history-list-heading"><strong>每日学习内容</strong><span>停留时间与已完成任务</span></div>
+        <div className="study-history-list-heading"><strong>每日学习内容</strong><span>专项停留时间与已完成任务</span></div>
         <div className="study-history-list">
           {[...days].reverse().map(({ key, date, record }) => {
             const dateLabel = date.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
+            const timedActivities = record?.activities.filter((activity) => activity.id.startsWith("study-time:")) ?? [];
+            const additionalTimedActivities = timedActivities.filter((activity) => !dailySkillTimeRows.some((row) => row.id === activity.id));
+            const categorisedSeconds = timedActivities.reduce((total, activity) => total + (activity.seconds ?? activity.minutes * 60), 0);
+            const uncategorisedSeconds = Math.max(0, (record?.activeSeconds ?? 0) - categorisedSeconds);
+            const completedActivities = record?.activities.filter((activity) => activity.id !== "app-active-time" && !activity.id.startsWith("study-time:")) ?? [];
             return (
               <article className={record ? "has-study" : ""} key={key}>
                 <div className="study-history-date"><span>{key === today ? "今天" : dateLabel}</span><strong>{record?.minutes ?? 0}<small> 分钟</small></strong></div>
                 <div className="study-history-activities">
-                  {record?.activities.length ? record.activities.map((activity) => <span key={activity.id}><b>{activity.label}</b><small>{activity.id === "app-active-time" ? record.activeSeconds < 60 ? "不足 1 分钟" : `${activity.minutes} 分钟` : "已完成"}</small></span>) : <p>{key === today ? "今天还没有产生有效停留时间" : "暂无可用的每日明细"}</p>}
+                  {record ? <>
+                    {dailySkillTimeRows.map((row) => {
+                      const activity = timedActivities.find((item) => item.id === row.id);
+                      const seconds = activity?.seconds ?? (activity?.minutes ?? 0) * 60;
+                      return <span className={`is-time${seconds === 0 ? " is-zero" : ""}`} key={row.id}><b>{row.label}</b><small>{formatStudyDuration(seconds)}</small></span>;
+                    })}
+                    {additionalTimedActivities.map((activity) => <span className="is-time" key={activity.id}><b>{activity.label}</b><small>{formatStudyDuration(activity.seconds ?? activity.minutes * 60)}</small></span>)}
+                    {uncategorisedSeconds > 0 && <span className="is-time is-other"><b>其他 / 未分类</b><small>{formatStudyDuration(uncategorisedSeconds)}</small></span>}
+                    {completedActivities.map((activity) => <span className="is-complete" key={activity.id}><b>{activity.label}</b><small>已完成</small></span>)}
+                  </> : <p>{key === today ? "今天还没有产生有效停留时间" : "暂无可用的每日明细"}</p>}
                 </div>
               </article>
             );

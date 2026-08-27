@@ -38,6 +38,19 @@ export type DailyStudyActivity = {
   id: string;
   label: string;
   minutes: number;
+  seconds?: number;
+};
+
+export type StudyTimeCategory = Skill | "official-test" | "review" | "ai";
+
+const studyTimeLabels: Record<StudyTimeCategory, string> = {
+  vocabulary: "词汇",
+  listening: "听力",
+  reading: "阅读",
+  speaking: "口语",
+  "official-test": "套题训练",
+  review: "笔记与复习",
+  ai: "AI 学习",
 };
 
 export type DailyStudyRecord = {
@@ -202,7 +215,7 @@ export function overallPlanProgress(progress: LearningProgress, today = localDay
   const officialSessionIds = new Set(records.flatMap((record) => record.activities
     .filter((activity) => activity.id.startsWith("official-session:"))
     .map((activity) => activity.id)));
-  const activeDays = records.filter((record) => record.activeSeconds >= 60 || record.activities.some((activity) => activity.id !== "app-active-time")).length;
+  const activeDays = records.filter((record) => record.activeSeconds >= 60 || record.activities.some((activity) => activity.id !== "app-active-time" && !activity.id.startsWith("study-time:"))).length;
   const plannedOfficialSessions = Math.max(1, Math.ceil(planDays / 7) * targetOfficialSessionsPerWeek(planDays, targetScore));
   const vocabularyPercent = Math.min(100, progress.masteredWords.length / vocabularyPlanSize * 100);
   const dailyTaskPercent = Math.min(100, completedDailyTasks / (planDays * 4) * 100);
@@ -316,22 +329,40 @@ export function recordAppStudyTime(
   progress: LearningProgress,
   elapsedSeconds: number,
   date = localDayKey(),
+  category?: StudyTimeCategory,
 ): LearningProgress {
   const secondsToAdd = Math.max(0, Math.floor(elapsedSeconds));
   if (secondsToAdd === 0) return progress;
   const currentRecord = progress.dailyStudyHistory[date] ?? { date, minutes: 0, activeSeconds: 0, activities: [] };
   const activeSeconds = (currentRecord.activeSeconds ?? 0) + secondsToAdd;
   const activeMinutes = Math.floor(activeSeconds / 60);
-  const timeActivity: DailyStudyActivity = { id: "app-active-time", label: "App 内有效学习", minutes: activeMinutes };
+  const timeActivity: DailyStudyActivity = { id: "app-active-time", label: "App 内有效学习", minutes: activeMinutes, seconds: activeSeconds };
+  const existingCategoryActivity = category
+    ? currentRecord.activities.find((activity) => activity.id === `study-time:${category}`)
+    : undefined;
+  const existingCategorySeconds = existingCategoryActivity?.seconds ?? (existingCategoryActivity ? existingCategoryActivity.minutes * 60 : 0);
+  const categorySeconds = category ? existingCategorySeconds + secondsToAdd : 0;
+  const categoryActivity: DailyStudyActivity | undefined = category ? {
+    id: `study-time:${category}`,
+    label: studyTimeLabels[category],
+    minutes: Math.floor(categorySeconds / 60),
+    seconds: categorySeconds,
+  } : undefined;
+  let activities = currentRecord.activities.some((activity) => activity.id === timeActivity.id)
+    ? currentRecord.activities.map((activity) => activity.id === timeActivity.id ? timeActivity : activity)
+    : [timeActivity, ...currentRecord.activities];
+  if (categoryActivity) {
+    activities = activities.some((activity) => activity.id === categoryActivity.id)
+      ? activities.map((activity) => activity.id === categoryActivity.id ? categoryActivity : activity)
+      : [...activities, categoryActivity];
+  }
   const dailyStudyHistory = {
     ...progress.dailyStudyHistory,
     [date]: {
       ...currentRecord,
       minutes: activeMinutes,
       activeSeconds,
-      activities: currentRecord.activities.some((activity) => activity.id === timeActivity.id)
-        ? currentRecord.activities.map((activity) => activity.id === timeActivity.id ? timeActivity : activity)
-        : [timeActivity, ...currentRecord.activities],
+      activities,
     },
   };
   const activeStudySeconds = (progress.activeStudySeconds ?? 0) + secondsToAdd;
@@ -454,9 +485,16 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   const storedDailyStudyHistory = stored.dailyStudyHistory && typeof stored.dailyStudyHistory === "object" ? stored.dailyStudyHistory : {};
   const dailyStudyHistory = Object.fromEntries(Object.entries(storedDailyStudyHistory).map(([date, record]) => {
     const activeSeconds = typeof record.activeSeconds === "number" ? Math.max(0, Math.floor(record.activeSeconds)) : 0;
-    const activities = Array.isArray(record.activities) ? record.activities.map((activity) => activity.id === "app-active-time"
-      ? { ...activity, minutes: Math.floor(activeSeconds / 60) }
-      : { ...activity, minutes: 0 }) : [];
+    const activities = Array.isArray(record.activities) ? record.activities.map((activity) => {
+      if (activity.id === "app-active-time") return { ...activity, minutes: Math.floor(activeSeconds / 60), seconds: activeSeconds };
+      if (activity.id.startsWith("study-time:")) {
+        const seconds = typeof activity.seconds === "number"
+          ? Math.max(0, Math.floor(activity.seconds))
+          : Math.max(0, Math.floor(activity.minutes * 60));
+        return { ...activity, minutes: Math.floor(seconds / 60), seconds };
+      }
+      return { ...activity, minutes: 0 };
+    }) : [];
     return [date, { date, activeSeconds, minutes: Math.floor(activeSeconds / 60), activities }];
   })) as Record<string, DailyStudyRecord>;
   const activeStudySeconds = Object.values(dailyStudyHistory).reduce((total, record) => total + record.activeSeconds, 0);

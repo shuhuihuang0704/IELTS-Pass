@@ -100,6 +100,16 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /recordAppStudyTime/);
   assert.match(state, /activeStudySeconds/);
   assert.match(state, /activeSeconds: number/);
+  assert.match(state, /StudyTimeCategory/);
+  assert.match(state, /study-time:\$\{category\}/);
+  assert.match(state, /existingCategorySeconds/);
+  assert.match(app, /activeStudyCategory/);
+  assert.match(app, /recordAppStudyTime\(progressRef\.current, seconds, localDayKey\(\), activeStudyCategory\)/);
+  assert.match(app, /study-time:vocabulary/);
+  assert.match(app, /study-time:listening/);
+  assert.match(app, /study-time:reading/);
+  assert.match(app, /study-time:speaking/);
+  assert.match(app, /formatStudyDuration/);
   assert.match(state, /id: "app-active-time", label: "App 内有效学习"/);
   assert.match(state, /minutes: Math\.floor\(activeStudySeconds \/ 60\)/);
   assert.doesNotMatch(state, /minutes: 12/);
