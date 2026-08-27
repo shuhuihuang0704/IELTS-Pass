@@ -2940,6 +2940,22 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
     onComplete(nextScore, answeredCount === 10);
   };
 
+  const redoListening = () => {
+    const audio = listeningAudio.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setFormAnswers({});
+    setSelectedFacilities([]);
+    setMatchingAnswers({});
+    setChoiceAnswers({});
+    setScore(null);
+    setShowTranscript(false);
+    setAudioTime(0);
+    setPlayerState("idle");
+  };
+
   return (
     <div className="exercise-layout listening-exam-layout">
       <div className="exercise-main listening-exam-main">
@@ -2999,8 +3015,8 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
           })}
         </section>
 
-        {score !== null && <div className={`answer-feedback ${score >= 8 && answeredCount === 10 ? "success" : "neutral"}`}>得分 {score} / 10。{answeredCount < 10 ? `${10 - answeredCount} 题未答并按错误处理；答案与原文已经解锁，但本项尚未计为完成。` : score < 8 ? "建议打开原文，重点检查拼写、同义替换和转折后的信息。" : "细节定位和拼写表现良好。"}</div>}
-        <div className="exercise-actions"><button className="text-action" disabled={score === null} onClick={() => setShowTranscript((current) => !current)}>{score === null ? "提交后解锁原文" : showTranscript ? "隐藏原文" : "查看原文复盘"}</button><button className="secondary-action" onClick={submit}>{answeredCount < 10 ? `提交当前答案（${answeredCount}/10）` : "提交 10 道答案"} →</button></div>
+        {score !== null && <div className={`answer-feedback ${score >= 8 && answeredCount === 10 ? "success" : "neutral"}`}>得分 {score} / 10。{answeredCount < 10 ? `${10 - answeredCount} 题未答并按错误处理；答案与原文已经解锁，但本项尚未计为完成。` : score < 8 ? "建议打开原文，重点检查拼写、同义替换和转折后的信息。" : "细节定位和拼写表现良好。"} 可以复盘原文，也可以选择“再写一遍”。</div>}
+        <div className="exercise-actions"><button className="text-action" disabled={score === null} onClick={() => setShowTranscript((current) => !current)}>{score === null ? "提交后解锁原文" : showTranscript ? "隐藏原文" : "查看原文复盘"}</button>{score === null ? <button className="secondary-action" onClick={submit}>{answeredCount < 10 ? `提交当前答案（${answeredCount}/10）` : "提交 10 道答案"} →</button> : <button className="secondary-action" onClick={redoListening}>↺ 再写一遍</button>}</div>
       </div>
       <aside className={`exercise-context transcript-panel listening-transcript ${score === null ? "is-locked" : "is-unlocked"}`}><span>{score === null ? "听力原文 · 未解锁" : "听力原文 · 已解锁"}</span><p>{score === null ? "提交当前答案后即可解锁原文；不要求先答完全部 10 题。" : showTranscript ? listeningExercise.script : "已经完成本次提交。点击“查看原文复盘”，标记没有听到的拼写、连读和同义替换。"}</p></aside>
     </div>
