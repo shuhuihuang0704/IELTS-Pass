@@ -2779,7 +2779,115 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
   );
 }
 
+type WordbookEntry = {
+  word: string;
+  meaning: string;
+  partOfSpeech: string;
+  example: string;
+  category: string;
+  collection: "core" | "listening";
+};
+
+const mixedWordParts: Record<string, string> = {
+  access: "n. / v.", alternative: "n. / adj.", approximate: "adj. / v.", attribute: "n. / v.", benefit: "n. / v.",
+  code: "n. / v.", comment: "n. / v.", commission: "n. / v.", consent: "n. / v.", constant: "adj. / n.",
+  contract: "n. / v.", contrast: "n. / v.", coordinate: "v. / n.", core: "n. / adj.", cycle: "n. / v.",
+  debate: "n. / v.", design: "n. / v.", document: "n. / v.", estimate: "v. / n.", export: "n. / v.",
+  feature: "n. / v.", final: "adj. / n.", finance: "n. / v.", focus: "n. / v.", function: "n. / v.",
+  fund: "n. / v.", graduate: "n. / v.", grant: "n. / v.", impact: "n. / v.", implement: "v. / n.",
+  individual: "n. / adj.", initial: "adj. / n.", institute: "n. / v.", label: "n. / v.", link: "n. / v.",
+  major: "adj. / n. / v.", manufacture: "v. / n.", output: "n. / v.", parallel: "adj. / n.", partner: "n. / v.",
+  potential: "adj. / n.", principal: "adj. / n.", process: "n. / v.", project: "n. / v.", purchase: "v. / n.",
+  range: "n. / v.", register: "v. / n.", research: "n. / v.", secure: "v. / adj.", select: "v. / adj.",
+  shift: "n. / v.", survey: "n. / v.", transfer: "v. / n.", transport: "n. / v.", waste: "n. / v.",
+};
+
+const verbWords = new Set(`analyse assess assume conduct constitute consume contaminate define derive establish indicate interpret recycle educate evaluate motivate participate automate communicate manufacture replace achieve acquire administrate affect assist compute conclude consist construct equate injure invest maintain obtain perceive regulate reside restrict seek compensate constrain contribute convene correspond deduce demonstrate dominate ensure exclude illustrate imply interact justify locate maximise negate publish react rely remove specify commit concentrate confer emerge implicate impose integrate investigate occupy predict promote resolve retain create distribute identify involve legislate occur proceed require respond vary`.split(" "));
+
+function inferPartOfSpeech(word: string, meaning: string) {
+  if (mixedWordParts[word]) return mixedWordParts[word];
+  if (word === "despite") return "prep.";
+  if (word === "hence") return "adv.";
+  if (verbWords.has(word) || /(ate|fy|ise|ize)$/.test(word)) return "v.";
+  if (/(tion|sion|ment|ness|ity|ance|ence|ism|ship|ure|acy|ics|logy|graphy)$/.test(word)) return "n.";
+  if (meaning.includes("的") || /(able|ible|al|ant|ent|ary|ic|ive|ous|ful|less|ory)$/.test(word)) return "adj.";
+  return "n.";
+}
+
+const wordbookEntries: WordbookEntry[] = Array.from(new Map([
+  ...dailyVocabulary.map((entry) => ({
+    word: entry.word,
+    meaning: entry.meaning,
+    partOfSpeech: inferPartOfSpeech(entry.word, entry.meaning),
+    example: entry.collocation,
+    category: entry.category,
+    collection: "core" as const,
+  })),
+  ...vocabulary.map((entry) => ({
+    word: entry.word,
+    meaning: entry.meaning,
+    partOfSpeech: inferPartOfSpeech(entry.word, entry.meaning),
+    example: entry.example,
+    category: "场景听写",
+    collection: "listening" as const,
+  })),
+].map((entry) => [entry.word.toLowerCase(), entry])).values()).sort((a, b) => a.word.localeCompare(b.word));
+
+function WordbookView({ progress, onBack }: { progress: LearningProgress; onBack: () => void }) {
+  const [query, setQuery] = useState("");
+  const [collection, setCollection] = useState<"all" | "core" | "listening">("all");
+  const [visibleCount, setVisibleCount] = useState(60);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredWords = useMemo(() => wordbookEntries.filter((entry) => {
+    const matchesCollection = collection === "all" || entry.collection === collection;
+    const matchesQuery = !normalizedQuery || `${entry.word} ${entry.meaning} ${entry.category}`.toLowerCase().includes(normalizedQuery);
+    return matchesCollection && matchesQuery;
+  }), [collection, normalizedQuery]);
+  const visibleWords = filteredWords.slice(0, visibleCount);
+  const coreCount = wordbookEntries.filter((entry) => entry.collection === "core").length;
+  const listeningCount = wordbookEntries.filter((entry) => entry.collection === "listening").length;
+
+  const selectCollection = (next: "all" | "core" | "listening") => {
+    setCollection(next);
+    setVisibleCount(60);
+  };
+
+  return (
+    <>
+      <button className="wordbook-back" onClick={onBack}>← 返回“我的”</button>
+      <PageHeader eyebrow="MY WORDBOOK" title="把全部词汇，装进" accent="一本单词本。" />
+      <section className="wordbook-hero">
+        <div><span>IELTS LEARNING LIBRARY</span><strong>{wordbookEntries.length}<small> 个待学习词汇</small></strong><p>包含 {coreCount} 个高频核心词与 {listeningCount} 个去重后的场景听写补充词。</p></div>
+        <div className="wordbook-hero-stats"><span><b>{progress.reviewWords.length}</b>待复习</span><span><b>{progress.masteredWords.length}</b>已掌握</span></div>
+      </section>
+      <section className="wordbook-toolbar" aria-label="单词本筛选">
+        <label><span>搜索单词或中文意思</span><input value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(60); }} placeholder="例如：environment / 环境" /></label>
+        <div role="tablist" aria-label="词库分类">
+          <button role="tab" aria-selected={collection === "all"} className={collection === "all" ? "is-active" : ""} onClick={() => selectCollection("all")}>全部 {wordbookEntries.length}</button>
+          <button role="tab" aria-selected={collection === "core"} className={collection === "core" ? "is-active" : ""} onClick={() => selectCollection("core")}>高频核心 {coreCount}</button>
+          <button role="tab" aria-selected={collection === "listening"} className={collection === "listening" ? "is-active" : ""} onClick={() => selectCollection("listening")}>场景听写 {listeningCount}</button>
+        </div>
+      </section>
+      <div className="wordbook-result-line"><span>当前找到 {filteredWords.length} 个词</span><small>按字母顺序排列</small></div>
+      <section className="wordbook-list" aria-label="全部学习词汇">
+        {visibleWords.length === 0 ? <div className="empty-state"><strong>没有找到对应单词</strong><p>试试英文、中文意思或主题名称。</p></div> : visibleWords.map((entry) => {
+          const isReview = progress.reviewWords.includes(entry.word);
+          const isMastered = progress.masteredWords.includes(entry.word);
+          return <article className="wordbook-entry" key={entry.word}>
+            <header><span>{entry.category}</span>{isReview ? <b className="needs-review">待复习</b> : isMastered ? <b className="is-mastered">已掌握</b> : <b>待学习</b>}</header>
+            <div className="wordbook-word"><div><h2>{entry.word}</h2><em>{entry.partOfSpeech}</em></div><button onClick={() => speak(entry.word, .76)} aria-label={`播放 ${entry.word}`}>▶</button></div>
+            <p className="wordbook-meaning">{entry.meaning}</p>
+            <div className="wordbook-example"><span>例句 / 常用搭配</span><p>{entry.example}</p></div>
+          </article>;
+        })}
+      </section>
+      {visibleCount < filteredWords.length && <button className="wordbook-more" onClick={() => setVisibleCount((current) => current + 60)}>继续显示更多 <span>{filteredWords.length - visibleCount}</span></button>}
+    </>
+  );
+}
+
 function ProfileView({ progress, percent, onReset }: { progress: LearningProgress; percent: number; onReset: () => void }) {
+  const [showWordbook, setShowWordbook] = useState(false);
   const stats = useMemo(() => [
     ["今日完成度", `${percent}%`],
     ["今日词汇", `${progress.dailyVocabularyKnown.length} / 100`],
@@ -2788,10 +2896,16 @@ function ProfileView({ progress, percent, onReset }: { progress: LearningProgres
     ["我的笔记", `${progress.notebook.length}`],
     ["连续学习", `${progress.streak} 天`],
   ], [percent, progress]);
+  if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} />;
   return (
     <>
       <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent="雅思 7.0。" />
       <div className="profile-grid">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+      <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
+        <span className="profile-wordbook-mark">Aa</span>
+        <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length} 个完整学习词汇 · 中文意思、词性、例句与发音</p></span>
+        <b>进入单词本 →</b>
+      </button>
       <section className="profile-settings"><div><strong>本机测试数据</strong><p>当前版本把进度保存在这个浏览器中。登录和跨设备云同步会在后续接入。</p></div><button onClick={onReset}>重置学习进度</button></section>
     </>
   );

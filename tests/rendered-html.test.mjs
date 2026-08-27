@@ -124,6 +124,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /加入笔记/);
   assert.match(app, /toggleNotebookEntry/);
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
+  assert.match(app, /我的单词本/);
+  assert.match(app, /IELTS LEARNING LIBRARY/);
+  assert.match(app, /搜索单词或中文意思/);
+  assert.match(app, /例句 \/ 常用搭配/);
+  assert.match(app, /inferPartOfSpeech/);
+  assert.match(app, /wordbookEntries/);
   assert.match(app, /每日学习记录/);
   assert.match(app, /继续增加学习/);
   assert.match(app, /今天还想多练一点/);
@@ -143,6 +149,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.study-history-chart-card\.is-monthly-chart/);
   assert.match(styles, /\.extra-study-panel/);
   assert.match(styles, /\.extra-study-options/);
+  assert.match(styles, /\.profile-wordbook/);
+  assert.match(styles, /\.wordbook-list/);
+  assert.match(styles, /\.wordbook-entry/);
   assert.match(app, /readingSourceEvidence/);
   assert.match(app, /原文荧光定位/);
   assert.match(app, /荧光笔定位原文/);
