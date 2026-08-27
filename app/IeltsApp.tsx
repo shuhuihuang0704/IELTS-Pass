@@ -976,12 +976,12 @@ function Sidebar({
   progress: LearningProgress;
   onNavigate: (view: View) => void;
 }) {
-  const nav: Array<{ id: View; label: string }> = [
-    { id: "today", label: "今天" },
-    { id: "practice", label: "专项练习" },
-    { id: "scene", label: "AI 场景" },
-    { id: "review", label: "笔记与复习" },
-    { id: "profile", label: "我的" },
+  const nav: Array<{ id: View; label: string; icon: string }> = [
+    { id: "today", label: "今天", icon: "⌂" },
+    { id: "practice", label: "专项练习", icon: "▦" },
+    { id: "scene", label: "AI 场景", icon: "✦" },
+    { id: "review", label: "笔记与复习", icon: "▤" },
+    { id: "profile", label: "我的", icon: "●" },
   ];
   const weeklyPercent = Math.min(100, Math.round((progress.minutes / 260) * 100));
   return (
@@ -991,14 +991,14 @@ function Sidebar({
         <span><strong>IELTS PASS</strong><small>Daily study system</small></span>
       </button>
       <nav className="desktop-nav" aria-label="主导航">
-        {nav.map((item, index) => (
+        {nav.map((item) => (
           <button className={view === item.id || (view === "skill" && item.id === "today") ? "is-active" : ""} key={item.id} onClick={() => onNavigate(item.id)}>
-            <span>{String(index + 1).padStart(2, "0")}</span>{item.label}
+            <span>{item.icon}</span>{item.label}
           </button>
         ))}
       </nav>
       <div className="weekly-rail-progress">
-        <span>本周目标</span><strong>{progress.minutes} / 260 分钟</strong>
+        <span>本周目标</span><strong>{progress.minutes} / 260 分钟</strong><small>★ {progress.points} 积分</small>
         <div className="mini-track"><i style={{ width: `${weeklyPercent}%` }} /></div>
       </div>
     </aside>
@@ -1006,12 +1006,12 @@ function Sidebar({
 }
 
 function MobileNavigation({ view, onNavigate }: { view: View; onNavigate: (view: View) => void }) {
-  const nav: Array<{ id: View; label: string }> = [
-    { id: "today", label: "今天" },
-    { id: "practice", label: "专项" },
-    { id: "scene", label: "AI" },
-    { id: "review", label: "笔记" },
-    { id: "profile", label: "我的" },
+  const nav: Array<{ id: View; label: string; icon: string }> = [
+    { id: "today", label: "今天", icon: "⌂" },
+    { id: "practice", label: "专项", icon: "▦" },
+    { id: "scene", label: "AI", icon: "✦" },
+    { id: "review", label: "笔记", icon: "▤" },
+    { id: "profile", label: "我的", icon: "●" },
   ];
   return (
     <nav className="mobile-nav" aria-label="移动端主导航">
@@ -1020,7 +1020,7 @@ function MobileNavigation({ view, onNavigate }: { view: View; onNavigate: (view:
           className={`${view === item.id || (view === "skill" && item.id === "today") ? "is-active " : ""}${item.id === "scene" ? "mobile-ai" : ""}`}
           key={item.id}
           onClick={() => onNavigate(item.id)}
-        >{item.label}</button>
+        ><span>{item.icon}</span><small>{item.label}</small></button>
       ))}
     </nav>
   );

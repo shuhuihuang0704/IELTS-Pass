@@ -40,6 +40,13 @@ test("ships all four learning modes and persistent progress", async () => {
   for (const feature of ["VocabularyPractice", "ListeningPractice", "SpeakingPractice", "ReadingPractice", "ReviewView"]) {
     assert.match(app, new RegExp(feature));
   }
+  const mobileNavigationBlock = app.match(/function MobileNavigation[\s\S]*?function PageHeader/)?.[0] ?? "";
+  assert.equal((mobileNavigationBlock.match(/id: "/g) ?? []).length, 5);
+  assert.equal((mobileNavigationBlock.match(/id: "today"/g) ?? []).length, 1);
+  assert.match(mobileNavigationBlock, /<span>\{item\.icon\}<\/span><small>\{item\.label\}<\/small>/);
+  assert.match(styles, /Native app shell/);
+  assert.match(styles, /env\(safe-area-inset-bottom\)/);
+  assert.match(styles, /\.mobile-nav button\.mobile-ai span/);
   assert.doesNotMatch(app, /先补做昨天的词汇/);
   assert.match(app, /今天已完成 \$\{completedCount\} \/ 4 项，今天下一项是/);
   assert.match(app, /localStorage\.setItem/);
