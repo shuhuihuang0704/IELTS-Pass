@@ -220,6 +220,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /className="daily-word-row"/);
   assert.doesNotMatch(app, /className="practice-grid"|className="practice-card"/);
   assert.match(app, /function AiTutorView/);
+  assert.match(app, /aria-label="打开 IELTS AI 助教" onClick=\{\(\) => onNavigate\("scene"\)\}/);
+  assert.doesNotMatch(app, /aria-label="试听场景"/);
   assert.match(app, /buildTutorReply/);
   assert.match(app, /detectTutorTopic/);
   assert.match(app, /extractTutorVocabularyTerms/);

@@ -1026,7 +1026,7 @@ function TodayView({
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
           <div className="scene-heading"><span>PLAN DAY {planDay} / {progress.studyPlanDays}</span><span>约 {dailyMinutes} 分钟</span></div>
           <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · {dictationTarget} 听写 · {phraseTarget} 连读 · {planFocus.label}</p>
-          <button className="voice-orb" aria-label="试听场景" onClick={() => speak("Hello, I'm calling about the room for rent.")}><i /><b>AI</b></button>
+          <button className="voice-orb" aria-label="打开 IELTS AI 助教" onClick={() => onNavigate("scene")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
             {skills.map((skill, index) => (
               <button
