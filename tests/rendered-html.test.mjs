@@ -22,7 +22,6 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
   assert.match(html, /场景化雅思学习/);
   assert.match(html, /IELTS PASS/);
   assert.match(html, /完成今天的/);
-  assert.match(html, /每日 100 词/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape|react-loading-skeleton/i);
 });
 
@@ -40,6 +39,8 @@ test("ships all four learning modes and persistent progress", async () => {
   for (const feature of ["VocabularyPractice", "ListeningPractice", "SpeakingPractice", "ReadingPractice", "ReviewView"]) {
     assert.match(app, new RegExp(feature));
   }
+  assert.match(data, /label: "词汇综合训练"/);
+  assert.match(app, /每日 \{vocabularyTarget\} 词/);
   const mobileNavigationBlock = app.match(/function MobileNavigation[\s\S]*?function PageHeader/)?.[0] ?? "";
   assert.equal((mobileNavigationBlock.match(/id: "/g) ?? []).length, 5);
   assert.equal((mobileNavigationBlock.match(/id: "today"/g) ?? []).length, 1);

@@ -1082,7 +1082,7 @@ function TodayView({
       {progress.carryoverTasks.length > 0 && (
         <section className="carryover-strip">
           <div><span>ROLLED OVER FROM YESTERDAY</span><strong>先补完昨天没有完成的任务</strong><p>补做任务不会自动打勾；完成完整专项后才会从这里移除。</p></div>
-          <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); const sourceDate = progress.carryoverTaskDates[skillId] ?? dayKeyAfter(-1); return skill ? <button onClick={() => onOpenSkill(skill.id, sourceDate)} key={skill.id}><span>{skill.short}</span><strong>{skill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : `${sourceDate} 未完成 →`}</small></button> : null; })}</div>
+          <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); const sourceDate = progress.carryoverTaskDates[skillId] ?? dayKeyAfter(-1); return skill ? <button onClick={() => onOpenSkill(skill.id, sourceDate)} key={skill.id}><span>{skill.short}</span><strong>{skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : `${sourceDate} 未完成 →`}</small></button> : null; })}</div>
         </section>
       )}
       <div className="dashboard-grid">
@@ -1107,13 +1107,13 @@ function TodayView({
             aria-expanded={completedCount === 4 ? showExtraStudy : undefined}
             aria-controls={completedCount === 4 ? "extra-study-menu" : undefined}
             onClick={completedCount === 4 ? () => setShowExtraStudy((current) => !current) : onStart}
-          >{completedCount === 4 ? showExtraStudy ? "收起加练选择" : "继续增加学习" : `继续${nextSkill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : nextSkill.label}`}<span>{completedCount === 4 && showExtraStudy ? "↑" : "→"}</span></button>
+          >{completedCount === 4 ? showExtraStudy ? "收起加练选择" : "继续增加学习" : `继续${nextSkill.label}`}<span>{completedCount === 4 && showExtraStudy ? "↑" : "→"}</span></button>
         </section>
         <aside className="progress-panel" aria-label="学习进度">
           <div className="progress-intro">
             <span>今日完成度</span><strong>{percent}<small>%</small></strong>
             <div className="progress-track"><i style={{ width: `${percent}%` }} /></div>
-            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `今天已完成 ${completedCount} / 4 项，今天下一项是${nextSkill.id === "vocabulary" ? `${vocabularyTarget} 词` : nextSkill.label}。`}</p>
+            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `今天已完成 ${completedCount} / 4 项，今天下一项是${nextSkill.label}。`}</p>
           </div>
           <button className="streak-row" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <button className="memory-row" onClick={() => onNavigate("review")}>
@@ -2465,7 +2465,7 @@ function SceneView({
             className={activeSkill === skill.id ? "is-active" : ""}
             key={skill.id}
             onClick={() => onSelectSkill(skill.id)}
-          ><span>{progress.completed[skill.id] ? "✓" : index + 1}</span>{skill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : skill.label}</button>
+          ><span>{progress.completed[skill.id] ? "✓" : index + 1}</span>{skill.label}</button>
         ))}
       </div>
       <section className="exercise-surface">
