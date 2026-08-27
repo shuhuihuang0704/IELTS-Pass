@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import AuthFlow from "./AuthFlow";
+import type { AuthUser } from "./auth-server";
 import {
   connectedSpeechPhrases,
   dailyVocabulary,
@@ -1005,6 +1007,9 @@ export default function IeltsApp() {
   const [activeOfficialTaskId, setActiveOfficialTaskId] = useState<string>();
   const [progress, setProgress] = useState<LearningProgress>(defaultProgress);
   const progressRef = useRef<LearningProgress>(defaultProgress);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const authUserRef = useRef<AuthUser | null>(null);
+  const [wechatEnabled, setWechatEnabled] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [dictionarySearchOpen, setDictionarySearchOpen] = useState(false);
   const [dictionarySearchSeed, setDictionarySearchSeed] = useState("");
@@ -1019,25 +1024,44 @@ export default function IeltsApp() {
           : undefined;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    let cancelled = false;
+    const hydrate = async () => {
       try {
+        const stored = window.localStorage.getItem(storageKey);
+        const localProgress = mergeStoredProgress(stored ? JSON.parse(stored) : null);
+        const response = await fetch("/api/auth?action=session", { headers: { accept: "application/json" } });
+        const session = await response.json() as { user?: AuthUser | null; progress?: unknown; wechatEnabled?: boolean };
+        if (cancelled) return;
+        const next = session.progress ? mergeStoredProgress(session.progress) : localProgress;
+        progressRef.current = next;
+        setProgress(next);
+        const nextUser = session.user ?? null;
+        authUserRef.current = nextUser;
+        setAuthUser(nextUser);
+        setWechatEnabled(Boolean(session.wechatEnabled));
+      } catch {
+        if (cancelled) return;
         const stored = window.localStorage.getItem(storageKey);
         const next = mergeStoredProgress(stored ? JSON.parse(stored) : null);
         progressRef.current = next;
         setProgress(next);
-      } catch {
-        progressRef.current = defaultProgress;
-        setProgress(defaultProgress);
+        authUserRef.current = null;
+        setAuthUser(null);
       } finally {
-        setHydrated(true);
+        if (!cancelled) setHydrated(true);
       }
-    }, 0);
-    return () => window.clearTimeout(timer);
+    };
+    void hydrate();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     progressRef.current = progress;
   }, [progress]);
+
+  useEffect(() => {
+    authUserRef.current = authUser;
+  }, [authUser]);
 
   useEffect(() => {
     if (!hydrated || !activeStudyCategory) return;
@@ -1052,6 +1076,7 @@ export default function IeltsApp() {
       progressRef.current = next;
       setProgress(next);
       window.localStorage.setItem(storageKey, JSON.stringify(next));
+      if (authUserRef.current) void fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "progress", progress: next }) });
     };
     const noteStudyInteraction = () => {
       const now = Date.now();
@@ -1095,8 +1120,46 @@ export default function IeltsApp() {
       const next = updater(current);
       progressRef.current = next;
       window.localStorage.setItem(storageKey, JSON.stringify(next));
+      if (authUserRef.current) void fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "progress", progress: next }) });
       return next;
     });
+  };
+
+  const handleAuthenticated = (response: { user?: AuthUser; progress?: unknown; wechatEnabled?: boolean }) => {
+    if (!response.user) return;
+    authUserRef.current = response.user;
+    setAuthUser(response.user);
+    if (response.wechatEnabled !== undefined) setWechatEnabled(response.wechatEnabled);
+    if (response.progress) {
+      const next = mergeStoredProgress(response.progress);
+      progressRef.current = next;
+      setProgress(next);
+      window.localStorage.setItem(storageKey, JSON.stringify(next));
+    }
+  };
+
+  const completeAccountOnboarding = async (score: number) => {
+    const targetBandScore = normalizeTargetBandScore(score);
+    const studyPlanDays = 90;
+    const nextProgress = {
+      ...progressRef.current,
+      targetBandScore,
+      studyPlanDays,
+      studyPlanStartedAt: localDayKey(),
+    };
+    const response = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "onboarding", targetBandScore, studyPlanDays, progress: nextProgress }),
+    });
+    const result = await response.json() as { user?: AuthUser; message?: string };
+    if (!response.ok || !result.user) throw new Error(result.message || "计划创建失败，请重试");
+    progressRef.current = nextProgress;
+    setProgress(nextProgress);
+    window.localStorage.setItem(storageKey, JSON.stringify(nextProgress));
+    authUserRef.current = result.user;
+    setAuthUser(result.user);
+    setView("today");
   };
 
   const completeSkill = (skill: Skill, minutes: number) => {
@@ -1164,6 +1227,23 @@ export default function IeltsApp() {
     setView("today");
   };
 
+  const signOut = async () => {
+    try {
+      await fetch("/api/auth", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "logout" }),
+      });
+    } finally {
+      authUserRef.current = null;
+      setAuthUser(null);
+      setView("today");
+    }
+  };
+
+  if (!hydrated) return <AuthFlow user={null} wechatEnabled={false} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
+  if (!authUser || authUser.targetBandScore === null) return <AuthFlow user={authUser} wechatEnabled={wechatEnabled} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
+
   return (
     <main className="app-shell" data-ready={hydrated}>
       <Sidebar view={view} progress={progress} onNavigate={setView} />
@@ -1194,7 +1274,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView progress={progress} onReset={resetProgress} updateProgress={updateProgress} />}
+        {view === "profile" && <ProfileView account={authUser} progress={progress} onReset={resetProgress} onSignOut={signOut} updateProgress={updateProgress} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
       {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
@@ -4600,7 +4680,7 @@ function RewardCenterView({ progress, onBack }: { progress: LearningProgress; on
   );
 }
 
-function ProfileView({ progress, onReset, updateProgress }: { progress: LearningProgress; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
+function ProfileView({ account, progress, onReset, onSignOut, updateProgress }: { account: AuthUser; progress: LearningProgress; onReset: () => void; onSignOut: () => Promise<void>; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
@@ -4690,7 +4770,7 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
-      <section className="profile-settings"><div><strong>本机测试数据</strong><p>当前版本把进度保存在这个浏览器中。登录和跨设备云同步会在后续接入。</p></div><button onClick={onReset}>重置学习进度</button></section>
+      <section className="profile-settings"><div><strong>{account.displayName}</strong><p>{account.provider === "wechat" ? "微信账号" : account.identifier} · 学习目标、笔记与进度已同步到当前账号。</p></div><div className="profile-account-actions"><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>
   );

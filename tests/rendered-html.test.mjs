@@ -21,7 +21,7 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
   assert.match(html, /<title>IELTS Pass/);
   assert.match(html, /场景化雅思学习/);
   assert.match(html, /IELTS PASS/);
-  assert.match(html, /完成今天的/);
+  assert.match(html, /创建你的学习账户/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape|react-loading-skeleton/i);
 });
 
@@ -772,6 +772,31 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /carryoverTasks\.filter/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);
+});
+
+test("ships account registration, secure sessions, WeChat adapter and score onboarding", async () => {
+  const [flow, route, authServer, hosting, schema, migration] = await Promise.all([
+    readFile(new URL("../app/AuthFlow.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/auth/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/auth-server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0000_heavy_wolfpack.sql", import.meta.url), "utf8"),
+  ]);
+  assert.match(flow, /手机号/);
+  assert.match(flow, /Email/);
+  assert.match(flow, /使用微信继续/);
+  assert.match(flow, /你的目标分数是/);
+  assert.match(flow, /5\.5, 6, 6\.5, 7, 7\.5, 8, 8\.5/);
+  assert.match(route, /action === "register"/);
+  assert.match(route, /action === "login"/);
+  assert.match(route, /action === "onboarding"/);
+  assert.match(route, /wechat-callback/);
+  assert.match(authServer, /PBKDF2/);
+  assert.match(authServer, /HttpOnly; Path=\/; SameSite=Lax/);
+  assert.equal(JSON.parse(hosting).d1, "DB");
+  assert.match(schema, /authSessions/);
+  assert.match(migration, /CREATE TABLE `users`/);
 });
 
 test("includes the finished social preview and removes starter preview files", async () => {
