@@ -258,8 +258,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /每日训练 · 阅读/);
   assert.match(app, /listeningNotebookReview/);
   assert.match(app, /officialAnswerAudioMedia/);
-  assert.match(app, /答案对应音频/);
-  assert.match(app, /只回听这道题答案出现前后的片段/);
+  assert.match(app, /所在完整 Task 音频/);
+  assert.doesNotMatch(app, /segmentIndex: Math\.max\(0, answers\.findIndex/);
+  assert.match(app, /本题完整音频/);
+  assert.doesNotMatch(app, /只回听这道题答案出现前后的片段/);
   assert.match(app, /notebookListeningSelections/);
   assert.match(app, /notebook-listening-options/);
   assert.match(app, /输入你的答案/);
@@ -675,6 +677,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /加入笔记（含考官语音）/);
   assert.match(app, /playNotebookMedia/);
   assert.match(app, /media\.endSeconds/);
+  assert.match(app, /enrichDailyListeningNotebookEntry/);
+  assert.match(app, /completeListeningCue/);
+  assert.match(app, /完整回听这道题的提问、回答和必要上下文/);
   assert.match(app, /submitted && <section className="speaking-topic-template"/);
   assert.match(app, /!speakingTaskMode \|\| taskSubmitted/);
   assert.match(app, /REVIEW MATERIAL LOCKED/);

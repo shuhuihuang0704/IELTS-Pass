@@ -159,15 +159,12 @@ type OfficialTestMaterial = {
   audioTracks?: OfficialAudioTrack[];
 };
 
-function officialAnswerAudioMedia(task: OfficialTaskSegment, answer: OfficialAnswer, audioTrack?: OfficialAudioTrack): NotebookEntry["media"] {
+function officialAnswerAudioMedia(answer: OfficialAnswer, audioTrack?: OfficialAudioTrack): NotebookEntry["media"] {
   if (!audioTrack) return undefined;
-  const answers = task.answers ?? [];
   return {
     kind: "audio",
-    label: `播放 Q${answer.number} 答案对应片段`,
+    label: `播放 Q${answer.number} 所在完整 Task 音频`,
     url: audioTrack.url,
-    segmentIndex: Math.max(0, answers.findIndex((item) => item.number === answer.number)),
-    segmentCount: Math.max(1, answers.length),
   };
 }
 
@@ -514,7 +511,7 @@ function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry 
   return {
     ...entry,
     detail,
-    media: officialAnswerAudioMedia(task, answer, audioTrack) ?? entry.media,
+    media: officialAnswerAudioMedia(answer, audioTrack) ?? entry.media,
     reference: entry.reference ?? { label: `${task.questionLabel} · 查看题目原页`, url: material.pdfUrl, page: task.questionPage },
   };
 }
@@ -585,20 +582,54 @@ type ListeningNotebookReview = {
   correctAnswer: string;
 };
 
+function dailyListeningNotebookContext(entry: NotebookEntry) {
+  const match = entry.id.match(/^question:listening:([^:]+):([^:]+):(.+)$/);
+  if (!match) return undefined;
+  const [, exerciseDate, setCode, questionNumber] = match;
+  const storedBand = Number(entry.source.match(/Band ([678])(?:\.0)?/)?.[1] ?? 7) as 6 | 7 | 8;
+  const set = [storedBand, 6, 7, 8]
+    .filter((band, index, bands) => bands.indexOf(band) === index)
+    .map((band) => getDailyListeningExercise(exerciseDate, band as 6 | 7 | 8))
+    .find((candidate) => candidate.code === setCode || candidate.code.startsWith(`${setCode} · Band`));
+  return set ? { set, questionNumber } : undefined;
+}
+
+function listeningEvidenceKeyForQuestion(questionNumber: string): ListeningEvidenceKey | undefined {
+  if (questionNumber === "5–6" || questionNumber === "5-6") return "facilities";
+  if (/^[1-4]$/.test(questionNumber)) return `l${questionNumber}` as ListeningEvidenceKey;
+  if (/^(7|8|9|10)$/.test(questionNumber)) return `l${questionNumber}` as ListeningEvidenceKey;
+  return undefined;
+}
+
+function completeListeningCue(cue: { startSeconds: number; endSeconds: number }) {
+  return { startSeconds: Math.max(0, cue.startSeconds - .6), endSeconds: cue.endSeconds + .8 };
+}
+
+function enrichDailyListeningNotebookEntry(entry: NotebookEntry): NotebookEntry {
+  const context = dailyListeningNotebookContext(entry);
+  const cueKey = context ? listeningEvidenceKeyForQuestion(context.questionNumber) : undefined;
+  const cue = cueKey && context ? context.set.audioCues[cueKey] : undefined;
+  if (!context || !cue) return entry;
+  return {
+    ...entry,
+    media: {
+      kind: "audio",
+      label: `播放 Q${context.questionNumber} 完整问答音频`,
+      url: context.set.audioSrc,
+      ...completeListeningCue(cue),
+    },
+  };
+}
+
 function listeningNotebookReview(entry: NotebookEntry): ListeningNotebookReview | undefined {
   const isListeningEntry = entry.source.includes("听力") || entry.source.toLowerCase().includes("listening") || entry.detail.includes("听力复盘：");
   if (entry.kind !== "question" || entry.media?.kind !== "audio" || !isListeningEntry) return undefined;
   const field = (label: string) => entry.detail.split("\n").find((line) => line.startsWith(`${label}：`))?.slice(label.length + 1).trim() ?? "";
   let options = field("选项").split("｜").map((option) => option.trim()).filter(Boolean);
   let allowsMultiple = false;
-  const dailyMatch = entry.id.match(/^question:listening:([^:]+):([^:]+):(.+)$/);
-  if (dailyMatch) {
-    const [, exerciseDate, setCode, questionNumber] = dailyMatch;
-    const storedBand = Number(entry.source.match(/Band ([678])(?:\.0)?/)?.[1] ?? 7) as 6 | 7 | 8;
-    const dailySet = [storedBand, 6, 7, 8]
-      .filter((band, index, bands) => bands.indexOf(band) === index)
-      .map((band) => getDailyListeningExercise(exerciseDate, band as 6 | 7 | 8))
-      .find((set) => set.code === setCode || set.code.startsWith(`${setCode} · Band`));
+  const dailyContext = dailyListeningNotebookContext(entry);
+  if (dailyContext) {
+    const { set: dailySet, questionNumber } = dailyContext;
     if (dailySet) {
       if (questionNumber === "5–6") {
         options = options.length > 0 ? options : dailySet.exercise.multipleSelect.options;
@@ -1642,7 +1673,7 @@ function OfficialTestRunner({
     if (audioTrack) lines.push("听力复盘：使用右侧音频按钮回听当前独立 Task，重点核对答案出现前后的同义替换和拼写。");
     return lines.join("\n");
   };
-  const officialQuestionMedia = (answer: OfficialAnswer) => officialAnswerAudioMedia(task, answer, audioTrack);
+  const officialQuestionMedia = (answer: OfficialAnswer) => officialAnswerAudioMedia(answer, audioTrack);
   const officialQuestionReference = { label: `${task.questionLabel} · 查看题目原页`, url: material.pdfUrl, page: task.questionPage };
   const submitCurrentTask = (responseOverride?: Record<string, string>) => {
     const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
@@ -3374,7 +3405,7 @@ function ListeningPractice({
       title: `Q${number} · ${prompt}`,
       detail: `题目：${prompt}\n${options.length > 0 ? `选项：${options.join("｜")}\n` : ""}我的答案：${userAnswer || "未作答"}\n正确答案：${correctAnswer}\n原文：${evidence.quote}`,
       source: `听力精听 · Band ${difficulty.band}.0 · ${exerciseDate} · ${listeningSet.code}`,
-      media: { kind: "audio", label: `播放 Q${number} 对应音频`, url: listeningSet.audioSrc, ...cue },
+      media: { kind: "audio", label: `播放 Q${number} 完整问答音频`, url: listeningSet.audioSrc, ...completeListeningCue(cue) },
     }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含本题音频）"}</button>;
   };
 
@@ -3993,7 +4024,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
   const reviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
   const reviewItems = progress.reviewWords.filter((item) => (progress.reviewSchedule[item]?.dueDate ?? today) <= today);
   const scheduledCount = progress.reviewWords.length - reviewItems.length;
-  const notebookEntries = progress.notebook.map(enrichLegacyOfficialNotebookEntry);
+  const notebookEntries = progress.notebook.map(enrichLegacyOfficialNotebookEntry).map(enrichDailyListeningNotebookEntry);
   const categoryCounts = notebookEntries.reduce<Record<Exclude<NotebookCategory, "all">, number>>((counts, entry) => {
     const category = notebookEntryCategory(entry);
     counts[category] += 1;
@@ -4102,7 +4133,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
                   <article className="is-correct-answer"><span>正确答案</span>{readingReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{readingReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
                   <article className="is-explanation"><span>解析</span><p>{readingReview.explanation}</p></article>
                 </section> : listeningReview ? <section className="notebook-listening-review">
-                  <article className="is-audio"><span>答案对应音频</span><button type="button" className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media?.label ?? "播放答案对应片段"}`}</button><small>只回听这道题答案出现前后的片段</small></article>
+                  <article className="is-audio"><span>本题完整音频</span><button type="button" className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media?.label ?? "播放本题完整问答"}`}</button><small>完整回听这道题的提问、回答和必要上下文</small></article>
                   <article className="is-listening-question"><span>题目</span><p>{listeningReview.question}</p>{listeningReview.options.length > 0 ? <div className="notebook-listening-options" role={listeningReview.allowsMultiple ? "group" : "radiogroup"} aria-label="选择你的答案">{listeningReview.options.map((option) => { const selected = listeningSelections.includes(option); return <button type="button" role={listeningReview.allowsMultiple ? "checkbox" : "radio"} aria-checked={selected} className={selected ? "is-selected" : ""} onClick={() => setNotebookListeningSelections((current) => ({ ...current, [entry.id]: listeningReview.allowsMultiple ? selected ? listeningSelections.filter((item) => item !== option) : [...listeningSelections, option] : [option] }))} key={option}><i>{selected ? "✓" : ""}</i><span>{option}</span></button>; })}</div> : <label className="notebook-listening-input"><span>输入你的答案</span><input value={notebookListeningInputs[entry.id] ?? ""} onChange={(event) => setNotebookListeningInputs((current) => ({ ...current, [entry.id]: event.target.value }))} placeholder="听完后输入答案" /></label>}</article>
                   <article className="is-correct-answer"><span>正确答案</span>{listeningReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{listeningReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
                 </section> : <p>{notebookDetailForDisplay(entry.detail)}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && !listeningReview && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
