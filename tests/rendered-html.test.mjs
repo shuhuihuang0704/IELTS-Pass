@@ -295,7 +295,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.notebook-kind\.listening/);
   assert.match(styles, /\.notebook-kind\.reading/);
   assert.match(app, /dailyDifficultyProfileForDate/);
-  assert.match(app, /dailyDifficultyProfiles/);
+  assert.doesNotMatch(app, /dailyDifficultyProfiles/);
   assert.match(state, /export type DailyDifficultyBand = 6 \| 7 \| 8/);
   assert.match(state, /export type DailyDifficultyStage = 1 \| 2 \| 3 \| 4/);
   assert.match(state, /targetDailyDifficultyBand/);
@@ -316,8 +316,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /getDailyListeningExercise\(exerciseDate, difficulty\.band\)/);
   assert.match(app, /getDailyReadingExercise\(exerciseDate, difficulty\.band\)/);
   assert.match(app, /getDailySpeakingScenario\(exerciseDate, difficulty\.band\)/);
-  assert.match(app, /PERSONALISED DAILY DIFFICULTY/);
-  assert.match(app, /daily-difficulty-progress/);
+  assert.doesNotMatch(app, /PERSONALISED DAILY DIFFICULTY|daily-difficulty-panel|daily-difficulty-progress|daily-difficulty-ladder|daily-exam-format/);
   assert.match(app, /IELTS LISTENING FORMAT/);
   assert.match(app, /IELTS ACADEMIC READING FORMAT/);
   assert.match(app, /IELTS SPEAKING FORMAT/);
@@ -327,8 +326,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /daily-reading-timer/);
   assert.match(app, /questionForDifficulty/);
   assert.match(app, /requireCounterpoint/);
-  assert.match(styles, /\.daily-difficulty-panel/);
-  assert.match(styles, /\.daily-difficulty-progress/);
+  assert.doesNotMatch(styles, /\.daily-difficulty-panel|\.daily-difficulty-progress|\.daily-difficulty-ladder|\.daily-exam-format/);
   assert.match(styles, /\.exam-format-strip/);
   assert.match(styles, /\.daily-reading-timer/);
   assert.match(app, /题目位置：题册 P/);

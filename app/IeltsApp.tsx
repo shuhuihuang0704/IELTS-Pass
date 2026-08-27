@@ -22,7 +22,6 @@ import {
   completionPercent,
   dailyConnectedSpeechTarget,
   dailyDifficultyProfileForDate,
-  dailyDifficultyProfiles,
   dailyDictationTarget,
   dailyReviewTarget,
   dailyVocabularyTarget,
@@ -2585,7 +2584,6 @@ function SceneView({
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
   const difficultyProfile = dailyDifficultyProfileForDate(progress.studyPlanStartedAt, contentDate, progress.studyPlanDays, progress.targetBandScore);
   const difficultyBand = difficultyProfile.band;
-  const difficultyPath = `目标 ${progress.targetBandScore.toFixed(1)} → Band ${difficultyBand}.0 专属路线`;
   const isCarryoverContent = contentDate !== localDayKey() && progress.carryoverTasks.includes(activeSkill);
   const [vocabularyMode, setVocabularyMode] = useState<"daily" | "typing" | "phrases">("daily");
   const vocabularyHeader = vocabularyMode === "typing"
@@ -2629,10 +2627,6 @@ function SceneView({
       </nav>
       <PageHeader eyebrow={header.eyebrow} title={header.title} accent={header.accent} />
       {isCarryoverContent && <section className="carryover-context-banner"><div><span>YESTERDAY&apos;S TASK</span><strong>正在补做 {contentDate} 的{activeSkill === "vocabulary" ? "词汇与听写" : skills.find((skill) => skill.id === activeSkill)?.label}</strong></div><small>本页题目按原任务日期加载；完成后才会从昨日未完成列表移除。</small></section>}
-      {activeSkill !== "vocabulary" && <section className="daily-difficulty-panel" aria-label={`今日训练难度 Band ${difficultyBand}.0`}>
-        <div className="daily-difficulty-copy"><span>PERSONALISED DAILY DIFFICULTY</span><strong>Band {difficultyBand}.0 · {difficultyProfile.stageLabel} · 第 {difficultyProfile.planDay}/{difficultyProfile.planDays} 天</strong><p>{difficultyProfile.summary} {difficultyPath}。</p><div className="daily-difficulty-progress"><i style={{ width: `${difficultyProfile.progressPercent}%` }} /><small>本路线难度进度 {difficultyProfile.progressPercent}%</small></div></div>
-        <div><div className="daily-difficulty-ladder">{([6, 7, 8] as const).map((band) => <span className={band === difficultyBand ? "is-active" : ""} key={band}><b>{band}.0</b><small>{dailyDifficultyProfiles[band].label}</small></span>)}</div><ul className="daily-exam-format"><li><b>听</b>{difficultyProfile.listening.format}</li><li><b>读</b>{difficultyProfile.reading.format}</li><li><b>说</b>{difficultyProfile.speaking.format}</li></ul></div>
-      </section>}
       <div className="scene-tabs" role="tablist" aria-label="场景训练步骤">
         {skills.map((skill, index) => (
           <button
