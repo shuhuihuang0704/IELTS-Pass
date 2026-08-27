@@ -1,3 +1,5 @@
+import { expandedVocabularyRows } from "./vocabulary-expanded";
+
 export type Skill = "vocabulary" | "listening" | "speaking" | "reading";
 
 export const skills: Array<{
@@ -410,10 +412,31 @@ statistic|统计量；统计数据|AWL 高频 4|official statistics|AWL 学术�
 status|地位；状态|AWL 高频 4|social status|AWL 学术词族
 `.trim();
 
-export const dailyVocabulary = dailyVocabularySource.split("\n").map((line) => {
+const curatedDailyVocabulary = dailyVocabularySource.split("\n").map((line) => {
   const [word, meaning, category, collocation, source] = line.split("|");
-  return { word, meaning, category, collocation, source: source ?? "IELTS 主题独立整理" };
+  return { word, meaning, category, collocation, source: source ?? "IELTS 主题独立整理", partOfSpeech: "", example: collocation };
 });
+
+const expandedSourceMeta = {
+  a: { category: "学术高频", source: "NAWL 1.2 · CC BY-SA 4.0" },
+  n: { category: "通用高频", source: "NGSL 1.2 · CC BY-SA 4.0" },
+  g: { category: "阅读拓展", source: "NGSL-GR 1.0 · CC BY-SA 4.0" },
+} as const;
+
+const preparedExpandedVocabulary = expandedVocabularyRows.map(([word, meaning, partOfSpeech, definition, sourceCode]) => {
+  const example = `In context, “${word}” means ${definition}.`;
+  return { word, meaning, partOfSpeech, example, collocation: example, ...expandedSourceMeta[sourceCode] };
+});
+
+export const dailyVocabulary = Array.from({ length: 36 }, (_, dayIndex) => {
+  const curatedStart = Math.ceil(curatedDailyVocabulary.length * dayIndex / 36);
+  const curatedEnd = Math.ceil(curatedDailyVocabulary.length * (dayIndex + 1) / 36);
+  const curatedBatch = curatedDailyVocabulary.slice(curatedStart, curatedEnd);
+  const expandedStart = dayIndex * 100 - curatedStart;
+  const expandedCount = 100 - curatedBatch.length;
+  const expandedBatch = preparedExpandedVocabulary.slice(expandedStart, expandedStart + expandedCount);
+  return [...curatedBatch, ...expandedBatch];
+}).flat();
 
 export function getDailyVocabulary(dayKey: string, count = 100) {
   const dayNumber = Math.floor(new Date(`${dayKey}T00:00:00`).getTime() / 86_400_000);

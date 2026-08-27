@@ -971,7 +971,7 @@ function TodayView({
           </div>
           <button className="daily-word-row" onClick={onVocabulary}>
             <span><small>TODAY&apos;S WORDS</small><strong>{todaySeenCount}<b>/100</b></strong></span>
-            <span className="daily-word-copy"><strong>每日高频词</strong><small>300 词核心库轮换 · 每天 5 × 20</small></span>
+            <span className="daily-word-copy"><strong>每日高频词</strong><small>3,600 词核心库轮换 · 每天 5 × 20</small></span>
             <b>→</b>
           </button>
           <button className="streak-row" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
@@ -2818,8 +2818,8 @@ const wordbookEntries: WordbookEntry[] = Array.from(new Map([
   ...dailyVocabulary.map((entry) => ({
     word: entry.word,
     meaning: entry.meaning,
-    partOfSpeech: inferPartOfSpeech(entry.word, entry.meaning),
-    example: entry.collocation,
+    partOfSpeech: entry.partOfSpeech || inferPartOfSpeech(entry.word, entry.meaning),
+    example: entry.example || entry.collocation,
     category: entry.category,
     collection: "core" as const,
   })),

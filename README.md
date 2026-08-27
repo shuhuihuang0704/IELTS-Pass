@@ -32,7 +32,7 @@
 ## 当前可以测试什么
 
 - **场景学习路径**：词汇 → 听力 → 口语 → 阅读。
-- **每日 100 词**：从 300 词高频核心库中按日期轮换，分成 5 组快速辨认，自动保存当日进度。
+- **每日 100 词**：从 3,600 词核心库中按日期轮换，分成 5 组快速辨认，36 天完成一轮，自动保存当日进度。
 - **三档学习队列**：按“认识 / 模糊 / 不熟悉”判断；点击认识后先核对中文含义，可确认进入下一词，也可点“记错了”让它重新进入本轮和间隔复习。
 - **自适应间隔复习**：需要强化的词按 1、3、7、14、30、60 天递增安排；复习时再次模糊或遗忘会缩短间隔并记录遗忘次数。
 - **80 词场景听写**：8 × 10 词分组，覆盖住宿、出行、教育、健康、工作、环境、服务和活动场景。
@@ -58,14 +58,17 @@
 
 > 当前考官回复和回答展开提示使用可替换的本地逻辑，目的是在没有 API 密钥时也能测试考试流程；它不会冒充官方 IELTS 评分。正式 AI 模型、账号和跨设备云同步属于下一阶段。
 >
-> 当前词库不是《雅思词汇真经》的电子化版本：该书只作为“3600+ 核心词、22 个主题”的产品规模参考，本项目没有其完整词表或再分发授权。APP 内每张卡片会标注来源层级；学术高频层依据 Academic Word List（AWL）的频率分层，中文释义与搭配由项目独立整理。
+> 当前词库不是《雅思词汇真经》的电子化版本：该书只作为“3600+ 核心词、22 个主题”的产品规模参考，本项目没有其完整词表或再分发授权。3,600 词核心库由项目原有 300 个独立整理主题词、NGSL 1.2、NAWL 1.2 与少量 NGSL-GR 1.0 中频阅读词合并去重而成；中文释义来自 MIT 许可的 ECDICT。完整署名与许可见 `THIRD_PARTY_NOTICES.md`。
 >
 > 官方套题模块在 App 内加载 IELTS.org 官方原始材料。Reading 使用 Modified Large Print [文章册](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf)、[题册](https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf)及[答案表](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf)，共 3 篇、40 题；另加载官方 [Listening](https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf)、[Writing](https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf) 与 [Speaking](https://ielts.org/cdn/ielts-sample-tests/ielts-speaking-sample-tasks-2023.pdf) Sample Tasks。这些可以确认是官方公开样题，但不能表述为已正式考过的 Cambridge 历年原卷；商业题库必须获得授权后才能内置。
 
 词汇选取依据：
 
 - [IELTS 官方词汇备考建议](https://ielts.org/news-and-insights/how-to-address-vocabulary-in-an-ielts-preparation-course)：建议雅思学术类考生结合 GSL、AWL、AVL 等频率词表学习。
-- [Academic Word List 研究](https://ir.wgtn.ac.nz/items/8f852b22-3f82-427e-b0b3-8d9c954d8e61)：570 个词族来自 350 万词学术语料库，并按出现范围、频率和均匀度筛选。
+- [NGSL 1.2 官方词表](https://www.newgeneralservicelist.com/new-general-service-list)：2,809 个通用高频词，基于 2.73 亿词语料；本项目排除最基础的前 200 项后按频率选取。
+- [NAWL 1.2 官方词表](https://www.newgeneralservicelist.com/new-academic-word-list)：957 个学术高频词，设计用于与 NGSL 组合覆盖一般学术英语。
+- [NGSL-GR 1.0 官方扩展](https://www.newgeneralservicelist.com/ngsl-graded-reader)：仅用于补充少量中频阅读词，避免用 the、and 等基础功能词凑数。
+- [ECDICT](https://github.com/skywind3000/ECDICT)：MIT 许可的英汉词典数据，用于生成扩展词条的中文释义。
 - 《雅思词汇真经》ISBN `978-7-5213-0455-8`：仅参考公开的规模与主题信息，不复制书中词表、释义或例句。
 
 ## 本地运行
@@ -137,10 +140,10 @@ tests/
 
 - [x] 响应式应用外壳与品牌视觉
 - [x] 租房场景的词汇、听力、口语、阅读闭环
-- [x] 300 词高频核心库、每日轮换 100 词、5 × 20 分组进度和错词回流
+- [x] 3,600 词核心库、每日轮换 100 词、36 天一轮、5 × 20 分组进度和错词回流
 - [x] Academic Reading 混合题型与 Speaking Part 3 考官式讨论
 - [x] 80 词场景听写与 Listening Section 1 十题混合套题
-- [ ] 将可核验词库扩展到 570 个 AWL 词族和更多雅思场景词
+- [x] 为扩展词库补齐可核验来源、词性、中文释义、英文语境与第三方许可说明
 - [ ] 获得商业教材授权后再导入对应词表；未授权内容不得标注为教材来源
 - [x] 进度激励和浏览器本地持久化
 - [x] 自动构建测试与社交分享封面

@@ -27,9 +27,11 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
 });
 
 test("ships all four learning modes and persistent progress", async () => {
-  const [app, data, state, styles] = await Promise.all([
+  const [app, data, expandedVocabulary, notices, state, styles] = await Promise.all([
     readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/vocabulary-expanded.ts", import.meta.url), "utf8"),
+    readFile(new URL("../THIRD_PARTY_NOTICES.md", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-state.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
@@ -48,6 +50,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /Speaking Part 3|真实考试结构|考官/);
   assert.match(app, /Form Completion|Choose TWO|提交 10 道答案/);
   assert.match(state, /dailyVocabularyDate|dailyVocabularySeen|dailyVocabularyKnown/);
+  assert.match(state, /vocabularyLibraryVersion = "3600-v1"/);
+  assert.match(state, /isCurrentVocabularyLibrary/);
   assert.match(state, /speakingPart3Turns/);
   assert.match(state, /listeningScore/);
   assert.match(state, /localDayKey/);
@@ -132,6 +136,19 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /wordbookEntries/);
   assert.match(app, /每日学习记录/);
   assert.match(app, /继续增加学习/);
+  assert.match(app, /3,600 词核心库轮换/);
+  assert.match(data, /length: 36/);
+  assert.match(data, /expandedVocabularyRows/);
+  const curatedVocabularySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\);/);
+  assert.ok(curatedVocabularySource);
+  assert.equal(curatedVocabularySource[1].trim().split("\n").length, 300);
+  assert.equal((expandedVocabulary.match(/^ {2}\[/gm) ?? []).length, 3300);
+  assert.doesNotMatch(expandedVocabulary, /^ {2}\["(?:the|and|of|be)",/gm);
+  assert.match(data, /NGSL 1\.2 · CC BY-SA 4\.0/);
+  assert.match(data, /NAWL 1\.2 · CC BY-SA 4\.0/);
+  assert.match(notices, /New General Service List 1\.2/);
+  assert.match(notices, /New Academic Word List 1\.2/);
+  assert.match(notices, /ECDICT/);
   assert.match(app, /今天还想多练一点/);
   assert.match(app, /今日基础完成度保持 100%/);
   assert.match(app, /复习错词与笔记/);
