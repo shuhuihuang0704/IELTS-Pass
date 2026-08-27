@@ -242,12 +242,6 @@ button { cursor: pointer; }
 .ai-tutor-sidebar small { color:rgba(255,255,255,.66); font-size:8px; font-weight:750; letter-spacing:1px; }
 .ai-tutor-sidebar h2 { margin:8px 0 0; font-size:29px; line-height:1.02; letter-spacing:-1.2px; }
 .ai-tutor-sidebar p { margin:15px 0 0; color:rgba(255,255,255,.7); font-size:11px; line-height:1.65; }
-.ai-tutor-progress { margin-top:auto; padding:16px; border:1px solid rgba(255,255,255,.14); border-radius:18px; background:rgba(255,255,255,.09); }
-.ai-tutor-progress span,.ai-tutor-progress strong { display:block; }
-.ai-tutor-progress span { color:rgba(255,255,255,.7); font-size:9px; }
-.ai-tutor-progress strong { margin-top:5px; font-size:22px; }
-.ai-tutor-progress>i { height:5px; margin-top:12px; display:block; overflow:hidden; border-radius:5px; background:rgba(255,255,255,.17); }
-.ai-tutor-progress>i>b { height:100%; display:block; border-radius:inherit; background:white; transition:width .5s ease; }
 .ai-tutor-chat { min-width:0; padding:25px; display:grid; grid-template-rows:auto minmax(300px,1fr) auto auto; background:#fbfafc; }
 .ai-tutor-chat>header { padding:0 2px 19px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #ebe7ef; }
 .ai-tutor-chat>header>div { display:flex; align-items:center; gap:11px; }
@@ -1381,7 +1375,6 @@ button { -webkit-tap-highlight-color:transparent; }
   .ai-tutor-sidebar>div:nth-child(2) { margin-top:0; }
   .ai-tutor-sidebar h2 { font-size:23px; }
   .ai-tutor-sidebar p { margin-top:9px; }
-  .ai-tutor-progress { grid-column:1 / -1; margin-top:2px; }
   .ai-tutor-chat { min-height:560px; padding:17px; grid-template-rows:auto minmax(270px,1fr) auto auto; }
   .ai-tutor-messages { max-height:330px; }
   .ai-message { max-width:94%; }
@@ -1418,6 +1411,6 @@ button { -webkit-tap-highlight-color:transparent; }
 }
 
 @media (prefers-reduced-motion:reduce) {
-  .profile-water-fill,.ai-tutor-progress>i>b { transition:none; }
+  .profile-water-fill { transition:none; }
   .profile-water-fill::before,.profile-water-fill::after,.ai-message.is-thinking>p>i { animation:none; }
 }

@@ -169,6 +169,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /buildTutorReply/);
   assert.match(app, /aria-label="向 IELTS AI 提问"/);
   assert.match(app, /基于内置备考知识与当前学习进度/);
+  assert.doesNotMatch(app, /ai-tutor-progress|<span>今日进度<\/span>/);
   assert.match(app, /profile-water-gauge/);
   assert.match(app, /profile-water-fill/);
   assert.match(app, /每完成一项今日任务，水位会上升 25%/);

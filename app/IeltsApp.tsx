@@ -2063,7 +2063,6 @@ function AiTutorView({ progress }: { progress: LearningProgress }) {
         <aside className="ai-tutor-sidebar">
           <span className="ai-tutor-mark">AI</span>
           <div><small>YOUR STUDY COPILOT</small><h2>问得具体，答案会更有用。</h2><p>可以粘贴题干、你的答案或句子。我会围绕雅思备考给出步骤、例句和改进方向。</p></div>
-          <div className="ai-tutor-progress"><span>今日进度</span><strong>{completionPercent(progress)}%</strong><i><b style={{ width: `${completionPercent(progress)}%` }} /></i></div>
         </aside>
         <div className="ai-tutor-chat">
           <header><div><i /><span><strong>IELTS AI 助教</strong><small>基于内置备考知识与当前学习进度</small></span></div><b>在线</b></header>
