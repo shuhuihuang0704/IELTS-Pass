@@ -2012,46 +2012,112 @@ function OfficialSpeakingResponse({
   );
 }
 
-type TutorMessage = { id: number; role: "assistant" | "user"; text: string };
+type TutorTopic = "词汇" | "听力" | "口语" | "阅读" | "写作" | "学习计划" | "需要补充" | "范围外";
+type TutorMessage = { id: number; role: "assistant" | "user"; text: string; topic?: TutorTopic };
+type TutorReply = { text: string; topic: TutorTopic };
 
-function buildTutorReply(question: string, progress: LearningProgress): string {
-  const input = question.toLowerCase();
-  if (/听力|listening|填空|多选/.test(input)) return "听力题先不要追着每个词听。填空题先圈出字数限制和空格前后的词性；播放时抓转折词、数字和同义替换。多选题先把选项差异压缩成关键词，听到完整意思后再选。你可以把具体题目或错因发给我，我会逐步帮你定位。";
-  if (/口语|speaking|part\s*[123]|一分钟|1分钟/.test(input)) return "口语回答可以用“立场—原因—例子—回扣”四步。Part 2 的一分钟准备只写人物、地点、转折和感受四组关键词，不写完整句；Part 3 要先直接回答，再解释原因和影响。把你的回答文字贴过来，我可以按流利度、词汇、语法和展开程度逐句改进。";
-  if (/写作|writing|task\s*[12]|作文|观点/.test(input)) return "写作先确认任务类型和立场。Task 2 每个主体段建议保持一个中心观点，并用“主题句—解释—具体例子—结果”展开；Task 1 则先写概述，再按最明显的特征分组比较。你可以粘贴作文，我会标出表达亮点、逻辑缺口，并给出可替换例句。";
-  if (/阅读|reading|判断|匹配|定位/.test(input)) return "阅读先读题干并提取定位词，再回原文寻找同义改写。判断题要区分 False（原文明确相反）和 Not Given（原文没有足够信息）；匹配题先看段落主旨，不要只匹配重复单词。把题干和相关段落发给我，我可以帮你标出定位依据。";
-  if (/单词|词汇|vocabulary|拼写|遗忘/.test(input)) return `你目前有 ${progress.reviewWords.length} 个词进入复习队列。新词先判断“认识 / 模糊 / 不熟悉”，模糊和不熟悉的词在本轮重复；复习时优先做主动回忆，再看中文和例句。拼写错误要单独进行听写，并按遗忘曲线在后续日期再次出现。`;
-  if (/计划|进度|今天|下一步|怎么学|安排/.test(input)) {
-    const done = Object.values(progress.completed).filter(Boolean).length;
-    return `你选择的是 ${progress.studyPlanDays} 天计划，每日词汇目标为 ${dailyVocabularyTarget(progress.studyPlanDays)} 词。今天完成了 ${done}/4 项，当前完成度 ${completionPercent(progress)}%。建议先完成尚未打勾的今日任务，再进入本周套题；若四项都已完成，就复习今日错词或加练一组听力。`;
+const tutorTopicRules: Array<{ topic: Exclude<TutorTopic, "需要补充" | "范围外">; terms: RegExp[] }> = [
+  { topic: "听力", terms: [/听力/i, /listening/i, /填空题/i, /多选题/i, /精听/i, /音频/i, /没听清/i] },
+  { topic: "口语", terms: [/口语/i, /speaking/i, /part\s*[123]/i, /一分钟准备/i, /考官/i, /发音/i, /录音/i] },
+  { topic: "写作", terms: [/写作/i, /writing/i, /task\s*[12]/i, /作文/i, /大作文/i, /小作文/i, /主体段/i] },
+  { topic: "阅读", terms: [/阅读/i, /reading/i, /判断题/i, /匹配题/i, /not\s*given/i, /true\s*\/\s*false/i, /定位词/i] },
+  { topic: "词汇", terms: [/单词/i, /词汇/i, /vocabulary/i, /拼写/i, /词性/i, /例句/i, /中文意思/i, /遗忘曲线/i] },
+  { topic: "学习计划", terms: [/计划/i, /进度/i, /今天/i, /下一步/i, /怎么学/i, /安排/i, /复习什么/i] },
+];
+
+const tutorLookupStopWords = new Set("what does mean meaning define definition difference between example sentence word vocabulary english chinese how use used usage please tell me is are the a an of and or to in for with ielts listening speaking reading writing task part true false not given".split(" "));
+
+function detectTutorTopic(question: string): TutorTopic {
+  const scores = tutorTopicRules.map((rule) => ({ topic: rule.topic, score: rule.terms.filter((term) => term.test(question)).length }));
+  const matched = scores.filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score);
+  if (matched.length === 0) return /雅思|ielts|考试|备考/i.test(question) ? "需要补充" : "范围外";
+  if (matched.length > 1 && matched[0].score === matched[1].score) return "需要补充";
+  return matched[0].topic;
+}
+
+function extractTutorVocabularyTerms(question: string) {
+  const isLookup = /意思|中文|怎么用|用法|词性|例句|区别|易混|mean(?:ing)?|define|definition|difference|example|use\b/i.test(question);
+  if (!isLookup) return [];
+  return Array.from(new Set((question.match(/\b[a-z][a-z'-]{1,39}\b/gi) ?? [])
+    .map((word) => word.toLowerCase())
+    .filter((word) => !tutorLookupStopWords.has(word))))
+    .slice(0, 2);
+}
+
+async function buildTutorReply(question: string, progress: LearningProgress, previousQuestion = ""): Promise<TutorReply> {
+  const isShortFollowUp = question.length <= 18 && /^(那|所以|为什么|怎么做|具体呢|举个例子|继续|这个呢|然后呢|why|how|example)/i.test(question.trim());
+  const contextualQuestion = isShortFollowUp && previousQuestion ? `${previousQuestion}\n追问：${question}` : question;
+  const vocabularyTerms = extractTutorVocabularyTerms(contextualQuestion);
+  if (vocabularyTerms.length > 0) {
+    const results = await Promise.all(vocabularyTerms.map(async (term) => ({ term, entries: await lookupDictionaryWord(term) })));
+    const explanations = results.map(({ term, entries }) => {
+      const entry = entries[0];
+      if (!entry) return `“${term}”：没有查到可靠词条，请检查拼写。`;
+      const meaning = entry.meanings[0];
+      const definition = meaning?.definitions[0];
+      const pronunciation = entry.phonetic ? `/${entry.phonetic.replaceAll("/", "")}/ · ` : "";
+      return `“${entry.word}” ${pronunciation}${meaning?.partOfSpeech ?? "word"}\n中文：${entry.chineseMeaning || "中文释义暂时不可用"}\n英文释义：${definition?.definition ?? "暂无"}${definition?.example ? `\n例句：${definition.example}` : ""}`;
+    });
+    return { topic: "词汇", text: `${explanations.join("\n\n")}\n\n这是按你输入的单词查询的结果；如果你想比较两个词，直接问“affect 和 effect 有什么区别”。` };
   }
-  return "可以。请把具体的 IELTS 问题、题干、你的答案或不理解的句子发给我。我会先判断它属于词汇、听力、口语、阅读还是写作，再给出可直接执行的解法、示例和下一步练习。";
+
+  const topic = detectTutorTopic(contextualQuestion);
+  if (topic === "听力") {
+    if (/第\s*\d+\s*题|这道题|为什么.*答案|答案为什么/i.test(question) && question.length < 55) return { topic, text: "我知道你在问一道具体听力题，但你还没有给出题干、选项或听力原句，所以我现在不能可靠判断答案。请发：①题干；②选项或你的答案；③你听到的原句。收到后我会按“定位信号 → 同义替换 → 排除依据”逐步解释，不会猜题。" };
+    if (/填空/i.test(contextualQuestion)) return { topic, text: "针对听力填空题：\n1. 播放前圈出字数限制，并判断空格需要名词、动词、形容词还是数字。\n2. 听的时候等待题干词的同义替换，不要只等原词。\n3. 写完检查单复数、拼写和日期格式。\n\n如果是某一道题，请把题干和你听到的原句发来，我会定位具体答案。" };
+    if (/多选/i.test(contextualQuestion)) return { topic, text: "针对听力多选题：先把每个选项压缩成一个差异词；录音中的一个观点常会先被提到再否定，必须等说话人完成态度转折后再选。提交前再检查题目要求选 TWO 还是 THREE。把选项发来，我可以逐项说明为什么保留或排除。" };
+    return { topic, text: "我理解你问的是听力训练。请告诉我是填空、多选、匹配还是精听，并附上具体题干；没有题干时，我只能提供方法，不能判断某一道题的答案。通用顺序是：预测答案形式 → 听定位信号 → 核对同义替换 → 检查拼写。" };
+  }
+  if (topic === "口语") {
+    if (/part\s*2|一分钟/i.test(contextualQuestion)) return { topic, text: "针对 Part 2 的 1 分钟准备：只写 4 组关键词——背景、两个细节、转折、感受。回答时按“直接点题 → 时间地点 → 两个具体细节 → 为什么重要”展开，目标说满约 1–2 分钟。把题卡或你的识别稿贴来，我会基于你的内容改，不会另编一个无关答案。" };
+    if (/part\s*3/i.test(contextualQuestion)) return { topic, text: "针对 Part 3：第一句直接表态，第二句解释原因，第三句给社会层面的例子，最后补充限制或另一面。不要背完整模板，只保留“In many cases… / This is mainly because… / That said…”这类连接骨架。发来考官问题和你的回答，我会逐句指出哪里没有回答到题目。" };
+    return { topic, text: "我理解你问的是口语。为了给出对应答案，请发考官的完整问题，最好再附上你的回答文字；我会依次检查是否答题、是否展开、词汇重复和句子准确度，而不是只给通用模板。" };
+  }
+  if (topic === "阅读") {
+    if (/not\s*given|判断题|true|false/i.test(contextualQuestion)) return { topic, text: "判断题必须同时看“题目陈述”和“原文相关句”。True 是同义一致；False 是原文明确信息相反；Not Given 是原文不足以判断。你还没有同时提供这两部分，所以我不会直接猜答案。把题目陈述和相关段落贴来，我会标出定位词、原文依据以及为什么不是另外两个选项。" };
+    if (/匹配/i.test(contextualQuestion)) return { topic, text: "匹配题先为每个段落写一句主旨，再匹配题目中的功能或观点；重复单词只能用来定位，不能单独作为答案依据。请把待匹配选项和相关段落一起发来，我会逐项给出原文定位和排除理由。" };
+    return { topic, text: "我理解你问的是阅读。若要判断具体答案，请同时发题干、选项和相关原文；我会按“题型 → 定位词 → 原文同义改写 → 答案 → 排除理由”回答。缺少原文时我会明确请你补充，不会编造定位。" };
+  }
+  if (topic === "写作") {
+    if (/task\s*1|小作文/i.test(contextualQuestion)) return { topic, text: "针对 Academic Task 1：先用 1 句改写题目，再用 1–2 句概述最明显趋势；主体段按特征分组比较，不要逐项报数。请粘贴题目和你的作文，我会只依据图表信息检查 overview、分组、数据比较和语言，缺少图表时不会虚构数据。" };
+    if (/task\s*2|大作文|观点/i.test(contextualQuestion)) return { topic, text: "针对 Task 2：先确认题型和你的立场，每个主体段只承担一个中心观点，按“主题句 → 为什么 → 具体例子 → 结果/限制”展开。把完整题目和作文贴来；我会先检查是否回应题目，再检查段落逻辑、词汇和语法，并给出可直接替换的例句。" };
+    return { topic, text: "我理解你问的是写作，但需要知道是 Task 1 还是 Task 2。请发完整题目和你的作文；我会以题目为依据提出修改，不会在没看到图表或题目时编造内容。" };
+  }
+  if (topic === "词汇") return { topic, text: `你目前有 ${progress.reviewWords.length} 个词进入复习队列。针对具体单词，请直接问“academic 是什么意思/怎么用”，我会返回中文、词性、英文释义和例句；针对记忆方法，模糊和不熟悉的词应在本轮重复，并进入 1、3、7、14、30、60 天复习。` };
+  if (topic === "学习计划") {
+    const done = Object.values(progress.completed).filter(Boolean).length;
+    return { topic, text: `这是根据你当前 App 进度生成的回答：你选择了 ${progress.studyPlanDays} 天计划，每日词汇目标 ${dailyVocabularyTarget(progress.studyPlanDays)} 词；今天完成 ${done}/4 项，完成度 ${completionPercent(progress)}%。${done < 4 ? "下一步先完成尚未打勾的任务，再进入套题训练。" : "今日基础任务已完成，可以复习错词或增加一组套题。"}` };
+  }
+  if (topic === "范围外") return { topic, text: "这个页面目前只回答 IELTS 学习相关问题，我不想在不相关领域给你一个看似确定但可能错误的答案。你可以问词汇、听力、口语、阅读、写作、套题或学习计划。" };
+  return { topic: "需要补充", text: "我还不能确定你具体在问哪一部分，所以先不猜。请补充一个关键词（词汇 / 听力 / 口语 / 阅读 / 写作），或直接粘贴题干、原文和你的答案，我会围绕这些内容回答。" };
 }
 
 function AiTutorView({ progress }: { progress: LearningProgress }) {
   const [messages, setMessages] = useState<TutorMessage[]>([
-    { id: 0, role: "assistant", text: "你好，我是你的 IELTS AI 助教。你可以问我一道题、一个单词、一段表达，也可以让我根据今天的进度安排下一步。" },
+    { id: 0, role: "assistant", topic: "需要补充", text: "你好，我是你的 IELTS AI 助教。请直接发具体问题；判断题最好同时发题干和原文，写作请发题目和作文，查词可以直接问“academic 是什么意思”。信息不够时我会请你补充，不会猜答案。" },
   ]);
   const [draft, setDraft] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const nextId = useRef(1);
-  const timerRef = useRef<number | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => () => { if (timerRef.current !== null) window.clearTimeout(timerRef.current); }, []);
   useEffect(() => { messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" }); }, [messages, isThinking]);
 
-  const sendQuestion = (question: string) => {
+  const sendQuestion = async (question: string) => {
     const text = question.trim();
     if (!text || isThinking) return;
+    const previousQuestion = [...messages].reverse().find((message) => message.role === "user")?.text ?? "";
     setMessages((current) => [...current, { id: nextId.current++, role: "user", text }]);
     setDraft("");
     setIsThinking(true);
-    timerRef.current = window.setTimeout(() => {
-      setMessages((current) => [...current, { id: nextId.current++, role: "assistant", text: buildTutorReply(text, progress) }]);
+    try {
+      const reply = await buildTutorReply(text, progress, previousQuestion);
+      setMessages((current) => [...current, { id: nextId.current++, role: "assistant", text: reply.text, topic: reply.topic }]);
+    } catch {
+      setMessages((current) => [...current, { id: nextId.current++, role: "assistant", topic: "需要补充", text: "这次查询没有成功。我不会临时编一个答案；请稍后重试，或把题干和你的答案再发一次。" }]);
+    } finally {
       setIsThinking(false);
-      timerRef.current = null;
-    }, 420);
+    }
   };
   const submitQuestion = (event: FormEvent) => { event.preventDefault(); sendQuestion(draft); };
   const prompts = ["Listening 填空题总是漏词怎么办？", "Part 2 一分钟怎么准备？", "Writing Task 2 怎么展开观点？", "根据今天进度安排下一步"];
@@ -2067,8 +2133,8 @@ function AiTutorView({ progress }: { progress: LearningProgress }) {
         <div className="ai-tutor-chat">
           <header><div><i /><span><strong>IELTS AI 助教</strong><small>基于内置备考知识与当前学习进度</small></span></div><b>在线</b></header>
           <div className="ai-tutor-messages" ref={messagesRef} aria-live="polite">
-            {messages.map((message) => <article className={`ai-message is-${message.role}`} key={message.id}><span>{message.role === "assistant" ? "AI" : "你"}</span><p>{message.text}</p></article>)}
-            {isThinking && <article className="ai-message is-assistant is-thinking"><span>AI</span><p><i /><i /><i /></p></article>}
+            {messages.map((message) => <article className={`ai-message is-${message.role}`} key={message.id}><span>{message.role === "assistant" ? "AI" : "你"}</span><div><p>{message.text}</p>{message.role === "assistant" && message.topic && <small className="ai-message-topic">回答范围 · {message.topic}</small>}</div></article>)}
+            {isThinking && <article className="ai-message is-assistant is-thinking"><span>AI</span><div><p><i /><i /><i /></p></div></article>}
           </div>
           <div className="ai-suggested-prompts">{prompts.map((prompt) => <button type="button" disabled={isThinking} onClick={() => sendQuestion(prompt)} key={prompt}>{prompt}</button>)}</div>
           <form className="ai-tutor-composer" onSubmit={submitQuestion}>
