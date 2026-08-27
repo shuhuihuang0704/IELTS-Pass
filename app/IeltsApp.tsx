@@ -2832,6 +2832,12 @@ type DictionaryResult = {
   }>;
 };
 
+type ConfusingWord = {
+  word: string;
+  partOfSpeech: string;
+  meaning: string;
+};
+
 async function lookupDictionaryWord(word: string): Promise<DictionaryResult[]> {
   const normalized = word.trim().toLowerCase();
   if (!normalized) return [];
@@ -2868,6 +2874,55 @@ function inferPartOfSpeech(word: string, meaning: string) {
   if (/(tion|sion|ment|ness|ity|ance|ence|ism|ship|ure|acy|ics|logy|graphy)$/.test(word)) return "n.";
   if (meaning.includes("的") || /(able|ible|al|ant|ent|ary|ic|ive|ous|ful|less|ory)$/.test(word)) return "adj.";
   return "n.";
+}
+
+const confusingWordGroups: ConfusingWord[][] = [
+  [{ word: "affect", partOfSpeech: "v.", meaning: "影响" }, { word: "effect", partOfSpeech: "n.", meaning: "影响；效果" }],
+  [{ word: "adapt", partOfSpeech: "v.", meaning: "适应；改编" }, { word: "adopt", partOfSpeech: "v.", meaning: "采用；收养" }],
+  [{ word: "advice", partOfSpeech: "n.", meaning: "建议" }, { word: "advise", partOfSpeech: "v.", meaning: "建议；劝告" }],
+  [{ word: "assure", partOfSpeech: "v.", meaning: "向某人保证" }, { word: "ensure", partOfSpeech: "v.", meaning: "确保" }, { word: "insure", partOfSpeech: "v.", meaning: "投保" }],
+  [{ word: "economic", partOfSpeech: "adj.", meaning: "经济的" }, { word: "economical", partOfSpeech: "adj.", meaning: "节约的；经济实惠的" }],
+  [{ word: "principal", partOfSpeech: "adj. / n.", meaning: "主要的；负责人" }, { word: "principle", partOfSpeech: "n.", meaning: "原则；原理" }],
+  [{ word: "complement", partOfSpeech: "v. / n.", meaning: "补充；相得益彰" }, { word: "compliment", partOfSpeech: "v. / n.", meaning: "赞美；称赞" }],
+  [{ word: "stationary", partOfSpeech: "adj.", meaning: "静止的" }, { word: "stationery", partOfSpeech: "n.", meaning: "文具" }],
+  [{ word: "historic", partOfSpeech: "adj.", meaning: "有历史意义的" }, { word: "historical", partOfSpeech: "adj.", meaning: "历史上的；与历史有关的" }],
+  [{ word: "later", partOfSpeech: "adv. / adj.", meaning: "稍后；后来的" }, { word: "latter", partOfSpeech: "adj. / n.", meaning: "后者；后半的" }],
+  [{ word: "loose", partOfSpeech: "adj.", meaning: "松的" }, { word: "lose", partOfSpeech: "v.", meaning: "失去；输掉" }],
+  [{ word: "rise", partOfSpeech: "v. / n.", meaning: "上升（不及物）" }, { word: "raise", partOfSpeech: "v.", meaning: "提高；举起（及物）" }],
+  [{ word: "borrow", partOfSpeech: "v.", meaning: "借入" }, { word: "lend", partOfSpeech: "v.", meaning: "借出" }],
+  [{ word: "emigrate", partOfSpeech: "v.", meaning: "移居国外（离开）" }, { word: "immigrate", partOfSpeech: "v.", meaning: "移民入境（进入）" }],
+  [{ word: "imply", partOfSpeech: "v.", meaning: "暗示（说话者）" }, { word: "infer", partOfSpeech: "v.", meaning: "推断（听者）" }],
+  [{ word: "precede", partOfSpeech: "v.", meaning: "先于" }, { word: "proceed", partOfSpeech: "v.", meaning: "继续进行" }],
+  [{ word: "personal", partOfSpeech: "adj.", meaning: "个人的；私人的" }, { word: "personnel", partOfSpeech: "n.", meaning: "全体人员；人事部门" }],
+  [{ word: "quiet", partOfSpeech: "adj.", meaning: "安静的" }, { word: "quite", partOfSpeech: "adv.", meaning: "相当；完全" }],
+  [{ word: "cite", partOfSpeech: "v.", meaning: "引用" }, { word: "site", partOfSpeech: "n.", meaning: "地点；网站" }, { word: "sight", partOfSpeech: "n.", meaning: "视力；景象" }],
+  [{ word: "conscience", partOfSpeech: "n.", meaning: "良心" }, { word: "conscious", partOfSpeech: "adj.", meaning: "有意识的；意识到的" }],
+  [{ word: "access", partOfSpeech: "n. / v.", meaning: "使用权；访问" }, { word: "assess", partOfSpeech: "v.", meaning: "评估" }],
+  [{ word: "perspective", partOfSpeech: "n.", meaning: "观点；视角" }, { word: "prospective", partOfSpeech: "adj.", meaning: "预期的；潜在的" }],
+  [{ word: "respectful", partOfSpeech: "adj.", meaning: "表示尊敬的" }, { word: "respective", partOfSpeech: "adj.", meaning: "各自的" }],
+  [{ word: "sensible", partOfSpeech: "adj.", meaning: "明智的；合理的" }, { word: "sensitive", partOfSpeech: "adj.", meaning: "敏感的；灵敏的" }],
+  [{ word: "effective", partOfSpeech: "adj.", meaning: "有效的" }, { word: "efficient", partOfSpeech: "adj.", meaning: "高效的" }],
+  [{ word: "especially", partOfSpeech: "adv.", meaning: "尤其" }, { word: "specially", partOfSpeech: "adv.", meaning: "专门地；特意地" }],
+  [{ word: "fewer", partOfSpeech: "det.", meaning: "更少的（可数）" }, { word: "less", partOfSpeech: "det.", meaning: "更少的（不可数）" }],
+  [{ word: "amount", partOfSpeech: "n.", meaning: "数量（不可数）" }, { word: "number", partOfSpeech: "n.", meaning: "数量（可数）" }],
+  [{ word: "beside", partOfSpeech: "prep.", meaning: "在……旁边" }, { word: "besides", partOfSpeech: "prep. / adv.", meaning: "除……之外；此外" }],
+  [{ word: "practice", partOfSpeech: "n.", meaning: "练习；实践" }, { word: "practise", partOfSpeech: "v.", meaning: "练习（英式拼写）" }],
+  [{ word: "device", partOfSpeech: "n.", meaning: "设备；装置" }, { word: "devise", partOfSpeech: "v.", meaning: "设计；想出" }],
+  [{ word: "breath", partOfSpeech: "n.", meaning: "呼吸；气息" }, { word: "breathe", partOfSpeech: "v.", meaning: "呼吸" }],
+  [{ word: "continual", partOfSpeech: "adj.", meaning: "反复发生的（有间断）" }, { word: "continuous", partOfSpeech: "adj.", meaning: "连续不断的" }],
+];
+
+const confusingWordIndex = new Map<string, ConfusingWord[]>(confusingWordGroups.flatMap((group) =>
+  group.map((current) => [current.word, group.filter((entry) => entry.word !== current.word)] as const),
+));
+
+function ConfusingWords({ word }: { word: string }) {
+  const entries = confusingWordIndex.get(word.toLowerCase());
+  if (!entries?.length) return null;
+  return <aside className="wordbook-confusables" aria-label={`${word} 的易混淆词`}>
+    <span>易混淆</span>
+    <div>{entries.map((entry) => <span className="wordbook-confusable" key={entry.word}><b>{entry.word}</b><small>{entry.partOfSpeech} · {entry.meaning}</small></span>)}</div>
+  </aside>;
 }
 
 const wordbookEntries: WordbookEntry[] = Array.from(new Map([
@@ -2944,9 +2999,9 @@ function WordbookView({ progress, onBack, updateProgress, onDictionarySearch }: 
           const isSaved = progress.notebook.some((item) => item.id === noteId);
           return <article className="wordbook-entry" key={entry.word}>
             <header><span>{entry.category}</span>{isReview ? <b className="needs-review">待复习</b> : isMastered ? <b className="is-mastered">已掌握</b> : <b>待学习</b>}</header>
-            <div className="wordbook-word"><div><h2>{entry.word}</h2><em>{entry.partOfSpeech}</em></div></div>
+            <div className="wordbook-word"><div><h2>{entry.word}</h2><em>{entry.partOfSpeech}</em></div><ConfusingWords word={entry.word} /></div>
             <p className="wordbook-meaning">{entry.meaning}</p>
-            <div className="wordbook-example"><span>例句 / 常用搭配</span><p>{entry.example}</p></div>
+            <div className="wordbook-example"><span>语境例句</span><p>{entry.example}</p></div>
             <footer className="wordbook-entry-actions"><button onClick={() => speak(entry.word, .76)} aria-label={`播放 ${entry.word}`}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `单词本 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></footer>
           </article>;
         })}
@@ -3000,7 +3055,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
           const isSaved = progress.notebook.some((item) => item.id === noteId);
           return <article className="dictionary-result is-local" key={entry.word}>
             <header><div><h3>{entry.word}</h3><span>{entry.partOfSpeech}</span></div><div><button onClick={() => speak(entry.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `核心词库 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
-            <div><section><b>中文意思</b><div><p className="dictionary-local-meaning">{entry.meaning}</p><blockquote>{entry.example}</blockquote><small>{entry.category}</small></div></section></div>
+            <div><section><b>中文意思</b><div><p className="dictionary-local-meaning">{entry.meaning}</p><blockquote>{entry.example}</blockquote><ConfusingWords word={entry.word} /><small>{entry.category}</small></div></section></div>
           </article>;
         })}
       </section>}

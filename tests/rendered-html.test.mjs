@@ -137,7 +137,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /我的单词本/);
   assert.match(app, /IELTS LEARNING LIBRARY/);
   assert.match(app, /搜索本单词本，或提交到全英语词典/);
-  assert.match(app, /例句 \/ 常用搭配/);
+  assert.match(app, /语境例句/);
   assert.match(app, /inferPartOfSpeech/);
   assert.match(app, /wordbookEntries/);
   assert.match(app, /搜索全部英语词典/);
@@ -186,6 +186,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.topbar-dictionary-search/);
   assert.match(styles, /\.dictionary-search-dialog/);
   assert.match(styles, /\.dictionary-local-results/);
+  assert.match(app, /confusingWordGroups/);
+  assert.match(app, /ConfusingWords word=\{entry\.word\}/);
+  assert.match(styles, /\.wordbook-confusable/);
+  assert.doesNotMatch(data, /In context,/);
   const dictionaryRoute = await readFile(new URL("../app/api/dictionary/route.ts", import.meta.url), "utf8");
   assert.match(dictionaryRoute, /api\.dictionaryapi\.dev/);
   assert.match(dictionaryRoute, /AbortSignal\.timeout\(6000\)/);

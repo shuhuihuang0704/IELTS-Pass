@@ -412,9 +412,54 @@ statistic|统计量；统计数据|AWL 高频 4|official statistics|AWL 学术�
 status|地位；状态|AWL 高频 4|social status|AWL 学术词族
 `.trim();
 
+function buildCuratedExample(word: string, collocation: string) {
+  const specialExamples: Record<string, string> = {
+    available: "Reliable data are readily available from the national statistics office.",
+    category: "Each response can fall into a different category.",
+    circumstance: "The policy may be justified under certain circumstances.",
+    constant: "The unemployment rate remained constant throughout the final quarter.",
+    context: "The behaviour has a different meaning in a social context.",
+    contrast: "The second result stands in sharp contrast to the first.",
+    define: "Researchers should clearly define each term before collecting data.",
+    despite: "Despite the higher cost, most participants supported the new programme.",
+    evident: "The difference became evident after the final set of interviews.",
+    emerge: "A clear pattern emerges when the figures are compared by age.",
+    hence: "The sample was too small, hence the need for further research.",
+    imply: "The results imply that access to public transport affects employment.",
+    implicate: "Several industries were implicated in the rise in carbon emissions.",
+    indicate: "The results indicate that the policy reduced household waste.",
+    instance: "For instance, cycling can reduce congestion in city centres.",
+    injure: "Unsafe equipment can seriously injure workers on a construction site.",
+    normal: "Public transport services returned to normal after the storm.",
+    occur: "Small variations occur naturally in a sample of this size.",
+    overall: "Overall, the trend shows a gradual rise in public transport use.",
+    percent: "Twenty percent of participants preferred the second option.",
+    period: "The figures rose steadily over a long period.",
+    prior: "Participants received the instructions prior to the experiment.",
+    proportion: "A large proportion of respondents supported the proposal.",
+    range: "The survey included a wide range of age groups.",
+    reside: "Most participants reside in urban areas near the university.",
+    sequence: "The main events are presented in chronological sequence.",
+    similar: "The results from the two regions were broadly similar.",
+  };
+  if (specialExamples[word]) return specialExamples[word];
+
+  const verbStarters = new Set("achieve acquire adapt address administrate administer affect analyse assess assist assume automate calculate carry collect comment communicate compensate complete concentrate conclude conduct confer consist constitute constrain construct consume contaminate contribute convene coordinate create deduce demonstrate derive develop distribute document dominate earn educate eliminate ensure equate establish estimate evaluate exclude export fall focus fund give have identify illustrate implement impose improve increase integrate interact interpret investigate invest involve justify label legislate locate maintain manufacture maximise motivate negate obtain occupy participate perceive perform place proceed promote protect provide publish purchase react receive recycle reduce register regulate rely remain remove replace require reside resolve respond restrict retain return save secure seek select sign specify support test transfer vary".split(" "));
+  const firstWord = collocation.toLowerCase().split(/\s+/)[0];
+  if (verbStarters.has(firstWord)) {
+    const completedCollocation = /\b(from|to|into)$/.test(collocation)
+      ? `${collocation} the proposed programme`
+      : /\bthat$/.test(collocation)
+        ? `${collocation} the policy was effective`
+        : collocation;
+    return `The research team plans to ${completedCollocation} before publishing its final report.`;
+  }
+  return `The report highlights ${collocation} as an important point for further discussion.`;
+}
+
 const curatedDailyVocabulary = dailyVocabularySource.split("\n").map((line) => {
   const [word, meaning, category, collocation, source] = line.split("|");
-  return { word, meaning, category, collocation, source: source ?? "IELTS 主题独立整理", partOfSpeech: "", example: collocation };
+  return { word, meaning, category, collocation, source: source ?? "IELTS 主题独立整理", partOfSpeech: "", example: buildCuratedExample(word, collocation) };
 });
 
 const expandedSourceMeta = {
@@ -423,8 +468,40 @@ const expandedSourceMeta = {
   g: { category: "阅读拓展", source: "NGSL-GR 1.0 · CC BY-SA 4.0" },
 } as const;
 
+function stableExampleIndex(word: string, size: number) {
+  return [...word].reduce((total, character) => total + character.charCodeAt(0), 0) % size;
+}
+
+function buildExpandedExample(word: string, partOfSpeech: string) {
+  const templates = partOfSpeech.startsWith("v")
+    ? [
+        `The study explains why communities may ${word} when conditions change.`,
+        `Researchers observed how people ${word} in response to the new policy.`,
+        `The report considers whether organisations should ${word} in the future.`,
+      ]
+    : partOfSpeech.startsWith("adj")
+      ? [
+          `The researchers found a ${word} difference between the two groups.`,
+          `This issue is particularly ${word} in rapidly growing cities.`,
+          `A more ${word} approach could improve the final outcome.`,
+        ]
+      : partOfSpeech.startsWith("adv")
+        ? [
+            `The figures changed ${word} over the ten-year period.`,
+            `The two groups responded ${word} to the same situation.`,
+            `The report explains the final trend ${word}.`,
+          ]
+        : [
+            `The report identifies ${word} as an important factor in the final outcome.`,
+            `Public discussion about ${word} has increased in recent years.`,
+            `The study examines the role of ${word} in modern society.`,
+          ];
+  return templates[stableExampleIndex(word, templates.length)];
+}
+
 const preparedExpandedVocabulary = expandedVocabularyRows.map(([word, meaning, partOfSpeech, definition, sourceCode]) => {
-  const example = `In context, “${word}” means ${definition}.`;
+  void definition;
+  const example = buildExpandedExample(word, partOfSpeech);
   return { word, meaning, partOfSpeech, example, collocation: example, ...expandedSourceMeta[sourceCode] };
 });
 
