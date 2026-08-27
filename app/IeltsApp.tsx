@@ -2906,6 +2906,7 @@ type WordbookEntry = {
 type DictionaryResult = {
   word: string;
   phonetic?: string;
+  chineseMeaning?: string | null;
   meanings: Array<{
     partOfSpeech: string;
     definitions: Array<{ definition: string; example?: string }>;
@@ -3125,9 +3126,9 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
 
   return <div className="dictionary-search-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <section className="dictionary-search-dialog" role="dialog" aria-modal="true" aria-label="全英语词典搜索">
-      <header><div><span>GLOBAL ENGLISH DICTIONARY</span><h2>查单词与中文释义</h2><p>核心词库优先显示中文意思；词库外单词继续查询词性、音标和英文释义。</p></div><button onClick={onClose} aria-label="关闭词典">×</button></header>
+      <header><div><span>GLOBAL ENGLISH DICTIONARY</span><h2>查单词与中文释义</h2><p>输入英文即可先看中文意思，再查看词性、音标、英文释义和例句。</p></div><button onClick={onClose} aria-label="关闭词典">×</button></header>
       <form onSubmit={(event) => { event.preventDefault(); const term = query.trim(); if (!term) return; const hasLocalResult = findLocalDictionaryEntries(term).length > 0; setLoading(!hasLocalResult); setError(""); setResults([]); setRequestedQuery(term); setRequestId((current) => current + 1); }}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入英语单词或中文意思" aria-label="输入英语单词" /><button type="submit" disabled={loading}>{loading ? "查询中…" : "查词"}</button></form>
-      <p className="dictionary-search-source">本地 3,600 词无需联网并显示中文；词库外结果由开放英语词典实时提供。</p>
+      <p className="dictionary-search-source">本地 3,600 词使用现有中文词库；词库外结果由开放英语词典与中文翻译服务实时提供。</p>
       {localResults.length > 0 && <section className="dictionary-local-results" aria-label="本地词库释义">
         <header><strong>{localResults.length === 1 ? "中文释义" : `找到 ${localResults.length} 个本地词条`}</strong><span>IELTS PASS CORE LIBRARY</span></header>
         {localResults.map((entry) => {
@@ -3143,11 +3144,12 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
       {results.map((result, resultIndex) => {
         const firstMeaning = result.meanings[0];
         const firstDefinition = firstMeaning?.definitions[0];
+        const chineseMeaning = result.chineseMeaning?.trim();
         const noteId = `word:${result.word.toLowerCase()}`;
         const isSaved = progress.notebook.some((item) => item.id === noteId);
         return <article className="dictionary-result" key={`${result.word}-${resultIndex}`}>
-          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
-          <div>{result.meanings.slice(0, 4).map((meaning, meaningIndex) => <section key={`${meaning.partOfSpeech}-${meaningIndex}`}><b>{meaning.partOfSpeech}</b><ol>{meaning.definitions.slice(0, 3).map((definition, definitionIndex) => <li key={definitionIndex}><p>{definition.definition}</p>{definition.example && <blockquote>{definition.example}</blockquote>}</li>)}</ol></section>)}</div>
+          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+          <div>{chineseMeaning ? <section className="dictionary-chinese-meaning"><b>中文意思</b><p>{chineseMeaning}</p></section> : <section className="dictionary-chinese-meaning is-unavailable"><b>中文意思</b><p>中文翻译暂时不可用，请稍后重试。</p></section>}<div className="dictionary-english-heading">英文释义与例句</div>{result.meanings.slice(0, 4).map((meaning, meaningIndex) => <section key={`${meaning.partOfSpeech}-${meaningIndex}`}><b>{meaning.partOfSpeech}</b><ol>{meaning.definitions.slice(0, 3).map((definition, definitionIndex) => <li key={definitionIndex}><p>{definition.definition}</p>{definition.example && <blockquote>{definition.example}</blockquote>}</li>)}</ol></section>)}</div>
         </article>;
       })}
     </section>

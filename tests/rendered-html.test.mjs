@@ -152,7 +152,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /开放英语词典/);
   assert.match(app, /findLocalDictionaryEntries/);
   assert.match(app, /查单词与中文释义/);
-  assert.match(app, /本地 3,600 词无需联网并显示中文/);
+  assert.match(app, /本地 3,600 词使用现有中文词库/);
   assert.match(app, /单词本 ·/);
   assert.match(app, /每日学习记录/);
   assert.match(app, /继续增加学习/);
@@ -199,7 +199,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(data, /In context,/);
   const dictionaryRoute = await readFile(new URL("../app/api/dictionary/route.ts", import.meta.url), "utf8");
   assert.match(dictionaryRoute, /api\.dictionaryapi\.dev/);
+  assert.match(dictionaryRoute, /api\.mymemory\.translated\.net/);
+  assert.match(dictionaryRoute, /langpair=en%7Czh-CN/);
   assert.match(dictionaryRoute, /AbortSignal\.timeout\(6000\)/);
+  assert.match(app, /result\.chineseMeaning/);
+  assert.match(app, /中文翻译暂时不可用/);
+  assert.match(styles, /\.dictionary-chinese-meaning/);
   assert.match(app, /readingSourceEvidence/);
   assert.match(app, /原文荧光定位/);
   assert.match(app, /荧光笔定位原文/);

@@ -1061,6 +1061,12 @@ button { cursor: pointer; }
 .dictionary-result>header>div:last-child { display:flex; gap:6px; }
 .dictionary-result>header button { min-height:32px; padding:0 10px; border:0; border-radius:9px; color:#554ab8; background:#ece9f8; font-size:8px; font-weight:700; }
 .dictionary-result>header button.is-saved { color:#287154; background:#dff1e8; }
+.dictionary-result>div>.dictionary-chinese-meaning { margin-top:13px; padding:12px 13px; display:grid; grid-template-columns:80px 1fr; gap:12px; border:1px solid #dcd6f0; border-radius:13px; background:#f8f6ff; }
+.dictionary-result>div>.dictionary-chinese-meaning>b { color:var(--violet); font-size:9px; }
+.dictionary-result>div>.dictionary-chinese-meaning>p { margin:0; color:#211d28; font-size:15px; font-weight:680; line-height:1.45; }
+.dictionary-result>div>.dictionary-chinese-meaning.is-unavailable { border-color:#eadfd9; background:#fff9f5; }
+.dictionary-result>div>.dictionary-chinese-meaning.is-unavailable>p { color:#8c7469; font-size:10px; font-weight:500; }
+.dictionary-english-heading { margin-top:14px; padding-bottom:7px; border-bottom:1px solid #ece7ee; color:#8a8390; font-size:8px; font-weight:750; letter-spacing:.5px; }
 .dictionary-result>div>section { margin-top:13px; display:grid; grid-template-columns:80px 1fr; gap:12px; }
 .dictionary-result>div>section>b { color:var(--violet); font-size:9px; }
 .dictionary-result ol { margin:0; padding-left:20px; }
