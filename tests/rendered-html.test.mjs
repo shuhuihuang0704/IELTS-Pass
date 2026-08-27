@@ -264,6 +264,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /所在完整 Task 音频/);
   assert.doesNotMatch(app, /segmentIndex: Math\.max\(0, answers\.findIndex/);
   assert.match(app, /答案与易混淆音频/);
+  assert.match(app, /aria-label="播放听力片段"/);
+  assert.match(app, /"▶ 播放"/);
+  assert.doesNotMatch(app, /播放 Q\$\{context\.questionNumber\} 答案与易混淆语境/);
   assert.doesNotMatch(app, /只回听这道题答案出现前后的片段/);
   assert.match(app, /notebookListeningSelections/);
   assert.match(app, /notebook-listening-options/);
