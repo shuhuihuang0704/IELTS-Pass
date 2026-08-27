@@ -8,15 +8,16 @@ import {
   getDailyListeningVocabulary,
   getDailyVocabulary,
   listeningCorpusMeta,
-  listeningExercise,
-  listeningReviewEvidence,
-  readingExercise,
-  readingReviewEvidence,
   skills,
-  speakingScenario,
   vocabulary,
   type Skill,
 } from "./learning-data";
+import {
+  getDailyListeningExercise,
+  getDailyReadingExercise,
+  getDailySpeakingScenario,
+  type ListeningEvidenceKey,
+} from "./daily-practice-data";
 import {
   completionPercent,
   dailyConnectedSpeechTarget,
@@ -883,7 +884,7 @@ export default function IeltsApp() {
             percent={percent}
             completedCount={completedCount}
             progress={progress}
-            onStart={() => { const nextSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]) ?? skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary"; openSkill(nextSkill, progress.carryoverTaskDates[nextSkill] ?? localDayKey()); }}
+            onStart={() => { const nextSkill = skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary"; openSkill(nextSkill, localDayKey()); }}
             onOpenSkill={openSkill}
             onNavigate={setView}
             onDictionarySearch={openDictionarySearch}
@@ -897,7 +898,7 @@ export default function IeltsApp() {
             activeSkill={activeSkill}
             contentDate={activeContentDate}
             progress={progress}
-            onSelectSkill={(skill) => openSkill(skill, progress.carryoverTaskDates[skill] ?? localDayKey())}
+            onSelectSkill={(skill) => openSkill(skill, activeContentDate)}
             onComplete={completeSkill}
             updateProgress={updateProgress}
           />
@@ -1009,9 +1010,7 @@ function TodayView({
   const planFocus = targetPlanFocus(progress.targetBandScore);
   const dailyMinutes = targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore);
   const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
-  const carryoverSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]);
-  const nextSkill = skills.find((skill) => skill.id === carryoverSkill)
-    ?? skills.find((skill) => !progress.completed[skill.id])
+  const nextSkill = skills.find((skill) => !progress.completed[skill.id])
     ?? skills[0];
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
   const weekKey = localWeekKey();
@@ -1041,9 +1040,9 @@ function TodayView({
               <button
                 className={`path-step ${progress.completed[skill.id] ? "is-done" : ""} ${nextSkill.id === skill.id ? "is-current" : ""}`}
                 key={skill.id}
-                onClick={() => onOpenSkill(skill.id, progress.carryoverTaskDates[skill.id] ?? localDayKey())}
+                onClick={() => onOpenSkill(skill.id, localDayKey())}
               >
-                <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{progress.carryoverTasks.includes(skill.id) ? "昨日未完成" : skill.id === "vocabulary" ? `${Math.ceil(vocabularyTarget * .15)} 分钟` : skill.duration}</small>
+                <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{skill.id === "vocabulary" ? `${Math.ceil(vocabularyTarget * .15)} 分钟` : skill.duration}</small>
               </button>
             ))}
           </div>
@@ -1058,7 +1057,7 @@ function TodayView({
           <div className="progress-intro">
             <span>今日完成度</span><strong>{percent}<small>%</small></strong>
             <div className="progress-track"><i style={{ width: `${percent}%` }} /></div>
-            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : progress.carryoverTasks.includes(nextSkill.id) ? `已完成 ${completedCount} / 4 项，先补做昨天的${nextSkill.id === "vocabulary" ? "词汇" : nextSkill.label}。` : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.id === "vocabulary" ? `${vocabularyTarget} 词` : nextSkill.label}。`}</p>
+            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.id === "vocabulary" ? `${vocabularyTarget} 词` : nextSkill.label}。`}</p>
           </div>
           <button className="streak-row" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <button className="memory-row" onClick={() => onNavigate("review")}>
@@ -2894,6 +2893,9 @@ function DailyVocabularySprint({
 }
 
 function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string; onComplete: (score: number, fullyAnswered: boolean) => void }) {
+  const listeningSet = getDailyListeningExercise(exerciseDate);
+  const listeningExercise = listeningSet.exercise;
+  const listeningReviewEvidence = listeningSet.evidence;
   const [formAnswers, setFormAnswers] = useState<Record<string, string>>({});
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
@@ -2970,7 +2972,7 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
     && listeningExercise.multipleSelect.answers.every((answer) => selectedFacilities.includes(answer));
 
   const personalisedListeningFeedback = (
-    id: keyof typeof listeningReviewEvidence,
+    id: ListeningEvidenceKey,
     userAnswer: string,
     correctAnswer: string,
   ) => {
@@ -3015,7 +3017,7 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
   };
 
   const renderListeningAnalysis = (
-    id: keyof typeof listeningReviewEvidence,
+    id: ListeningEvidenceKey,
     number: string,
     userAnswer: string,
     correctAnswer: string,
@@ -3080,11 +3082,11 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>{exerciseDate} · Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>正式考试录音只播放一次；Demo 可以重播以便精听复盘。</p>
         <div className="listening-controls">
-          <audio ref={listeningAudio} src="/listening-section-1-v2.wav?voices=uk-female-male-v3" preload="metadata" onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src="/listening-section-1.vtt?voices=uk-female-male-v3" srcLang="en" label="English" /></audio>
+          <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${playerState}`}>
             <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
-            <span className="listening-player-copy"><strong>{playerState === "playing" ? "正在播放 · 英国女接待员 × 英国男学生" : playerState === "paused" ? "已暂停 · 英国女接待员 × 英国男学生" : "播放双人英式完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · 男女声线清晰区分 · IELTS 自然语速</small></span>
+            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : "播放双人英式完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · 男女声线清晰区分 · IELTS 自然语速</small></span>
           </div>
           <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
         </div>
@@ -3156,6 +3158,7 @@ function SpeakingPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: () => void;
 }) {
+  const speakingScenario = getDailySpeakingScenario(exerciseDate);
   type PracticeRecognitionEvent = { results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> };
   type PracticeRecognitionErrorEvent = { error?: string };
   type PracticeRecognition = {
@@ -3170,7 +3173,8 @@ function SpeakingPractice({
     onend: (() => void) | null;
   };
   type PracticeRecognitionConstructor = new () => PracticeRecognition;
-  const questionIndex = Math.min(progress.speakingPart3Turns, speakingScenario.questions.length - 1);
+  const completedTurns = progress.speakingTurnsByDate[exerciseDate] ?? 0;
+  const questionIndex = Math.min(completedTurns, speakingScenario.questions.length - 1);
   const [draft, setDraft] = useState("");
   const [micStatus, setMicStatus] = useState("");
   const [micState, setMicState] = useState<"idle" | "listening">("idle");
@@ -3255,7 +3259,7 @@ function SpeakingPractice({
       playExaminerPrompt(reply);
       return;
     }
-    const nextTurns = progress.speakingPart3Turns + 1;
+    const nextTurns = completedTurns + 1;
     const finished = nextTurns >= speakingScenario.questions.length;
     const reply = finished
       ? "Thank you. That is the end of the speaking test."
@@ -3264,7 +3268,11 @@ function SpeakingPractice({
     setAnswerFeedback(hasDevelopment
       ? `本轮完成：${wordCount} 词，并使用了展开信号。继续保持观点—原因—例子的结构。`
       : `本轮完成：${wordCount} 词。下一题可加入 because、for example 或 however，让论证更清楚。`);
-    updateProgress((current) => ({ ...current, speakingPart3Turns: current.speakingPart3Turns + 1 }));
+    updateProgress((current) => ({
+      ...current,
+      speakingPart3Turns: nextTurns,
+      speakingTurnsByDate: { ...current.speakingTurnsByDate, [exerciseDate]: nextTurns },
+    }));
     setActiveExaminerPrompt(reply);
     setShowExaminerSubtitles(false);
     playExaminerPrompt(reply);
@@ -3331,7 +3339,7 @@ function SpeakingPractice({
   return (
     <div className="exercise-layout speaking-layout is-single-column">
       <div className="exercise-main conversation-panel">
-        <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{exerciseDate} · {Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
+        <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{exerciseDate} · {Math.min(completedTurns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
         <div className="speaking-audio-controls">
           <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => playExaminerPrompt(activeExaminerPrompt) : startSpeaking}>{speakingStarted ? "↺ 重听当前问题" : "▶ 开始口语模拟"}</button>
           <button disabled={examinerAudioState === "idle"} onClick={toggleExaminerPause}>{examinerAudioState === "paused" ? "▶ 继续播放" : "Ⅱ 暂停"}</button>
@@ -3349,16 +3357,19 @@ function SpeakingPractice({
 }
 
 function ReadingPractice({ exerciseDate, onComplete }: { exerciseDate: string; onComplete: (score: number, fullyAnswered: boolean) => void }) {
+  const readingSet = getDailyReadingExercise(exerciseDate);
+  const readingExercise = readingSet.exercise;
+  const readingReviewEvidence = readingSet.evidence;
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
-  const answerKey = useMemo(() => Object.fromEntries([
+  const answerKey = Object.fromEntries([
     ...readingExercise.matchingHeadings,
     ...readingExercise.matchingInformation,
     ...readingExercise.multipleChoice,
     ...readingExercise.trueFalseNotGiven,
     ...readingExercise.summary.questions,
-  ].map((question) => [question.id, question.answer])), []);
+  ].map((question) => [question.id, question.answer]));
   const totalQuestions = Object.keys(answerKey).length;
   const answeredCount = Object.keys(answers).filter((id) => answers[id]).length;
 

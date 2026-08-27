@@ -27,9 +27,10 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
 });
 
 test("ships all four learning modes and persistent progress", async () => {
-  const [app, data, expandedVocabulary, listeningCorpus, notices, state, styles] = await Promise.all([
+  const [app, data, dailyPractice, expandedVocabulary, listeningCorpus, notices, state, styles] = await Promise.all([
     readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/daily-practice-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/vocabulary-expanded.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/listening-corpus.ts", import.meta.url), "utf8"),
     readFile(new URL("../THIRD_PARTY_NOTICES.md", import.meta.url), "utf8"),
@@ -116,6 +117,11 @@ test("ships all four learning modes and persistent progress", async () => {
     /const dailySkillOrder: Skill\[\] = \["vocabulary", "listening", "reading", "speaking"\]/,
   );
   assert.match(state, /const carryoverTasks = dailySkillOrder\.filter/);
+  assert.match(state, /speakingTurnsByDate: Record<string, number>/);
+  assert.match(app, /progress\.speakingTurnsByDate\[exerciseDate\]/);
+  assert.match(app, /openSkill\(nextSkill, localDayKey\(\)\)/);
+  assert.match(app, /onClick=\{\(\) => onOpenSkill\(skill\.id, localDayKey\(\)\)\}/);
+  assert.match(app, /onSelectSkill=\{\(skill\) => openSkill\(skill, activeContentDate\)\}/);
   assert.match(state, /dailyVocabularyCompleted/);
   assert.match(state, /dailyDictationCompleted/);
   assert.match(state, /dailyDictationSeen/);
@@ -150,9 +156,14 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(data, /listeningReviewEvidence/);
   assert.match(data, /为什么|怎么改进|修正信息干扰|多选题要同时核对限定词/);
   assert.match(data, /export const connectedSpeechPhrases = listeningCorpusPhrases\.map/);
-  assert.match(app, /listening-section-1-v2\.wav/);
-  assert.match(app, /英国女接待员 × 英国男学生/);
-  assert.match(app, /voices=uk-female-male-v3/);
+  assert.match(dailyPractice, /listening-section-1-v2\.wav/);
+  assert.match(dailyPractice, /listening-arts-centre\.wav/);
+  assert.match(dailyPractice, /listening-wildlife-volunteer\.wav/);
+  assert.match(dailyPractice, /英国女接待员 × 英国男学生/);
+  assert.match(dailyPractice, /dailyRotationIndex/);
+  assert.match(dailyPractice, /getDailyListeningExercise/);
+  assert.match(dailyPractice, /getDailyReadingExercise/);
+  assert.match(dailyPractice, /getDailySpeakingScenario/);
   assert.match(app, /type IeltsVoiceRole = "examiner" \| "female" \| "male"/);
   assert.match(app, /listening-scrubber/);
   assert.match(app, /currentTime = nextTime/);
@@ -571,9 +582,15 @@ test("ships all four learning modes and persistent progress", async () => {
 test("includes the finished social preview and removes starter preview files", async () => {
   const image = new URL("../public/og.png", import.meta.url);
   const listeningAudio = new URL("../public/listening-section-1.wav", import.meta.url);
+  const artsCentreAudio = new URL("../public/listening-arts-centre.wav", import.meta.url);
+  const wildlifeAudio = new URL("../public/listening-wildlife-volunteer.wav", import.meta.url);
   await access(image);
   assert.ok((await stat(image)).size > 100_000);
   await access(listeningAudio);
   assert.ok((await stat(listeningAudio)).size > 1_000_000);
+  await access(artsCentreAudio);
+  assert.ok((await stat(artsCentreAudio)).size > 1_000_000);
+  await access(wildlifeAudio);
+  assert.ok((await stat(wildlifeAudio)).size > 1_000_000);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });

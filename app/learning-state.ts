@@ -72,6 +72,7 @@ export type LearningProgress = {
   readingScore: number | null;
   speakingTurns: number;
   speakingPart3Turns: number;
+  speakingTurnsByDate: Record<string, number>;
   officialPracticeCompleted: string[];
   officialTaskResults: Record<string, OfficialTaskResult>;
   officialTaskAttemptHistory: Record<string, OfficialTaskResult[]>;
@@ -277,6 +278,7 @@ export const defaultProgress: LearningProgress = {
   readingScore: null,
   speakingTurns: 0,
   speakingPart3Turns: 0,
+  speakingTurnsByDate: {},
   officialPracticeCompleted: [],
   officialTaskResults: {},
   officialTaskAttemptHistory: {},
@@ -502,6 +504,11 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     readingScore: isCurrentDay ? (stored.readingScore ?? null) : null,
     speakingTurns: isCurrentDay ? (stored.speakingTurns ?? 0) : 0,
     speakingPart3Turns: isCurrentDay ? (stored.speakingPart3Turns ?? 0) : 0,
+    speakingTurnsByDate: stored.speakingTurnsByDate && typeof stored.speakingTurnsByDate === "object"
+      ? stored.speakingTurnsByDate
+      : isCurrentDay && (stored.speakingPart3Turns ?? 0) > 0
+        ? { [today]: stored.speakingPart3Turns ?? 0 }
+        : {},
     officialPracticeCompleted: Array.isArray(stored.officialPracticeCompleted) ? stored.officialPracticeCompleted : [],
     officialTaskResults: stored.officialTaskResults && typeof stored.officialTaskResults === "object" ? stored.officialTaskResults : {},
     officialTaskAttemptHistory: stored.officialTaskAttemptHistory && typeof stored.officialTaskAttemptHistory === "object" ? stored.officialTaskAttemptHistory : {},
