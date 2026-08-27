@@ -133,7 +133,7 @@ export async function POST(request: Request) {
       const identifier = normalizeIdentifier(provider, body.identifier);
       const row = await authDb().prepare("SELECT id, provider, identifier, password_hash AS passwordHash, display_name AS displayName, avatar_url AS avatarUrl, target_band_score AS targetBandScore, study_plan_days AS studyPlanDays, exam_date AS examDate, progress_json AS progressJson FROM users WHERE provider = ? AND identifier = ?")
         .bind(provider, identifier).first<Record<string, unknown>>();
-      if (!row || !await verifyPassword(body.password, typeof row.passwordHash === "string" ? row.passwordHash : null)) return errorResponse(new Error("账号或密码不正确"), 401);
+      if (!row || !await verifyPassword(body.password, typeof row.passwordHash === "string" ? row.passwordHash : null)) return errorResponse(new Error("手机号、Email 或密码错误，无法登录"), 401);
       const cookie = await createSession(request, String(row.id));
       return json({ ...publicAuthPayload(row as never), isNew: false, wechatEnabled: wechatIsConfigured() }, 200, { "set-cookie": cookie });
     }

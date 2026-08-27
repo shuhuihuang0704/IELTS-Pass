@@ -70,6 +70,7 @@ export default function AuthFlow({
       if (!response.ok || !result.user) throw new Error(result.message || "登录失败，请稍后重试");
       onAuthenticated(result);
     } catch (error) {
+      if (mode === "login") setPassword("");
       setMessage(error instanceof Error ? error.message : "登录失败，请稍后重试");
     } finally {
       setSubmitting(false);
