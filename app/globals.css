@@ -1030,7 +1030,8 @@ button { cursor: pointer; }
 .notebook-reading-review .is-options li p { margin:0; color:#5a545e; }
 .notebook-reading-review .is-options li small { flex:0 0 auto; padding:3px 6px; border-radius:6px; color:#5145b1; background:#ece9f8; font-size:7px; font-weight:750; }
 .notebook-reading-review .is-options li.is-user-answer { border-color:#cfc9ef; background:#f6f4ff; }
-.notebook-reading-review .is-location { background:#fffcef; border-color:#ebe2b8; }
+.notebook-reading-review .is-source { background:#fffcef; border-color:#ebe2b8; }
+.notebook-reading-review .is-source>small { display:block; margin-top:7px; color:#8c835f; font-size:8px; line-height:1.45; }
 .notebook-reading-review blockquote { margin:8px 0 0; padding:8px 10px; border-left:3px solid #d9c65a; color:#625c48; background:rgba(255,255,255,.72); font-size:9px; line-height:1.55; }
 .notebook-reading-review .is-correct-answer button { width:100%; min-height:42px; margin-top:7px; padding:7px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; border:0; border-radius:9px; color:#5145b1; background:#ece9f8; text-align:left; }
 .notebook-reading-review .is-correct-answer button i { letter-spacing:3px; font-style:normal; }
