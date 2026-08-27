@@ -23,6 +23,7 @@ import {
   dailyDictationTarget,
   dailyReviewTarget,
   dailyVocabularyTarget,
+  dayKeyAfter,
   defaultProgress,
   localDayKey,
   localWeekKey,
@@ -748,6 +749,7 @@ function WritingFeedbackPanel({ response, minimumWords }: { response: string; mi
 export default function IeltsApp() {
   const [view, setView] = useState<View>("today");
   const [activeSkill, setActiveSkill] = useState<Skill>("vocabulary");
+  const [activeContentDate, setActiveContentDate] = useState(localDayKey());
   const [activeOfficialSessionId, setActiveOfficialSessionId] = useState(officialTestSchedule[0].id);
   const [progress, setProgress] = useState<LearningProgress>(defaultProgress);
   const progressRef = useRef<LearningProgress>(defaultProgress);
@@ -827,10 +829,12 @@ export default function IeltsApp() {
 
   const completeSkill = (skill: Skill, minutes: number) => {
     updateProgress((current) => {
+      const remainingCarryoverDates = Object.fromEntries(Object.entries(current.carryoverTaskDates).filter(([skillId]) => skillId !== skill)) as Partial<Record<Skill, string>>;
       const next = {
         ...current,
         completed: { ...current.completed, [skill]: true },
         carryoverTasks: current.carryoverTasks.filter((item) => item !== skill),
+        carryoverTaskDates: remainingCarryoverDates,
       };
       if (current.completed[skill]) return next;
       return recordStudyActivity(next, {
@@ -844,8 +848,9 @@ export default function IeltsApp() {
   const percent = completionPercent(progress);
   const completedCount = Object.values(progress.completed).filter(Boolean).length;
 
-  const openSkill = (skill: Skill) => {
+  const openSkill = (skill: Skill, contentDate = localDayKey()) => {
     setActiveSkill(skill);
+    setActiveContentDate(contentDate);
     setView("skill");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -865,6 +870,7 @@ export default function IeltsApp() {
     window.localStorage.removeItem(storageKey);
     progressRef.current = defaultProgress;
     setProgress(defaultProgress);
+    setActiveContentDate(localDayKey());
     setView("today");
   };
 
@@ -877,7 +883,7 @@ export default function IeltsApp() {
             percent={percent}
             completedCount={completedCount}
             progress={progress}
-            onStart={() => openSkill(progress.carryoverTasks.find((skill) => !progress.completed[skill]) ?? skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary")}
+            onStart={() => { const nextSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]) ?? skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary"; openSkill(nextSkill, progress.carryoverTaskDates[nextSkill] ?? localDayKey()); }}
             onOpenSkill={openSkill}
             onNavigate={setView}
             onDictionarySearch={openDictionarySearch}
@@ -889,8 +895,9 @@ export default function IeltsApp() {
         {view === "skill" && (
           <SceneView
             activeSkill={activeSkill}
+            contentDate={activeContentDate}
             progress={progress}
-            onSelectSkill={setActiveSkill}
+            onSelectSkill={(skill) => openSkill(skill, progress.carryoverTaskDates[skill] ?? localDayKey())}
             onComplete={completeSkill}
             updateProgress={updateProgress}
           />
@@ -990,7 +997,7 @@ function TodayView({
   completedCount: number;
   progress: LearningProgress;
   onStart: () => void;
-  onOpenSkill: (skill: Skill) => void;
+  onOpenSkill: (skill: Skill, contentDate?: string) => void;
   onNavigate: (view: View) => void;
   onDictionarySearch: (query?: string) => void;
 }) {
@@ -1020,7 +1027,7 @@ function TodayView({
       {progress.carryoverTasks.length > 0 && (
         <section className="carryover-strip">
           <div><span>ROLLED OVER FROM YESTERDAY</span><strong>先补完昨天没有完成的任务</strong><p>补做任务不会自动打勾；完成完整专项后才会从这里移除。</p></div>
-          <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); return skill ? <button onClick={() => onOpenSkill(skill.id)} key={skill.id}><span>{skill.short}</span><strong>{skill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : "昨日未完成 →"}</small></button> : null; })}</div>
+          <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); const sourceDate = progress.carryoverTaskDates[skillId] ?? dayKeyAfter(-1); return skill ? <button onClick={() => onOpenSkill(skill.id, sourceDate)} key={skill.id}><span>{skill.short}</span><strong>{skill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : `${sourceDate} 未完成 →`}</small></button> : null; })}</div>
         </section>
       )}
       <div className="dashboard-grid">
@@ -1034,7 +1041,7 @@ function TodayView({
               <button
                 className={`path-step ${progress.completed[skill.id] ? "is-done" : ""} ${nextSkill.id === skill.id ? "is-current" : ""}`}
                 key={skill.id}
-                onClick={() => onOpenSkill(skill.id)}
+                onClick={() => onOpenSkill(skill.id, progress.carryoverTaskDates[skill.id] ?? localDayKey())}
               >
                 <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{progress.carryoverTasks.includes(skill.id) ? "昨日未完成" : skill.id === "vocabulary" ? `${Math.ceil(vocabularyTarget * .15)} 分钟` : skill.duration}</small>
               </button>
@@ -2303,12 +2310,14 @@ function AiTutorView({ progress }: { progress: LearningProgress }) {
 
 function SceneView({
   activeSkill,
+  contentDate,
   progress,
   onSelectSkill,
   onComplete,
   updateProgress,
 }: {
   activeSkill: Skill;
+  contentDate: string;
   progress: LearningProgress;
   onSelectSkill: (skill: Skill) => void;
   onComplete: (skill: Skill, minutes: number) => void;
@@ -2317,6 +2326,7 @@ function SceneView({
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
   const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
+  const isCarryoverContent = contentDate !== localDayKey() && progress.carryoverTasks.includes(activeSkill);
   const [vocabularyMode, setVocabularyMode] = useState<"daily" | "typing" | "phrases">("daily");
   const vocabularyHeader = vocabularyMode === "typing"
     ? { eyebrow: "SCENE DICTATION", title: `每天 ${dictationTarget} 个听写词，`, accent: "听清再写准。" }
@@ -2326,7 +2336,7 @@ function SceneView({
   const headers: Record<Skill, { eyebrow: string; title: string; accent: string }> = {
     vocabulary: vocabularyHeader,
     listening: { eyebrow: "LISTENING · SECTION 1", title: "听清细节，", accent: "再做选择。" },
-    speaking: { eyebrow: "SPEAKING · PART 3", title: "像面对考官一样，", accent: "展开观点。" },
+    speaking: { eyebrow: "SPEAKING PRACTICE", title: "像面对考官一样，", accent: "展开观点。" },
     reading: { eyebrow: "ACADEMIC READING", title: "按真实题型，", accent: "完成定位。" },
   };
   const header = headers[activeSkill];
@@ -2335,12 +2345,16 @@ function SceneView({
       const dailyVocabularyCompleted = section === "daily" || current.dailyVocabularyCompleted;
       const dailyDictationCompleted = section === "dictation" || current.dailyDictationCompleted;
       const fullyCompleted = dailyVocabularyCompleted && dailyDictationCompleted;
+      const remainingCarryoverDates = fullyCompleted
+        ? Object.fromEntries(Object.entries(current.carryoverTaskDates).filter(([skillId]) => skillId !== "vocabulary")) as Partial<Record<Skill, string>>
+        : current.carryoverTaskDates;
       const next = {
         ...current,
         dailyVocabularyCompleted,
         dailyDictationCompleted,
         completed: { ...current.completed, vocabulary: fullyCompleted },
         carryoverTasks: fullyCompleted ? current.carryoverTasks.filter((item) => item !== "vocabulary") : current.carryoverTasks,
+        carryoverTaskDates: remainingCarryoverDates,
       };
       return fullyCompleted && !current.completed.vocabulary
         ? recordStudyActivity(next, { id: "daily-skill:vocabulary", label: "词汇训练", minutes: Math.ceil(vocabularyTarget * .15) })
@@ -2350,6 +2364,7 @@ function SceneView({
   return (
     <>
       <PageHeader eyebrow={header.eyebrow} title={header.title} accent={header.accent} />
+      {isCarryoverContent && <section className="carryover-context-banner"><div><span>YESTERDAY&apos;S TASK</span><strong>正在补做 {contentDate} 的{activeSkill === "vocabulary" ? "词汇与听写" : skills.find((skill) => skill.id === activeSkill)?.label}</strong></div><small>本页题目按原任务日期加载；完成后才会从昨日未完成列表移除。</small></section>}
       <div className="scene-tabs" role="tablist" aria-label="场景训练步骤">
         {skills.map((skill, index) => (
           <button
@@ -2362,13 +2377,13 @@ function SceneView({
         ))}
       </div>
       <section className="exercise-surface">
-        {activeSkill === "vocabulary" && <VocabularyPractice mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
-        {activeSkill === "listening" && <ListeningPractice onComplete={(score, fullyAnswered) => {
+        {activeSkill === "vocabulary" && <VocabularyPractice key={`vocabulary:${contentDate}`} contentDate={contentDate} mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
+        {activeSkill === "listening" && <ListeningPractice key={`listening:${contentDate}`} exerciseDate={contentDate} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
           if (fullyAnswered) onComplete("listening", 12);
         }} />}
-        {activeSkill === "speaking" && <SpeakingPractice progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
-        {activeSkill === "reading" && <ReadingPractice onComplete={(score, fullyAnswered) => {
+        {activeSkill === "speaking" && <SpeakingPractice key={`speaking:${contentDate}`} exerciseDate={contentDate} progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
+        {activeSkill === "reading" && <ReadingPractice key={`reading:${contentDate}`} exerciseDate={contentDate} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, readingScore: score }));
           if (fullyAnswered) onComplete("reading", 18);
         }} />}
@@ -2378,12 +2393,14 @@ function SceneView({
 }
 
 function VocabularyPractice({
+  contentDate,
   mode,
   setMode,
   progress,
   onSectionComplete,
   updateProgress,
 }: {
+  contentDate: string;
   mode: "daily" | "typing" | "phrases";
   setMode: (mode: "daily" | "typing" | "phrases") => void;
   progress: LearningProgress;
@@ -2394,12 +2411,12 @@ function VocabularyPractice({
   const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
   const dailyDictationWords = useMemo(
-    () => getDailyListeningVocabulary(progress.dailyVocabularyDate, dictationTarget),
-    [dictationTarget, progress.dailyVocabularyDate],
+    () => getDailyListeningVocabulary(contentDate, dictationTarget),
+    [contentDate, dictationTarget],
   );
   const dailyConnectedSpeechPhrases = useMemo(
-    () => getDailyConnectedSpeechPhrases(progress.dailyVocabularyDate, phraseTarget),
-    [phraseTarget, progress.dailyVocabularyDate],
+    () => getDailyConnectedSpeechPhrases(contentDate, phraseTarget),
+    [contentDate, phraseTarget],
   );
   const completedDictationCount = dailyDictationWords.filter((item) => progress.dailyDictationSeen.includes(item.word)).length;
   const dictationGroupCount = Math.max(1, Math.ceil(dailyDictationWords.length / 10));
@@ -2541,7 +2558,7 @@ function VocabularyPractice({
       </div>
       <p className="completion-requirement">当前 {progress.studyPlanDays} 天计划：每日 {vocabularyTarget} 个核心词、{dictationTarget} 个语料听写词与 {phraseTarget} 个连读词组；完成核心词和场景听写后，词汇任务才会打勾。</p>
       {mode === "daily" ? (
-        <DailyVocabularySprint progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
+        <DailyVocabularySprint contentDate={contentDate} progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
       ) : mode === "typing" ? (
         <div className="exercise-layout is-single-column">
           <div className="exercise-main dictation-batch-practice">
@@ -2758,16 +2775,18 @@ function ConnectedSpeechPractice({
 }
 
 function DailyVocabularySprint({
+  contentDate,
   progress,
   onComplete,
   updateProgress,
 }: {
+  contentDate: string;
   progress: LearningProgress;
   onComplete: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const dailyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
-  const dailyWords = useMemo(() => getDailyVocabulary(progress.dailyVocabularyDate, dailyTarget), [dailyTarget, progress.dailyVocabularyDate]);
+  const dailyWords = useMemo(() => getDailyVocabulary(contentDate, dailyTarget), [contentDate, dailyTarget]);
   const total = dailyWords.length;
   const groupSize = 20;
   const roundCount = Math.ceil(total / groupSize);
@@ -2874,7 +2893,7 @@ function DailyVocabularySprint({
   );
 }
 
-function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAnswered: boolean) => void }) {
+function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string; onComplete: (score: number, fullyAnswered: boolean) => void }) {
   const [formAnswers, setFormAnswers] = useState<Record<string, string>>({});
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
@@ -2984,7 +3003,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
   return (
     <div className="exercise-layout listening-exam-layout">
       <div className="exercise-main listening-exam-main">
-        <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>Questions 1–10</span></div>
+        <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>{exerciseDate} · Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>正式考试录音只播放一次；Demo 可以重播以便精听复盘。</p>
         <div className="listening-controls">
           <audio ref={listeningAudio} src="/listening-section-1-v2.wav?voices=uk-female-male-v3" preload="metadata" onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src="/listening-section-1.vtt?voices=uk-female-male-v3" srcLang="en" label="English" /></audio>
@@ -3053,10 +3072,12 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
 }
 
 function SpeakingPractice({
+  exerciseDate,
   progress,
   updateProgress,
   onComplete,
 }: {
+  exerciseDate: string;
   progress: LearningProgress;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: () => void;
@@ -3236,7 +3257,7 @@ function SpeakingPractice({
   return (
     <div className="exercise-layout speaking-layout is-single-column">
       <div className="exercise-main conversation-panel">
-        <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
+        <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{exerciseDate} · {Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
         <div className="speaking-audio-controls">
           <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => playExaminerPrompt(activeExaminerPrompt) : startSpeaking}>{speakingStarted ? "↺ 重听当前问题" : "▶ 开始口语模拟"}</button>
           <button disabled={examinerAudioState === "idle"} onClick={toggleExaminerPause}>{examinerAudioState === "paused" ? "▶ 继续播放" : "Ⅱ 暂停"}</button>
@@ -3253,7 +3274,7 @@ function SpeakingPractice({
   );
 }
 
-function ReadingPractice({ onComplete }: { onComplete: (score: number, fullyAnswered: boolean) => void }) {
+function ReadingPractice({ exerciseDate, onComplete }: { exerciseDate: string; onComplete: (score: number, fullyAnswered: boolean) => void }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
@@ -3318,7 +3339,7 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number, fullyAnsw
   return (
     <div className="reading-layout">
       <article className="reading-passage">
-        <div className="exercise-kicker"><span>Academic Reading passage</span><span>约 500 词</span></div>
+        <div className="exercise-kicker"><span>Academic Reading passage</span><span>{exerciseDate} · 约 500 词</span></div>
         <h2>{readingExercise.title}</h2><span className="reading-subtitle">{readingExercise.subtitle}</span>
         <div className="reading-paragraphs">
           {readingExercise.paragraphs.map((paragraph) => <section id={`reading-paragraph-${paragraph.label}`} className={evidencePhrasesForParagraph(paragraph.label).length ? "is-evidence-active" : ""} key={paragraph.label}><strong>{paragraph.label}</strong><p>{renderPassageText(paragraph.label, paragraph.text)}</p></section>)}

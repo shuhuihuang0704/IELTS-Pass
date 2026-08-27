@@ -77,6 +77,7 @@ export type LearningProgress = {
   officialTaskAttemptHistory: Record<string, OfficialTaskResult[]>;
   dailyStudyHistory: Record<string, DailyStudyRecord>;
   carryoverTasks: Skill[];
+  carryoverTaskDates: Partial<Record<Skill, string>>;
   activeStudySeconds: number;
   minutes: number;
   streak: number;
@@ -281,6 +282,7 @@ export const defaultProgress: LearningProgress = {
   officialTaskAttemptHistory: {},
   dailyStudyHistory: {},
   carryoverTasks: [],
+  carryoverTaskDates: {},
   activeStudySeconds: 0,
   minutes: 0,
   streak: 0,
@@ -421,6 +423,19 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     ? []
     : validSkills.filter((skill) => !stored.completed?.[skill]);
   const carryoverTasks = Array.from(new Set([...previousCarryover, ...newlyMissedTasks]));
+  const storedCarryoverTaskDates = stored.carryoverTaskDates && typeof stored.carryoverTaskDates === "object"
+    ? stored.carryoverTaskDates
+    : {};
+  const previousStudyDate = typeof stored.dailyVocabularyDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(stored.dailyVocabularyDate)
+    ? stored.dailyVocabularyDate
+    : dayKeyAfter(-1, today);
+  const carryoverTaskDates = Object.fromEntries(carryoverTasks.map((skill) => {
+    const existingDate = storedCarryoverTaskDates[skill];
+    const sourceDate = typeof existingDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(existingDate)
+      ? existingDate
+      : isCurrentDay ? dayKeyAfter(-1, today) : previousStudyDate;
+    return [skill, sourceDate];
+  })) as Partial<Record<Skill, string>>;
   completed.vocabulary = Boolean(
     isCurrentVocabularyDay && stored.dailyVocabularyCompleted && stored.dailyDictationCompleted,
   );
@@ -493,5 +508,6 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     minutes: Math.floor(activeStudySeconds / 60),
     streak: calculateStudyStreak(dailyStudyHistory, today),
     carryoverTasks,
+    carryoverTaskDates,
   };
 }

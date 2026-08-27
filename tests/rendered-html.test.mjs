@@ -108,6 +108,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /officialTaskResults/);
   assert.match(state, /officialTaskAttemptHistory: Record<string, OfficialTaskResult\[\]>/);
   assert.match(state, /carryoverTasks/);
+  assert.match(state, /carryoverTaskDates/);
+  assert.match(state, /previousStudyDate/);
   assert.match(state, /newlyMissedTasks/);
   assert.match(state, /dailyVocabularyCompleted/);
   assert.match(state, /dailyDictationCompleted/);
@@ -545,6 +547,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);
   assert.match(app, /昨日未完成/);
   assert.match(app, /progress\.carryoverTasks\.length > 0 &&/);
+  assert.match(app, /progress\.carryoverTaskDates\[skillId\]/);
+  assert.match(app, /contentDate=\{contentDate\}/);
+  assert.match(app, /getDailyVocabulary\(contentDate/);
+  assert.match(app, /getDailyListeningVocabulary\(contentDate/);
+  assert.match(app, /YESTERDAY&apos;S TASK/);
+  assert.match(styles, /\.carryover-context-banner/);
   assert.doesNotMatch(app, /TASK ROLLOVER|目前没有昨日待补做任务|carryover-strip is-empty/);
   assert.match(app, /carryoverTasks\.filter/);
   assert.match(data, /vocabulary|listening|speaking|reading/);

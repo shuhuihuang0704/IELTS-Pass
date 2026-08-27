@@ -57,6 +57,11 @@ button { cursor: pointer; }
 .carryover-task-list span { color:#bf664b; font-size:9px; }
 .carryover-task-list strong { margin-top:4px; font-size:10px; }
 .carryover-task-list small { margin-top:5px; color:#9b776c; font-size:8px; }
+.carryover-context-banner { margin:18px 0 0; padding:14px 17px; display:flex; align-items:center; justify-content:space-between; gap:18px; border:1px solid #e7d8c4; border-radius:15px; background:#fff9ef; }
+.carryover-context-banner span,.carryover-context-banner strong { display:block; }
+.carryover-context-banner span { color:#a86736; font-size:8px; font-weight:800; letter-spacing:.75px; }
+.carryover-context-banner strong { margin-top:4px; color:#55473f; font-size:12px; }
+.carryover-context-banner small { max-width:390px; color:#8a7568; font-size:9px; line-height:1.5; text-align:right; }
 .scene-stage { min-height:560px; position:relative; overflow:hidden; padding:34px; border-radius:32px; color:white; background:radial-gradient(circle at 96% 8%,rgba(255,183,219,.7),transparent 29%),radial-gradient(circle at 10% 92%,rgba(66,211,210,.4),transparent 33%),linear-gradient(145deg,#5439ad,#414ac0 50%,#263a8d); box-shadow:0 22px 52px rgba(56,45,138,.23); }
 .scene-watermark { position:absolute; right:-20px; top:66px; color:rgba(255,255,255,.07); font-size:clamp(74px,10vw,132px); line-height:.78; letter-spacing:-9px; font-weight:750; text-align:right; transform:rotate(-7deg); user-select:none; }
 .scene-heading { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; color:rgba(255,255,255,.74); font-size:10px; letter-spacing:.8px; }
@@ -205,6 +210,8 @@ button { cursor: pointer; }
   .dashboard-grid { margin-top:24px; }
   .carryover-strip { margin-top:20px; padding:17px; }
   .carryover-task-list { grid-template-columns:repeat(2,1fr); }
+  .carryover-context-banner { align-items:flex-start; flex-direction:column; }
+  .carryover-context-banner small { max-width:none; text-align:left; }
   .scene-stage { min-height:470px; padding:23px; border-radius:27px; }
   .scene-stage h2 { margin-top:24px; font-size:42px; }
   .scene-watermark { top:90px; font-size:84px; }
