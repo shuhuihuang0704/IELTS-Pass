@@ -3032,20 +3032,41 @@ function SpeakingPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: () => void;
 }) {
+  type PracticeRecognitionEvent = { results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> };
+  type PracticeRecognitionErrorEvent = { error?: string };
+  type PracticeRecognition = {
+    lang: string;
+    continuous: boolean;
+    interimResults: boolean;
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+    onresult: ((event: PracticeRecognitionEvent) => void) | null;
+    onerror: ((event: PracticeRecognitionErrorEvent) => void) | null;
+    onend: (() => void) | null;
+  };
+  type PracticeRecognitionConstructor = new () => PracticeRecognition;
   const questionIndex = Math.min(progress.speakingPart3Turns, speakingScenario.questions.length - 1);
   const [draft, setDraft] = useState("");
   const [micStatus, setMicStatus] = useState("");
+  const [micState, setMicState] = useState<"idle" | "listening">("idle");
   const [answerFeedback, setAnswerFeedback] = useState("");
   const [showExaminerSubtitles, setShowExaminerSubtitles] = useState(false);
   const [speakingStarted, setSpeakingStarted] = useState(false);
   const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
   const examinerUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const practiceRecognition = useRef<PracticeRecognition | null>(null);
   const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => speakingScenario.questions[questionIndex]);
 
   useEffect(() => () => {
     if (examinerUtterance.current) {
       examinerUtterance.current.onend = null;
       examinerUtterance.current.onerror = null;
+    }
+    if (practiceRecognition.current) {
+      practiceRecognition.current.onend = null;
+      practiceRecognition.current.abort();
+      practiceRecognition.current = null;
     }
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
@@ -3090,13 +3111,21 @@ function SpeakingPractice({
   const send = (event?: FormEvent) => {
     event?.preventDefault();
     const text = draft.trim();
-    if (!speakingStarted || !text) return;
+    if (!speakingStarted) {
+      setMicStatus("请先点击“开始口语模拟”，听完考官问题后再回答。");
+      return;
+    }
+    if (!text) {
+      setMicStatus("还没有识别到回答。请点击麦克风说英语，或直接在输入框打字。");
+      return;
+    }
+    if (practiceRecognition.current) practiceRecognition.current.stop();
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     const hasDevelopment = /because|since|for example|for instance|however|although|whereas|therefore|so that/i.test(text);
     if (wordCount < 10) {
       const reply = "Could you explain that in a little more detail?";
       setDraft("");
-      setAnswerFeedback("回答偏短：Part 3 需要观点 + 原因，尽量再展开 2–3 句。");
+      setAnswerFeedback("回答已经提交，但内容偏短：请补充观点、原因和一个例子，尽量再展开 2–3 句。");
       setActiveExaminerPrompt(reply);
       setShowExaminerSubtitles(false);
       playExaminerPrompt(reply);
@@ -3119,19 +3148,60 @@ function SpeakingPractice({
   };
 
   const startMicrophone = () => {
-    if (!speakingStarted) return;
-    type RecognitionEvent = { results: { 0: { 0: { transcript: string } } } };
-    type Recognition = { lang: string; interimResults: boolean; start: () => void; onresult: ((event: RecognitionEvent) => void) | null; onerror: (() => void) | null; onend: (() => void) | null };
-    type RecognitionConstructor = new () => Recognition;
-    const speechWindow = window as typeof window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
+    if (!speakingStarted) {
+      setMicStatus("请先点击“开始口语模拟”，让考官提出问题。");
+      return;
+    }
+    if (practiceRecognition.current) {
+      practiceRecognition.current.stop();
+      setMicStatus("已停止录入，检查识别文字后点击“提交回答”。");
+      return;
+    }
+    const speechWindow = window as typeof window & { SpeechRecognition?: PracticeRecognitionConstructor; webkitSpeechRecognition?: PracticeRecognitionConstructor };
     const Constructor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-    if (!Constructor) { setMicStatus("当前浏览器不支持语音识别，请使用文字输入。建议在 Chrome 中测试。"); return; }
+    if (!Constructor) { setMicStatus("当前浏览器不支持语音识别，但仍可直接在右侧输入框打字并提交回答。建议在 Chrome 或 Edge 中使用麦克风。"); return; }
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setExaminerAudioState("idle");
     const recognition = new Constructor();
-    recognition.lang = "en-GB"; recognition.interimResults = false;
-    recognition.onresult = (event) => { setDraft(event.results[0][0].transcript); setMicStatus("已识别，请确认后发送。"); };
-    recognition.onerror = () => setMicStatus("没有识别成功，请重试或使用文字输入。");
-    recognition.onend = () => setMicStatus((current) => current || "录音已结束。");
-    setMicStatus("正在听，请用英语说话…"); recognition.start();
+    const originalDraft = draft.trim();
+    let heardText = false;
+    let recognitionFailed = false;
+    recognition.lang = "en-GB";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      let transcript = "";
+      let hasFinalResult = false;
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0].transcript;
+        hasFinalResult ||= event.results[index].isFinal;
+      }
+      const cleanedTranscript = transcript.trim();
+      if (!cleanedTranscript) return;
+      heardText = true;
+      setDraft([originalDraft, cleanedTranscript].filter(Boolean).join(" "));
+      setMicStatus(hasFinalResult ? "识别完成，请检查文字并点击“提交回答”。" : "正在识别…请继续说。");
+    };
+    recognition.onerror = (event) => {
+      recognitionFailed = true;
+      const permissionDenied = event.error === "not-allowed" || event.error === "service-not-allowed";
+      setMicStatus(permissionDenied ? "没有获得麦克风权限，请允许权限后重试；也可以直接打字回答。" : "没有识别成功，请重试或直接打字回答。");
+    };
+    recognition.onend = () => {
+      if (practiceRecognition.current === recognition) practiceRecognition.current = null;
+      setMicState("idle");
+      if (!recognitionFailed) setMicStatus(heardText ? "识别完成，请检查文字并点击“提交回答”。" : "没有听清内容，请重试或直接打字回答。");
+    };
+    practiceRecognition.current = recognition;
+    setMicState("listening");
+    setMicStatus("正在听，请用英语回答…");
+    try {
+      recognition.start();
+    } catch {
+      practiceRecognition.current = null;
+      setMicState("idle");
+      setMicStatus("语音输入没有启动，请重试或直接打字回答。");
+    }
   };
 
   return (
@@ -3146,8 +3216,8 @@ function SpeakingPractice({
         <div className="conversation speaking-question-stage" aria-live="polite">
           <div className="message ai"><span>考官</span><p className={!showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{!speakingStarted ? "点击“开始口语模拟”后，考官会用语音提问" : !showExaminerSubtitles ? examinerAudioState === "paused" ? "⏸ 考官音频已暂停 · 字幕已隐藏" : "🔊 当前考官问题 · 字幕已隐藏" : activeExaminerPrompt}</p></div>
         </div>
-        <form className="speaking-form" onSubmit={send}><button disabled={!speakingStarted} type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input disabled={!speakingStarted} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={speakingStarted ? "用英语回答考官，尽量说明原因并举例…" : "请先点击开始口语模拟"} aria-label="口语回答" /><button disabled={!speakingStarted} type="submit">回答</button></form>
-        <div className="mic-status" aria-live="polite">{micStatus || (speakingStarted ? "支持语音输入；也可以打字模拟回答。" : "点击开始后，考官会先读出问题。")}</div>
+        <form className="speaking-form" onSubmit={send}><button disabled={!speakingStarted} type="button" className={`mic-button ${micState === "listening" ? "is-listening" : ""}`} onClick={startMicrophone} aria-pressed={micState === "listening"} aria-label={micState === "listening" ? "停止语音输入" : "开始语音输入"}>●</button><input disabled={!speakingStarted} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={speakingStarted ? "用英语回答考官，尽量说明原因并举例…" : "请先点击开始口语模拟"} aria-label="口语回答" /><button disabled={!speakingStarted || !draft.trim() || micState === "listening"} type="submit">提交回答</button></form>
+        <div className="mic-status" aria-live="polite">{micStatus || (speakingStarted ? "点击左侧麦克风说英语，识别后提交；也可以直接打字回答。" : "点击开始后，考官会先读出问题。")}</div>
         {answerFeedback && <div className="speaking-feedback" aria-live="polite">{answerFeedback}</div>}
       </div>
     </div>

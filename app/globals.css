@@ -903,9 +903,11 @@ button { cursor: pointer; }
 .speaking-form input:disabled { color:#8d8790; background:#f2eff3; cursor:not-allowed; }
 .speaking-form>button { border:0; border-radius:12px; }
 .mic-button { color:#c55767; background:#f5e3e7; }
+.mic-button.is-listening { color:white; background:#c55767; box-shadow:0 0 0 5px rgba(197,87,103,.13); animation:speaking-mic-pulse 1.1s ease-in-out infinite; }
 .speaking-form>button:last-child { padding:0 15px; color:white; background:var(--violet); font-size:11px; }
 .mic-status { min-height:20px; margin-top:7px; color:#817a83; font-size:9px; }
 .speaking-feedback { margin-top:7px; padding:9px 11px; border-radius:10px; color:#4f4776; background:#ece8f8; font-size:10px; line-height:1.45; }
+@keyframes speaking-mic-pulse { 0%,100% { transform:scale(.94); } 50% { transform:scale(1); } }
 .exercise-context ul { margin:17px 0 0; padding:0; list-style:none; }
 .exercise-context li { margin-top:9px; padding:10px; border-radius:11px; color:#686169; background:#f4f1ed; font-size:11px; }
 .exercise-context li.is-done { color:#176c4f; background:#e2f3ec; }

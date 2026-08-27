@@ -55,7 +55,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /SCENE DICTATION|每天.*个听写词|听清再写准/);
   assert.match(app, /CONNECTED SPEECH|每天.*个词组|听懂自然语流/);
   assert.match(app, /Matching Headings|Matching Information|Summary Completion/);
-  assert.match(app, /Speaking Part 3|考官/);
+  assert.match(app, /考官/);
+  assert.match(data, /label: "口语"/);
+  assert.doesNotMatch(data, /label: "口语 Part 3"/);
   assert.doesNotMatch(app, /真实考试结构/);
   assert.match(app, /Form Completion|Choose TWO|提交 10 道答案/);
   assert.match(state, /dailyVocabularyDate|dailyVocabularySeen|dailyVocabularyKnown/);
@@ -147,6 +149,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /currentTime = nextTime/);
   assert.match(app, /听不懂？显示字幕/);
   assert.match(app, /开始口语模拟/);
+  assert.match(app, /practiceRecognition/);
+  assert.match(app, /提交回答/);
+  assert.match(app, /没有获得麦克风权限/);
+  assert.match(app, /!draft\.trim\(\) \|\| micState === "listening"/);
   assert.match(app, /记错了/);
   assert.match(app, /重听当前问题/);
   assert.match(app, /继续播放/);
