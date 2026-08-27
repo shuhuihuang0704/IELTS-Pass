@@ -2106,41 +2106,52 @@ function VocabularyPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const [mode, setMode] = useState<"daily" | "typing" | "phrases">("daily");
-  const [index, setIndex] = useState(() => Math.min(
-    vocabulary.filter((item) => progress.dailyDictationSeen.includes(item.word)).length,
-    vocabulary.length - 1,
-  ));
-  const [value, setValue] = useState("");
-  const [feedback, setFeedback] = useState<Feedback>(null);
-  const word = vocabulary[index];
+  const completedDictationCount = vocabulary.filter((item) => progress.dailyDictationSeen.includes(item.word)).length;
+  const [dictationGroup, setDictationGroup] = useState(() => Math.min(7, Math.floor(completedDictationCount / 10)));
+  const [dictationAnswers, setDictationAnswers] = useState<string[]>(() => Array(10).fill(""));
+  const [dictationSubmitted, setDictationSubmitted] = useState(false);
+  const [activeDictationItem, setActiveDictationItem] = useState(0);
+  const dictationInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const dictationWords = vocabulary.slice(dictationGroup * 10, dictationGroup * 10 + 10);
+  const filledDictationCount = dictationAnswers.filter((answer) => answer.trim()).length;
+  const dictationCorrectCount = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word).length;
 
-  const check = (event?: FormEvent) => {
-    event?.preventDefault();
-    const correct = value.trim().toLowerCase() === word.word;
-    setFeedback({ tone: correct ? "success" : "error", text: correct ? "拼写正确，答案已经揭晓。" : "拼写有误，已加入需要复习的词汇。" });
-    updateProgress((current) => {
-      const next = {
-        ...current,
-        masteredWords: correct ? Array.from(new Set([...current.masteredWords, word.word])) : current.masteredWords,
-        reviewWords: current.reviewWords,
-      };
-      return correct ? next : scheduleWordForReview(next, word.word, "unfamiliar", 0);
-    });
+  const openDictationGroup = (groupIndex: number) => {
+    setDictationGroup(groupIndex);
+    setDictationAnswers(Array(10).fill(""));
+    setDictationSubmitted(false);
+    setActiveDictationItem(0);
   };
 
-  const next = () => {
-    if (!feedback) return;
-    updateProgress((current) => ({
-      ...current,
-      dailyDictationSeen: Array.from(new Set([...current.dailyDictationSeen, word.word])),
-    }));
-    if (index === vocabulary.length - 1) {
-      onSectionComplete("dictation");
-      setFeedback({ tone: "success", text: "本组完成。结果已同步到今日进度和复习。" });
-      return;
-    }
-    setIndex((current) => current + 1);
-    setValue(""); setFeedback(null);
+  const playDictationWord = (itemIndex: number, rate = .72) => {
+    setActiveDictationItem(itemIndex);
+    speak(dictationWords[itemIndex].word, rate);
+  };
+
+  const moveToNextDictationInput = (itemIndex: number) => {
+    if (itemIndex >= dictationWords.length - 1) return;
+    const nextIndex = itemIndex + 1;
+    setActiveDictationItem(nextIndex);
+    dictationInputRefs.current[nextIndex]?.focus();
+    speak(dictationWords[nextIndex].word, .72);
+  };
+
+  const submitDictationGroup = (event: FormEvent) => {
+    event.preventDefault();
+    if (filledDictationCount < dictationWords.length) return;
+    setDictationSubmitted(true);
+    updateProgress((current) => {
+      const correctWords = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word).map((item) => item.word);
+      const wrongWords = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() !== item.word);
+      let next: LearningProgress = {
+        ...current,
+        dailyDictationSeen: Array.from(new Set([...current.dailyDictationSeen, ...dictationWords.map((item) => item.word)])),
+        masteredWords: Array.from(new Set([...current.masteredWords, ...correctWords])),
+      };
+      wrongWords.forEach((item) => { next = scheduleWordForReview(next, item.word, "unfamiliar", 0); });
+      return next;
+    });
+    if (dictationGroup === 7) onSectionComplete("dictation");
   };
 
   return (
@@ -2155,34 +2166,42 @@ function VocabularyPractice({
         <DailyVocabularySprint progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
       ) : mode === "typing" ? (
         <div className="exercise-layout">
-      <div className="exercise-main typing-practice">
-        <div className="exercise-kicker"><span>听音拼写 · 第 {Math.floor(index / 10) + 1} / 8 组</span><span>{progress.dailyDictationSeen.length + (feedback ? 1 : 0)} / {vocabulary.length}</span></div>
-        <h2>只听声音，输入对应的英文单词</h2><p>提交检查前不显示中文、拼写和例句。</p>
-        <button className="audio-control" onClick={() => speak(word.word, 0.72)}><span>▶</span>播放英式发音</button>
-        <form className="typing-form" onSubmit={check}>
-          <input
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                check();
-              }
-            }}
-            spellCheck={false}
-            placeholder="输入英文单词…"
-            aria-label="输入英文单词"
-          />
-          <button type="submit">检查</button>
-        </form>
-        <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? "先听发音再输入；检查后才会显示答案。"}</div>
-        {feedback && <div className="dictation-reveal"><span>正确拼写</span><strong>{word.word}</strong><p>{word.meaning}</p><button className={progress.notebook.some((entry) => entry.id === `word:${word.word.toLowerCase()}`) ? "inline-note-button is-saved" : "inline-note-button"} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${word.word.toLowerCase()}`, kind: "word", title: word.word, detail: `${word.meaning}\n${word.example}`, source: "场景听写" }))}>{progress.notebook.some((entry) => entry.id === `word:${word.word.toLowerCase()}`) ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div>}
-        <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === vocabulary.length - 1 ? "完成听写" : "下一个"} →</button></div>
-      </div>
-      <aside className="exercise-context">
-        <span>{feedback ? "场景例句" : "盲听规则"}</span><p>{feedback ? word.example : "中文释义、正确拼写和例句会在检查后出现。拼写错误的单词将自动进入复习。"}</p>{feedback && <button onClick={() => speak(word.example)}>播放例句</button>}
-        <div className="context-stat"><strong>{progress.masteredWords.length}</strong><span>累计掌握词汇</span></div>
-      </aside>
+          <div className="exercise-main dictation-batch-practice">
+            <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / 8 组</span><span>{completedDictationCount} / {vocabulary.length}</span></div>
+            <h2>一组 10 词，连续写完再检查</h2><p>听音后直接输入，按 Enter 自动跳到下一词并播放；整组提交前不显示答案和中文。</p>
+            <div className="dictation-group-tabs" role="tablist" aria-label="场景听写分组">
+              {Array.from({ length: 8 }, (_, groupIndex) => {
+                const completed = vocabulary.slice(groupIndex * 10, groupIndex * 10 + 10).every((item) => progress.dailyDictationSeen.includes(item.word));
+                return <button type="button" role="tab" aria-selected={dictationGroup === groupIndex} className={`${dictationGroup === groupIndex ? "is-active " : ""}${completed ? "is-complete" : ""}`} onClick={() => openDictationGroup(groupIndex)} key={groupIndex}>{completed ? "✓" : groupIndex + 1}</button>;
+              })}
+            </div>
+            <form className="dictation-batch-form" onSubmit={submitDictationGroup}>
+              <div className="dictation-batch-list">
+                {dictationWords.map((item, itemIndex) => {
+                  const answer = dictationAnswers[itemIndex] ?? "";
+                  const correct = answer.trim().toLowerCase() === item.word;
+                  const saved = progress.notebook.some((entry) => entry.id === `word:${item.word.toLowerCase()}`);
+                  return <article className={`${activeDictationItem === itemIndex ? "is-active " : ""}${dictationSubmitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={item.word}>
+                    <span className="dictation-item-number">{dictationGroup * 10 + itemIndex + 1}</span>
+                    <button className="dictation-play" type="button" onClick={() => playDictationWord(itemIndex)} aria-label={`播放第 ${itemIndex + 1} 个词`}>▶</button>
+                    <label><span>第 {itemIndex + 1} 个词</span><input ref={(node) => { dictationInputRefs.current[itemIndex] = node; }} value={answer} disabled={dictationSubmitted} onFocus={() => setActiveDictationItem(itemIndex)} onChange={(event) => setDictationAnswers((current) => current.map((currentAnswer, answerIndex) => answerIndex === itemIndex ? event.target.value : currentAnswer))} onKeyDown={(event) => { if (event.key === "Enter" && itemIndex < dictationWords.length - 1) { event.preventDefault(); moveToNextDictationInput(itemIndex); } }} spellCheck={false} autoComplete="off" placeholder="输入听到的单词" aria-label={`第 ${itemIndex + 1} 个听写答案`} /></label>
+                    {dictationSubmitted && <div className="dictation-item-result"><span>{correct ? "正确" : "需要复习"}</span><strong>{item.word}</strong><p>{item.meaning}</p><button type="button" className={saved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${item.word.toLowerCase()}`, kind: "word", title: item.word, detail: `${item.meaning}\n${item.example}`, source: "场景听写" }))}>{saved ? "★ 已在笔记" : "☆ 加入笔记"}</button></div>}
+                  </article>;
+                })}
+              </div>
+              <footer className="dictation-batch-footer">
+                <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / 10 正确` : `${filledDictationCount} / 10 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 连续作答，最后统一检查"}</span></div>
+                {!dictationSubmitted ? <button type="submit" disabled={filledDictationCount < dictationWords.length}>一次提交本组 10 词</button> : <div><button type="button" className="is-secondary" onClick={() => { setDictationAnswers(Array(10).fill("")); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < 7 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
+              </footer>
+            </form>
+          </div>
+          <aside className="exercise-context dictation-batch-guide">
+            <span>高效键盘流程</span>
+            <ol><li><b>1</b><span>点击播放或选中输入框</span></li><li><b>2</b><span>输入拼写，按 Enter</span></li><li><b>3</b><span>自动播放下一词，继续输入</span></li><li><b>4</b><span>10 词一次提交并复盘</span></li></ol>
+            <button onClick={() => playDictationWord(activeDictationItem)}>▶ 播放当前词</button>
+            <button onClick={() => playDictationWord(activeDictationItem, .55)}>慢速播放</button>
+            <div className="context-stat"><strong>{progress.masteredWords.length}</strong><span>累计掌握词汇</span></div>
+          </aside>
         </div>
       ) : (
         <ConnectedSpeechPractice progress={progress} updateProgress={updateProgress} />

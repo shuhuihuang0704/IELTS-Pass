@@ -117,7 +117,13 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /speechSynthesis\.pause/);
   assert.match(app, /speechSynthesis\.resume/);
   assert.match(app, /字幕已隐藏/);
-  assert.match(app, /提交检查前不显示中文/);
+  assert.match(app, /整组提交前不显示答案和中文/);
+  assert.match(app, /一组 10 词，连续写完再检查/);
+  assert.match(app, /一次提交本组 10 词/);
+  assert.match(app, /moveToNextDictationInput/);
+  assert.match(app, /wrongWords\.forEach/);
+  assert.match(styles, /\.dictation-batch-list/);
+  assert.match(styles, /\.dictation-batch-footer/);
   assert.match(app, /先核对中文含义/);
   assert.match(app, /核对后再次出现/);
   assert.match(app, /核对后很快再现/);
