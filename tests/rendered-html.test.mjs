@@ -310,7 +310,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /切换后立即重算词汇、听写、连读、复习和套题安排/);
   assert.match(styles, /\.study-plan-card/);
   assert.match(styles, /\.study-plan-presets/);
-  assert.match(styles, /\.study-plan-focus/);
+  assert.doesNotMatch(app, /study-plan-focus|听力重点|口语重点|阅读重点|写作重点/);
+  assert.doesNotMatch(styles, /\.study-plan-focus/);
   assert.doesNotMatch(app, /\["今日词汇"|\["待强化词汇"/);
   assert.match(styles, /\.ai-tutor-shell/);
   assert.match(styles, /\.profile-water-gauge/);
