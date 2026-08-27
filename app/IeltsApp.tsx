@@ -1316,6 +1316,7 @@ function OfficialTestRunner({
   const readingBookletRef = useRef<HTMLDivElement>(null);
   const task = material.tasks[taskIndex];
   const taskUnitLabel = task.speakingPrompt ? "Part" : material.passagePdfUrl ? "Passage" : "Task";
+  const showTaskSelector = material.tasks.length > 1 && !material.passagePdfUrl;
   const audioTrack = material.audioTracks?.[audioTrackIndex];
   const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
   const displayPdfUrl = paperMode === "answers" && material.answerPdfUrl ? material.answerPdfUrl : material.pdfUrl;
@@ -1478,8 +1479,8 @@ function OfficialTestRunner({
         </aside>
         <section className="official-paper-panel">
           <header><div><strong>{task.questionLabel}</strong></div><small>{task.electronicModel && paperMode === "answers" ? "电子参考范文 · 清晰排版" : `官方原始题号 · 当前显示 P${displayPage}`}</small></header>
-          <div className={material.tasks.length > 1 ? "official-task-controls" : "official-task-controls is-single"}>
-            {material.tasks.length > 1 && <label>选择 {taskUnitLabel}<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>}
+          <div className={showTaskSelector ? "official-task-controls" : "official-task-controls is-single"}>
+            {showTaskSelector && <label>选择 {taskUnitLabel}<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>}
             <div className="official-paper-switch" aria-label="题目与答案切换">
               <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{questionPageLabel}</button>
               {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"}{task.electronicModel ? "" : ` · P${answerPageLabel}`}</button>}

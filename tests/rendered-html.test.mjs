@@ -583,6 +583,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
   assert.doesNotMatch(app, /题目直接在这里|本套材料|本材料任务|Academic Reading · Full Test 1–40|runner-material-index/);
   assert.match(app, /official-task-controls is-single/);
+  assert.match(app, /const showTaskSelector = material\.tasks\.length > 1 && !material\.passagePdfUrl/);
+  assert.match(app, /showTaskSelector && <label>选择 \{taskUnitLabel\}/);
   assert.match(app, /officialAnswerIsCorrect/);
   assert.match(app, /new Set\(groupResponses\)/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);
