@@ -12,8 +12,8 @@ export const skills: Array<{
 }> = [
   { id: "vocabulary", short: "词", label: "每日词汇", description: "按备考周期生成高频词速刷、语料听写与连读词组", duration: "按计划" },
   { id: "listening", short: "听", label: "听力精练", description: "Section 1 填空、多选、匹配与单选", duration: "12 分钟" },
-  { id: "speaking", short: "说", label: "口语 Part 3", description: "真人考官式抽象讨论与追问", duration: "5 分钟" },
   { id: "reading", short: "读", label: "阅读套题", description: "匹配、单选、判断与摘要填空", duration: "18 分钟" },
+  { id: "speaking", short: "说", label: "口语 Part 3", description: "真人考官式抽象讨论与追问", duration: "5 分钟" },
 ];
 
 const corpusPhraseExampleByWord = new Map<string, string>();

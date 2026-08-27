@@ -295,6 +295,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /answeredCount < totalQuestions/);
   assert.match(app, /官方套题训练计划/);
   assert.doesNotMatch(app, /IELTS 官方公开样题|题目与录音由 IELTS\.org 提供|等待完整提交|个必做 Passage 已提交/);
+  const skillOrderBlock = data.match(/export const skills:[\s\S]*?\];/)?.[0] ?? "";
+  assert.ok(skillOrderBlock.indexOf('id: "reading"') < skillOrderBlock.indexOf('id: "speaking"'));
   assert.match(app, /不等同于已正式考过的 Cambridge 历年原卷/);
   assert.match(app, /开始本套/);
   assert.match(app, /OfficialTestRunner/);
