@@ -125,6 +125,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /整组提交前不显示答案和中文/);
   assert.match(app, /一段音频，连续听写 10 个词/);
   assert.match(app, /dictation-sequence-player/);
+  assert.doesNotMatch(app, /dictation-group-tabs|场景听写分组/);
+  assert.doesNotMatch(styles, /\.dictation-group-tabs/);
   assert.match(app, /toggleDictationSequence/);
   assert.match(app, /seekDictationSequence/);
   assert.match(app, /拖动场景听写进度/);

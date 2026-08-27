@@ -2303,12 +2303,6 @@ function VocabularyPractice({
           <div className="exercise-main dictation-batch-practice">
             <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / 8 组</span><span>{completedDictationCount} / {vocabulary.length}</span></div>
             <h2>一段音频，连续听写 10 个词</h2><p>每个词后预留约 4 秒书写时间；可以随时暂停、继续或拖动进度，整组提交前不显示答案和中文。</p>
-            <div className="dictation-group-tabs" role="tablist" aria-label="场景听写分组">
-              {Array.from({ length: 8 }, (_, groupIndex) => {
-                const completed = vocabulary.slice(groupIndex * 10, groupIndex * 10 + 10).every((item) => progress.dailyDictationSeen.includes(item.word));
-                return <button type="button" role="tab" aria-selected={dictationGroup === groupIndex} className={`${dictationGroup === groupIndex ? "is-active " : ""}${completed ? "is-complete" : ""}`} onClick={() => openDictationGroup(groupIndex)} key={groupIndex}>{completed ? "✓" : groupIndex + 1}</button>;
-              })}
-            </div>
             <section className="dictation-sequence-player" aria-label={`第 ${dictationGroup + 1} 组连续听写播放器`}>
               <button type="button" className="dictation-sequence-toggle" onClick={toggleDictationSequence} aria-label={dictationPlayback === "playing" ? "暂停本组听写" : "播放本组听写"}>{dictationPlayback === "playing" ? "Ⅱ" : "▶"}</button>
               <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 个词` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 个词` : dictationPlayback === "ended" ? "本组音频播放完毕" : "播放本组 10 词录音"}</strong><small>10 个词 · 每词约 1 秒 · 间隔约 4 秒</small></div>
