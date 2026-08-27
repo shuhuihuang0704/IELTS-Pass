@@ -304,7 +304,15 @@ button { cursor: pointer; }
 .official-practice-heading p { margin:7px 0 0; color:var(--muted); font-size:11px; }
 .official-practice-heading>strong { color:var(--violet); font-size:42px; letter-spacing:-2px; }
 .official-practice-heading>strong small { font-size:14px; letter-spacing:0; }
-.official-session-list { margin-top:15px; }
+.official-session-group { margin-top:20px; }
+.official-session-group>header { padding:0 2px 11px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; border-bottom:1px solid #ece8ee; }
+.official-session-group>header div span,.official-session-group>header div strong { display:block; }
+.official-session-group>header div span { color:var(--violet); font-size:8px; font-weight:750; letter-spacing:.75px; }
+.official-session-group>header div strong { margin-top:4px; font-size:16px; }
+.official-session-group>header>small { color:var(--muted); font-size:9px; text-align:right; }
+.official-session-group.is-open { margin-top:30px; padding-top:22px; border-top:7px solid #f3f0f4; }
+.official-session-group.is-open>header div span { color:#817a85; }
+.official-session-list { margin-top:0; }
 .official-session { padding:18px 0; display:grid; grid-template-columns:78px 1fr auto; align-items:center; gap:18px; border-top:1px solid #ece8ee; }
 .official-session:first-child { border-top:0; }
 .official-session-date { min-height:58px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:15px; background:#f2f0ec; }
@@ -316,6 +324,9 @@ button { cursor: pointer; }
 .official-session.is-open-practice .official-session-date { color:#6f6873; background:#f5f3f6; }
 .official-session-copy h3 { margin:5px 0 0; font-size:15px; }
 .official-session-copy p { max-width:580px; margin:5px 0 0; color:var(--muted); font-size:10px; line-height:1.45; }
+.official-session-copy .official-weekly-question { width:fit-content; margin-top:8px; padding:7px 9px; display:flex; align-items:center; gap:8px; border-radius:9px; color:#3f376f; background:#efecfa; }
+.official-weekly-question span { color:#756bb8; font-size:8px; }
+.official-weekly-question strong { font-size:9px; }
 .official-session-copy>b { display:inline-block; margin-top:7px; color:#554a9b; font-size:9px; }
 .official-session-actions { min-width:126px; display:flex; flex-direction:column; gap:7px; }
 .official-session-actions a,.official-session-actions button { min-height:34px; padding:0 11px; display:grid; place-items:center; border:0; border-radius:10px; text-decoration:none; font-size:9px; }

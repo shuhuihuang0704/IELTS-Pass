@@ -437,6 +437,14 @@ function plannedOfficialSessionsForWeek(sessionsPerWeek: number, weekKey = local
   return officialTestSchedule.filter((session) => selectedIds.has(session.id));
 }
 
+function weeklyOpeningTask(session: OfficialTestSession, weekKey = localWeekKey()) {
+  const tasks = session.materials[0]?.tasks ?? [];
+  if (tasks.length === 0) return undefined;
+  const weekNumber = Math.floor(new Date(`${weekKey}T12:00:00`).getTime() / (7 * 86_400_000));
+  const sessionOffset = Math.max(0, officialTestSchedule.findIndex((item) => item.id === session.id));
+  return tasks[((weekNumber + sessionOffset) % tasks.length + tasks.length) % tasks.length];
+}
+
 type IeltsVoiceRole = "examiner" | "female" | "male";
 
 const preferredIeltsVoiceNames: Record<IeltsVoiceRole, string[]> = {
@@ -753,6 +761,7 @@ export default function IeltsApp() {
   const [activeSkill, setActiveSkill] = useState<Skill>("vocabulary");
   const [activeContentDate, setActiveContentDate] = useState(localDayKey());
   const [activeOfficialSessionId, setActiveOfficialSessionId] = useState(officialTestSchedule[0].id);
+  const [activeOfficialTaskId, setActiveOfficialTaskId] = useState<string>();
   const [progress, setProgress] = useState<LearningProgress>(defaultProgress);
   const progressRef = useRef<LearningProgress>(defaultProgress);
   const [hydrated, setHydrated] = useState(false);
@@ -866,8 +875,9 @@ export default function IeltsApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const openOfficialTest = (sessionId: string) => {
+  const openOfficialTest = (sessionId: string, initialTaskId?: string) => {
     setActiveOfficialSessionId(sessionId);
+    setActiveOfficialTaskId(initialTaskId);
     setView("official-test");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -901,7 +911,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "practice" && <PracticeView progress={progress} onOpenOfficialTest={openOfficialTest} />}
-        {view === "official-test" && <OfficialTestRunner session={officialTestSchedule.find((session) => session.id === activeOfficialSessionId) ?? officialTestSchedule[0]} progress={progress} onBack={() => setView("practice")} updateProgress={updateProgress} />}
+        {view === "official-test" && <OfficialTestRunner key={`${activeOfficialSessionId}:${activeOfficialTaskId ?? "start"}`} session={officialTestSchedule.find((session) => session.id === activeOfficialSessionId) ?? officialTestSchedule[0]} initialTaskId={activeOfficialTaskId} progress={progress} onBack={() => setView("practice")} updateProgress={updateProgress} />}
         {view === "scene" && <AiTutorView progress={progress} />}
         {view === "skill" && (
           <SceneView
@@ -1229,7 +1239,7 @@ function PracticeView({
   onOpenOfficialTest,
 }: {
   progress: LearningProgress;
-  onOpenOfficialTest: (sessionId: string) => void;
+  onOpenOfficialTest: (sessionId: string, initialTaskId?: string) => void;
 }) {
   return (
     <>
@@ -1244,13 +1254,29 @@ function OfficialPracticePlan({
   onOpenOfficialTest,
 }: {
   progress: LearningProgress;
-  onOpenOfficialTest: (sessionId: string) => void;
+  onOpenOfficialTest: (sessionId: string, initialTaskId?: string) => void;
 }) {
   const weekKey = localWeekKey();
   const sessionsPerWeek = targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore);
   const plannedSessions = plannedOfficialSessionsForWeek(sessionsPerWeek, weekKey);
   const plannedSessionIds = new Set(plannedSessions.map((session) => session.id));
+  const openSessions = officialTestSchedule.filter((session) => !plannedSessionIds.has(session.id));
   const completedCount = plannedSessions.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey))).length;
+
+  const renderSession = (session: OfficialTestSession, index: number, isPlanned: boolean) => {
+    const recordId = officialPracticeRecordId(session, weekKey);
+    const completed = progress.officialPracticeCompleted.includes(recordId);
+    const openingTask = isPlanned ? weeklyOpeningTask(session, weekKey) : undefined;
+    return (
+      <article className={`official-session ${completed ? "is-complete " : ""}${isPlanned ? "is-planned" : "is-open-practice"}`} key={session.id}>
+        <div className="official-session-date"><span>{session.dayLabel}</span><strong>{session.time}</strong></div>
+        <div className="official-session-copy"><small>0{index + 1} · {session.source} <em>{isPlanned ? "本周计划" : "开放训练"}</em></small><h3>{session.title}</h3><p>{session.description}</p>{openingTask && <p className="official-weekly-question"><span>本周从新题开始</span><strong>{openingTask.questionLabel}</strong></p>}<b>{session.setCode} · {session.duration}</b></div>
+        <div className="official-session-actions">
+          <button onClick={() => onOpenOfficialTest(session.id, openingTask?.id)}>{completed ? "查看本套 · 已完成" : "开始本套 →"}</button>
+        </div>
+      </article>
+    );
+  };
 
   return (
     <section className="official-practice-plan">
@@ -1258,41 +1284,30 @@ function OfficialPracticePlan({
         <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>{progress.studyPlanDays} 天计划 · 本周安排 {plannedSessions.length} 次 · 听力、阅读、写作、口语四部分始终开放并按周轮换</p></div>
         <strong>{completedCount}<small>/{plannedSessions.length}</small></strong>
       </header>
-      <div className="official-session-list">
-        {officialTestSchedule.map((session, index) => {
-          const recordId = officialPracticeRecordId(session, weekKey);
-          const completed = progress.officialPracticeCompleted.includes(recordId);
-          const isPlanned = plannedSessionIds.has(session.id);
-          return (
-            <article className={`official-session ${completed ? "is-complete " : ""}${isPlanned ? "is-planned" : "is-open-practice"}`} key={session.id}>
-              <div className="official-session-date"><span>{session.dayLabel}</span><strong>{session.time}</strong></div>
-              <div className="official-session-copy"><small>0{index + 1} · {session.source} <em>{isPlanned ? "本周计划" : "开放加练"}</em></small><h3>{session.title}</h3><p>{session.description}</p><b>{session.setCode} · {session.duration}</b></div>
-              <div className="official-session-actions">
-                <button onClick={() => onOpenOfficialTest(session.id)}>{completed ? "查看本套 · 已完成" : "开始本套 →"}</button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <section className="official-session-group is-planned"><header><div><span>THIS WEEK</span><strong>本周计划</strong></div><small>按周次轮换进入不同 Passage / Task / Part</small></header><div className="official-session-list">{plannedSessions.map((session, index) => renderSession(session, index, true))}</div></section>
+      {openSessions.length > 0 && <section className="official-session-group is-open"><header><div><span>OPEN PRACTICE</span><strong>开放训练</strong></div><small>计划外科目仍可随时练习</small></header><div className="official-session-list">{openSessions.map((session, index) => renderSession(session, index, false))}</div></section>}
     </section>
   );
 }
 
 function OfficialTestRunner({
   session,
+  initialTaskId,
   progress,
   onBack,
   updateProgress,
 }: {
   session: OfficialTestSession;
+  initialTaskId?: string;
   progress: LearningProgress;
   onBack: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const material = session.materials[0];
-  const [taskIndex, setTaskIndex] = useState(0);
+  const initialTaskIndex = Math.max(0, material.tasks.findIndex((item) => item.id === initialTaskId));
+  const [taskIndex, setTaskIndex] = useState(initialTaskIndex);
   const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
-  const [audioTrackIndex, setAudioTrackIndex] = useState(0);
+  const [audioTrackIndex, setAudioTrackIndex] = useState(material.tasks[initialTaskIndex]?.audioTrackIndex ?? initialTaskIndex);
   const [officialResponses, setOfficialResponses] = useState<Record<string, string>>(() => {
     const responses: Record<string, string> = {};
     for (const sessionMaterial of session.materials) {
