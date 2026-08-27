@@ -941,7 +941,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView progress={progress} onReset={resetProgress} updateProgress={updateProgress} />}
+        {view === "profile" && <ProfileView progress={progress} onReset={resetProgress} onOpenNotebook={() => setView("review")} updateProgress={updateProgress} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
       {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
@@ -1350,7 +1350,6 @@ function OfficialTestRunner({
   const readingBookletRef = useRef<HTMLDivElement>(null);
   const task = material.tasks[taskIndex];
   const taskUnitLabel = task.speakingPrompt ? "Part" : material.passagePdfUrl ? "Passage" : "Task";
-  const showTaskSelector = material.tasks.length > 1 && !material.passagePdfUrl;
   const audioTrack = material.audioTracks?.[audioTrackIndex];
   const displayPage = paperMode === "answers" && task.answerPage ? task.answerPage : task.questionPage;
   const displayPdfUrl = paperMode === "answers" && material.answerPdfUrl ? material.answerPdfUrl : material.pdfUrl;
@@ -1513,14 +1512,13 @@ function OfficialTestRunner({
         </aside>
         <section className="official-paper-panel">
           <header><div><strong>{task.questionLabel}</strong></div><small>{task.electronicModel && paperMode === "answers" ? "电子参考范文 · 清晰排版" : `官方原始题号 · 当前显示 P${displayPage}`}</small></header>
-          <div className={showTaskSelector ? "official-task-controls" : "official-task-controls is-single"}>
-            {showTaskSelector && <label>选择 {taskUnitLabel}<select value={taskIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.tasks.map((item, index) => <option value={index} key={item.id}>{index + 1}. {item.label} · {item.questionLabel}</option>)}</select></label>}
+          <div className="official-task-controls is-single">
             <div className="official-paper-switch" aria-label="题目与答案切换">
               <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{questionPageLabel}</button>
               {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"}{task.electronicModel ? "" : ` · P${answerPageLabel}`}</button>}
             </div>
           </div>
-          {material.tasks.length > 1 && !speakingTaskMode && (
+          {material.tasks.length > 1 && (
             <section className="official-task-map" aria-label="官方练习任务导航">
               <header><div><span>{speakingTaskMode ? "3 INDEPENDENT SPEAKING PARTS" : material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {speakingTaskMode ? "Speaking Part" : material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{speakingTaskMode ? "每个 Part 独立完成考官提问、60 秒准备、录音提交与反馈；提交一个不会完成另外两个。" : material.audioTracks ? "可以提前提交查看当前 Task 的答案和原文；空题按未答处理，答完全部题目才计为完成。" : material.passagePdfUrl ? "可以提前提交查看当前 Passage 的答案与解析；答完全部题目才计为完成。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${completedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
               <div>{material.tasks.map((materialTask, index) => {
@@ -4161,7 +4159,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
   </div>;
 }
 
-function ProfileView({ progress, onReset, updateProgress }: { progress: LearningProgress; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
+function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { progress: LearningProgress; onReset: () => void; onOpenNotebook: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
@@ -4181,10 +4179,6 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
     : paceGap >= 0
       ? `当前比计划节奏领先 ${paceGap} 个百分点。`
       : `距离当前计划节奏还差 ${Math.abs(paceGap)} 个百分点。`;
-  const stats = [
-    ["累计学习", `${progress.minutes} 分钟`],
-    ["我的笔记", `${progress.notebook.length}`],
-  ];
   const applyStudyPlan = (days: number) => {
     const nextDays = normalizeStudyPlanDays(days);
     setCustomPlanDays(String(nextDays));
@@ -4228,7 +4222,7 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
         </div>
         <div className="profile-overview-column">
           <button className="profile-streak-card" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
-          <div className="profile-grid">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+          <div className="profile-grid"><div><span>累计学习</span><strong>{progress.minutes} 分钟</strong></div><button className="profile-notebook-card" onClick={onOpenNotebook}><span>我的笔记</span><strong>{progress.notebook.length}</strong><b>进入我的笔记 →</b></button></div>
         </div>
       </section>
       <section className="study-plan-card">

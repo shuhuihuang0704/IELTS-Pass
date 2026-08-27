@@ -312,6 +312,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.study-plan-presets/);
   assert.doesNotMatch(app, /study-plan-focus|听力重点|口语重点|阅读重点|写作重点/);
   assert.doesNotMatch(styles, /\.study-plan-focus/);
+  assert.match(app, /className="profile-notebook-card" onClick=\{onOpenNotebook\}/);
+  assert.match(app, /进入我的笔记 →/);
+  assert.match(app, /onOpenNotebook=\{\(\) => setView\("review"\)\}/);
   assert.doesNotMatch(app, /\["今日词汇"|\["待强化词汇"/);
   assert.match(styles, /\.ai-tutor-shell/);
   assert.match(styles, /\.profile-water-gauge/);
@@ -517,7 +520,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(speakingBlock, /What kind of things give status to people in your country\?/);
   assert.equal((speakingBlock.match(/preparationSeconds: 60/g) ?? []).length, 3);
   assert.match(app, /3 INDEPENDENT SPEAKING PARTS/);
-  assert.match(app, /material\.tasks\.length > 1 && !speakingTaskMode/);
+  assert.match(app, /material\.tasks\.length > 1 && \(/);
+  assert.doesNotMatch(app, /material\.tasks\.length > 1 && !speakingTaskMode/);
   assert.match(app, /is-speaking-workspace/);
   assert.match(app, /\(!speakingTaskMode \|\| taskSubmitted\) && <div className="official-material-column">/);
   assert.match(app, /OfficialSpeakingResponse/);
@@ -598,8 +602,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
   assert.doesNotMatch(app, /题目直接在这里|本套材料|本材料任务|Academic Reading · Full Test 1–40|runner-material-index/);
   assert.match(app, /official-task-controls is-single/);
-  assert.match(app, /const showTaskSelector = material\.tasks\.length > 1 && !material\.passagePdfUrl/);
-  assert.match(app, /showTaskSelector && <label>选择 \{taskUnitLabel\}/);
+  assert.doesNotMatch(app, /showTaskSelector|<label>选择 \{taskUnitLabel\}|选择 Passage|选择 Task|选择 Part/);
+  assert.doesNotMatch(styles, /\.official-task-controls (?:label|select)/);
   assert.match(app, /officialAnswerIsCorrect/);
   assert.match(app, /new Set\(groupResponses\)/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);
