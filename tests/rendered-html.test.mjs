@@ -400,7 +400,6 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /IELTS 官方公开样题|题目与录音由 IELTS\.org 提供|等待完整提交|个必做 Passage 已提交/);
   const skillOrderBlock = data.match(/export const skills:[\s\S]*?\];/)?.[0] ?? "";
   assert.ok(skillOrderBlock.indexOf('id: "reading"') < skillOrderBlock.indexOf('id: "speaking"'));
-  assert.match(app, /不等同于已正式考过的 Cambridge 历年原卷/);
   assert.match(app, /开始本套/);
   assert.match(app, /OfficialTestRunner/);
   assert.match(app, /IELTS-OFFICIAL-AR-MLP-01/);
@@ -429,6 +428,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /material\.tasks\.length > 1/);
   assert.match(app, /official-task-map/);
   assert.match(app, /official-source-document/);
+  assert.doesNotMatch(app, /内容来源说明|official-source-note/);
+  assert.doesNotMatch(styles, /\.official-source-note/);
   assert.match(app, /材料区 \+ 答题区模板/);
   assert.match(app, /isolateOfficialTaskPages/);
   assert.match(app, /当前 Task 独立显示/);

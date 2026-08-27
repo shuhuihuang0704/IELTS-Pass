@@ -304,9 +304,6 @@ button { cursor: pointer; }
 .official-practice-heading p { margin:7px 0 0; color:var(--muted); font-size:11px; }
 .official-practice-heading>strong { color:var(--violet); font-size:42px; letter-spacing:-2px; }
 .official-practice-heading>strong small { font-size:14px; letter-spacing:0; }
-.official-source-note { margin-top:22px; padding:15px 17px; border-radius:15px; color:#5b5273; background:#f0edf9; }
-.official-source-note b { font-size:11px; }
-.official-source-note p { margin:5px 0 0; font-size:10px; line-height:1.55; }
 .official-session-list { margin-top:15px; }
 .official-session { padding:18px 0; display:grid; grid-template-columns:78px 1fr auto; align-items:center; gap:18px; border-top:1px solid #ece8ee; }
 .official-session:first-child { border-top:0; }
@@ -1456,7 +1453,6 @@ button { -webkit-tap-highlight-color:transparent; }
 .official-plan-strip { margin-top:14px; padding:18px 20px; border-radius:18px; }
 .official-plan-strip>button { border-radius:11px; }
 .official-practice-plan { padding:24px; border-radius:20px; }
-.official-source-note { border:1px solid #e5e1f6; background:#f7f5ff; }
 .official-session { padding:15px 0; }
 .official-session-date { border:1px solid var(--line); border-radius:12px; background:#f7f7f8; }
 .official-runner-bar,.official-runner-sidebar,.official-paper-panel { border-radius:18px; }

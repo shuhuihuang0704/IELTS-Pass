@@ -1258,7 +1258,6 @@ function OfficialPracticePlan({
         <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>{progress.studyPlanDays} 天计划 · 本周安排 {plannedSessions.length} 次 · 听力、阅读、写作、口语四部分始终开放并按周轮换</p></div>
         <strong>{completedCount}<small>/{plannedSessions.length}</small></strong>
       </header>
-      <div className="official-source-note"><b>内容来源说明</b><p>Reading 使用 IELTS.org 官方完整 Academic Reading Sample Test（3 篇、1–40 题）。这是官方样题，不等同于已正式考过的 Cambridge 历年原卷；App 不会把两者混淆。</p></div>
       <div className="official-session-list">
         {officialTestSchedule.map((session, index) => {
           const recordId = officialPracticeRecordId(session, weekKey);
