@@ -483,7 +483,6 @@ type ReadingNotebookReview = {
   sourceLabel: "原文对应句" | "原文对应段";
   location: string;
   excerpt: string;
-  userAnswer: string;
   correctAnswer: string;
   explanation: string;
 };
@@ -532,31 +531,15 @@ function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | un
     sourceLabel,
     location: field("原文定位") || field("题目位置") || "当前笔记没有保存精确段落，请展开题目原页复盘。",
     excerpt,
-    userAnswer: field("我的答案") || "未作答",
     correctAnswer: field("正确答案"),
     explanation: field("解析") || "提交题目后会补充答案解析。",
   };
-}
-
-function notebookOptionMatchesAnswer(option: string, answer: string) {
-  const normalizedOption = option.trim().toLowerCase();
-  return answer.split("、").some((answerPart) => {
-    const normalizedAnswer = answerPart.trim().toLowerCase();
-    const answerCode = normalizedAnswer.split(/[·.]/)[0].trim();
-    return Boolean(normalizedAnswer) && (
-      normalizedOption === normalizedAnswer
-      || normalizedOption.startsWith(`${normalizedAnswer}.`)
-      || normalizedOption.endsWith(`. ${normalizedAnswer}`)
-      || (answerCode.length === 1 && normalizedOption.startsWith(`${answerCode}.`))
-    );
-  });
 }
 
 type ListeningNotebookReview = {
   question: string;
   options: string[];
   allowsMultiple: boolean;
-  userAnswer: string;
   correctAnswer: string;
 };
 
@@ -590,9 +573,14 @@ function listeningNotebookReview(entry: NotebookEntry): ListeningNotebookReview 
     question: field("题目") || entry.title,
     options,
     allowsMultiple,
-    userAnswer: field("我的答案") || "未作答",
     correctAnswer: field("正确答案"),
   };
+}
+
+function notebookDetailForDisplay(detail: string) {
+  return detail.split("\n")
+    .filter((line) => !/^(我的答案|我的作答|我的回答)：/.test(line.trim()))
+    .join("\n");
 }
 
 function officialPracticeRecordId(session: OfficialTestSession, weekKey = localWeekKey()) {
@@ -4064,7 +4052,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               const expanded = expandedNotebookIds.includes(entry.id);
               const answerRevealed = revealedNotebookAnswerIds.includes(entry.id);
               const listeningSelections = listeningReview
-                ? notebookListeningSelections[entry.id] ?? listeningReview.options.filter((option) => notebookOptionMatchesAnswer(option, listeningReview.userAnswer))
+                ? notebookListeningSelections[entry.id] ?? []
                 : [];
               const detailPreview = entry.detail.split("\n").find((line) => line.startsWith("题目："))?.slice(3) ?? entry.detail.split("\n")[0];
               const notebookPreview = readingReview?.question ?? listeningReview?.question ?? (entry.kind === "word" ? `${entry.title} · ${detailPreview}` : detailPreview || entry.title);
@@ -4076,14 +4064,14 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
                 <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div>{!readingReview && !listeningReview && <h2>{entry.title}</h2>}{readingReview ? <section className="notebook-reading-review">
                   <article className="is-source"><span>{readingReview.sourceLabel}</span>{readingReview.excerpt ? <blockquote>{readingReview.excerpt}</blockquote> : <p>当前笔记没有保存对应原文，请展开题目原页复盘。</p>}<small>{readingReview.location}</small></article>
                   <article><span>题目</span><p>{readingReview.question}</p></article>
-                  {readingReview.options.length > 0 && <article className="is-options"><span>选项</span><ol>{readingReview.options.map((option) => { const selected = notebookOptionMatchesAnswer(option, readingReview.userAnswer); return <li className={selected ? "is-user-answer" : ""} key={option}><p>{option}</p>{selected && <small>我的选择</small>}</li>; })}</ol></article>}
+                  {readingReview.options.length > 0 && <article className="is-options"><span>选项</span><ol>{readingReview.options.map((option) => <li key={option}><p>{option}</p></li>)}</ol></article>}
                   <article className="is-correct-answer"><span>正确答案</span>{readingReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{readingReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
                   <article className="is-explanation"><span>解析</span><p>{readingReview.explanation}</p></article>
                 </section> : listeningReview ? <section className="notebook-listening-review">
                   <article className="is-audio"><span>答案对应音频</span><button type="button" className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media?.label ?? "播放答案对应片段"}`}</button><small>只回听这道题答案出现前后的片段</small></article>
-                  <article className="is-listening-question"><span>题目</span><p>{listeningReview.question}</p>{listeningReview.options.length > 0 ? <div className="notebook-listening-options" role={listeningReview.allowsMultiple ? "group" : "radiogroup"} aria-label="选择你的答案">{listeningReview.options.map((option) => { const selected = listeningSelections.includes(option); return <button type="button" role={listeningReview.allowsMultiple ? "checkbox" : "radio"} aria-checked={selected} className={selected ? "is-selected" : ""} onClick={() => setNotebookListeningSelections((current) => ({ ...current, [entry.id]: listeningReview.allowsMultiple ? selected ? listeningSelections.filter((item) => item !== option) : [...listeningSelections, option] : [option] }))} key={option}><i>{selected ? "✓" : ""}</i><span>{option}</span></button>; })}</div> : <label className="notebook-listening-input"><span>输入你的答案</span><input value={notebookListeningInputs[entry.id] ?? (listeningReview.userAnswer === "未作答" ? "" : listeningReview.userAnswer)} onChange={(event) => setNotebookListeningInputs((current) => ({ ...current, [entry.id]: event.target.value }))} placeholder="听完后输入答案" /></label>}</article>
+                  <article className="is-listening-question"><span>题目</span><p>{listeningReview.question}</p>{listeningReview.options.length > 0 ? <div className="notebook-listening-options" role={listeningReview.allowsMultiple ? "group" : "radiogroup"} aria-label="选择你的答案">{listeningReview.options.map((option) => { const selected = listeningSelections.includes(option); return <button type="button" role={listeningReview.allowsMultiple ? "checkbox" : "radio"} aria-checked={selected} className={selected ? "is-selected" : ""} onClick={() => setNotebookListeningSelections((current) => ({ ...current, [entry.id]: listeningReview.allowsMultiple ? selected ? listeningSelections.filter((item) => item !== option) : [...listeningSelections, option] : [option] }))} key={option}><i>{selected ? "✓" : ""}</i><span>{option}</span></button>; })}</div> : <label className="notebook-listening-input"><span>输入你的答案</span><input value={notebookListeningInputs[entry.id] ?? ""} onChange={(event) => setNotebookListeningInputs((current) => ({ ...current, [entry.id]: event.target.value }))} placeholder="听完后输入答案" /></label>}</article>
                   <article className="is-correct-answer"><span>正确答案</span>{listeningReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{listeningReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
-                </section> : <p>{entry.detail}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && !listeningReview && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
+                </section> : <p>{notebookDetailForDisplay(entry.detail)}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && !listeningReview && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
                 {entry.reference && <details className="notebook-entry-reference"><summary>{entry.reference.label}</summary><iframe title={`${entry.title} · 题目原页`} src={`${entry.reference.url}#page=${entry.reference.page}&toolbar=0&navpanes=0&view=FitH`} /></details>}
                 <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
                   const note = event.target.value;

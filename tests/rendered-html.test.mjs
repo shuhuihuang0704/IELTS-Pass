@@ -264,8 +264,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /!readingReview && !listeningReview && <h2>/);
   assert.match(app, /segmentDuration/);
   assert.match(app, /readingQuestionOptions/);
-  assert.match(app, /notebookOptionMatchesAnswer/);
-  assert.match(app, /我的选择/);
+  assert.doesNotMatch(app, /notebookOptionMatchesAnswer/);
+  assert.doesNotMatch(app, /我的选择/);
+  assert.match(app, /notebookDetailForDisplay/);
+  assert.match(app, /我的答案\|我的作答\|我的回答/);
+  assert.match(app, /notebookListeningInputs\[entry\.id\] \?\? ""/);
   assert.match(app, /revealedNotebookAnswerIds/);
   assert.match(app, /expandedNotebookIds/);
   assert.match(app, /type NotebookCategory = "all" \| "word" \| "listening" \| "reading" \| "speaking" \| "writing" \| "other"/);
@@ -282,12 +285,13 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /原文对应句/);
   assert.doesNotMatch(app, /<article><span>我的作答<\/span>/);
   assert.match(styles, /\.notebook-reading-review \.is-correct-answer button/);
-  assert.match(styles, /\.notebook-reading-review \.is-options li\.is-user-answer/);
+  assert.doesNotMatch(styles, /\.notebook-reading-review \.is-options li\.is-user-answer/);
   assert.match(styles, /\.notebook-listening-review \.is-audio button/);
   assert.match(styles, /\.notebook-listening-options button\.is-selected/);
   assert.match(styles, /\.notebook-entry\.is-collapsed/);
   assert.match(styles, /\.notebook-entry-preview/);
   assert.match(styles, /\.notebook-category-tabs/);
+  assert.match(styles, /\.notebook-list \{[^}]*align-items:start/);
   assert.match(styles, /\.notebook-kind\.listening/);
   assert.match(styles, /\.notebook-kind\.reading/);
   assert.match(app, /dailyDifficultyProfileForDate/);
