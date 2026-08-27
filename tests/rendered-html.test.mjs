@@ -485,7 +485,6 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /task\.transcriptPage && !taskSubmitted/);
   assert.match(app, /task\.transcriptPage && taskSubmitted/);
   assert.match(app, /听力原文尚未开放/);
-  assert.match(app, /disabled=\{taskRequiresSubmission && !taskSubmitted\}/);
   assert.match(app, /8 INDEPENDENT LISTENING TASKS/);
   assert.match(app, /可以提前提交查看当前 Task 的答案和原文/);
   assert.match(app, /officialTaskRecordId/);
@@ -628,9 +627,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /只包含本 Passage 的题目页/);
   assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
   assert.doesNotMatch(app, /题目直接在这里|本套材料|本材料任务|Academic Reading · Full Test 1–40|runner-material-index/);
-  assert.match(app, /official-task-controls is-single/);
-  assert.doesNotMatch(app, /showTaskSelector|<label>选择 \{taskUnitLabel\}|选择 Passage|选择 Task|选择 Part/);
-  assert.doesNotMatch(styles, /\.official-task-controls (?:label|select)/);
+  assert.doesNotMatch(app, /official-task-controls|official-paper-switch|showTaskSelector|<label>选择 \{taskUnitLabel\}|选择 Passage|选择 Task|选择 Part|查看题目 · P|提交后查看答案/);
+  assert.doesNotMatch(styles, /\.official-task-controls|\.official-paper-switch/);
   assert.match(app, /officialAnswerIsCorrect/);
   assert.match(app, /new Set\(groupResponses\)/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);

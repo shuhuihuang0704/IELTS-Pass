@@ -361,12 +361,6 @@ button { cursor: pointer; }
 .official-paper-panel>header span { color:var(--violet); font-size:9px; letter-spacing:.5px; }
 .official-paper-panel>header strong { margin-top:4px; font-size:13px; }
 .official-paper-panel>header>small { color:var(--muted); font-size:9px; }
-.official-task-controls { margin-top:14px; padding:12px; display:grid; grid-template-columns:minmax(240px,1fr) auto; align-items:end; gap:12px; border-radius:14px; background:#f4f1ed; }
-.official-task-controls.is-single { display:flex; justify-content:flex-end; }
-.official-paper-switch { display:flex; gap:6px; }
-.official-paper-switch button { min-height:36px; padding:0 11px; border:0; border-radius:9px; color:#645e67; background:#e8e3df; font-size:9px; white-space:nowrap; }
-.official-paper-switch button.is-active { color:white; background:var(--violet); }
-.official-paper-switch button:disabled { color:#9b949c; background:#e8e4e8; cursor:not-allowed; }
 .official-full-reading-body,.official-standard-paper-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:12px; align-items:start; }
 .official-full-reading-body>.official-answer-sheet,.official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { grid-column:2; grid-row:1 / span 20; max-height:760px; overflow:auto; position:sticky; top:12px; }
 .official-full-reading-body { grid-template-columns:minmax(0,1.5fr) minmax(300px,.72fr); }
@@ -1342,9 +1336,6 @@ button { cursor: pointer; }
   .official-runner-sidebar>small { grid-column:1 / -1; }
   .runner-timer-primary,.runner-timer-reset { width:100%; }
   .official-paper-panel>header { align-items:flex-start; flex-direction:column; }
-  .official-task-controls { grid-template-columns:1fr; }
-  .official-paper-switch { display:grid; grid-template-columns:1fr 1fr; }
-  .official-paper-switch button { padding:0 8px; white-space:normal; }
   .official-answer-grid { grid-template-columns:1fr; }
   .official-answer-sheet>footer { align-items:stretch; flex-direction:column; }
   .official-answer-sheet>footer button { width:100%; }

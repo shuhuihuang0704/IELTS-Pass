@@ -1381,7 +1381,6 @@ function OfficialTestRunner({
   const openResponseKey = `${taskKey}:open-response`;
   const openResponse = officialResponses[openResponseKey] ?? "";
   const openResponseWordCount = openResponse.trim() ? openResponse.trim().split(/\s+/).length : 0;
-  const taskRequiresSubmission = taskAnswers.length > 0 || Boolean(task.minimumWords) || Boolean(task.speakingPrompt);
   const answeredCount = taskAnswers.filter((answer) => (officialResponses[`${taskKey}:${answer.number}`] ?? "").trim()).length;
   const allAnswersFilled = taskAnswers.length > 0 && answeredCount === taskAnswers.length;
   const taskSubmitted = submittedTasks[taskKey] ?? false;
@@ -1389,8 +1388,6 @@ function OfficialTestRunner({
   const officialTaskPaperPages = paperMode === "answers" && task.answerPage
     ? task.answerPages ?? [task.answerPage]
     : task.questionPages ?? [task.questionPage];
-  const questionPageLabel = (task.questionPages ?? [task.questionPage]).join("–");
-  const answerPageLabel = (task.answerPages ?? (task.answerPage ? [task.answerPage] : [])).join("–");
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
     .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords) || Boolean(sessionTask.speakingPrompt))
@@ -1536,12 +1533,6 @@ function OfficialTestRunner({
         </aside>
         <section className="official-paper-panel">
           <header><div><strong>{task.questionLabel}</strong></div><small>{task.electronicModel && paperMode === "answers" ? "电子参考范文 · 清晰排版" : `官方原始题号 · 当前显示 P${displayPage}`}</small></header>
-          <div className="official-task-controls is-single">
-            <div className="official-paper-switch" aria-label="题目与答案切换">
-              <button className={paperMode === "questions" ? "is-active" : ""} onClick={() => setPaperMode("questions")}>查看题目 · P{questionPageLabel}</button>
-              {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"}{task.electronicModel ? "" : ` · P${answerPageLabel}`}</button>}
-            </div>
-          </div>
           {material.tasks.length > 1 && (
             <section className="official-task-map" aria-label="官方练习任务导航">
               <header><div><span>{speakingTaskMode ? "3 INDEPENDENT SPEAKING PARTS" : material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {speakingTaskMode ? "Speaking Part" : material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{speakingTaskMode ? "每个 Part 独立完成考官提问、60 秒准备、录音提交与反馈；提交一个不会完成另外两个。" : material.audioTracks ? "可以提前提交查看当前 Task 的答案和原文；空题按未答处理，答完全部题目才计为完成。" : material.passagePdfUrl ? "可以提前提交查看当前 Passage 的答案与解析；答完全部题目才计为完成。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${completedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
