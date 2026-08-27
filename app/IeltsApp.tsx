@@ -2396,7 +2396,7 @@ function VocabularyPractice({
       {mode === "daily" ? (
         <DailyVocabularySprint progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
       ) : mode === "typing" ? (
-        <div className="exercise-layout">
+        <div className="exercise-layout is-single-column">
           <div className="exercise-main dictation-batch-practice">
             <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / {dictationGroupCount} 组</span><span>{completedDictationCount} / {dailyDictationWords.length}</span></div>
             <h2>一段音频，连续听写 10 个词</h2><p>每个词后预留约 4 秒书写时间；可以随时暂停、继续或拖动进度，整组提交前不显示答案和中文。</p>
@@ -2426,13 +2426,6 @@ function VocabularyPractice({
               </footer>
             </form>
           </div>
-          <aside className="exercise-context dictation-batch-guide">
-            <span>高效键盘流程</span>
-            <ol><li><b>1</b><span>点击一次，播放整组 10 个词</span></li><li><b>2</b><span>利用词间间隔输入拼写</span></li><li><b>3</b><span>需要时暂停或拖动进度条</span></li><li><b>4</b><span>10 词一次提交并复盘</span></li></ol>
-            <button onClick={toggleDictationSequence}>{dictationPlayback === "playing" ? "Ⅱ 暂停本组音频" : "▶ 播放 / 继续本组"}</button>
-            <button onClick={() => { resetDictationPlayer(); setActiveDictationItem(0); }}>↺ 回到本组开头</button>
-            <div className="context-stat"><strong>{progress.masteredWords.length}</strong><span>累计掌握词汇</span></div>
-          </aside>
         </div>
       ) : (
         <ConnectedSpeechPractice phrases={dailyConnectedSpeechPhrases} progress={progress} updateProgress={updateProgress} />
@@ -2485,7 +2478,7 @@ function ConnectedSpeechPractice({
   }
 
   return (
-    <div className="exercise-layout connected-speech-layout">
+    <div className="exercise-layout is-single-column connected-speech-layout">
       <div className="exercise-main typing-practice">
         <div className="exercise-kicker"><span>连读 / 弱读 / 失爆 · 已导入语料库</span><span>{completedCount + (feedback ? 1 : 0)} / {phrases.length}</span></div>
         <h2>听自然语流，写出完整词组</h2><p>先听自然语速；需要时再听慢速，不显示文字提示。</p>
@@ -2495,7 +2488,6 @@ function ConnectedSpeechPractice({
         {feedback && <div className="dictation-reveal phrase-reveal"><span>{phrase.feature}</span><strong>{phrase.phrase}</strong><p>{phrase.meaning}</p><small>{phrase.note}</small><button className={progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "inline-note-button is-saved" : "inline-note-button"} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${phrase.phrase.toLowerCase()}`, kind: "word", title: phrase.phrase, detail: `${phrase.meaning}\n${phrase.note}`, source: `吞音词组 · ${phrase.feature}` }))}>{progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div>}
         <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === phrases.length - 1 ? "完成加练" : "下一个"} →</button></div>
       </div>
-      <aside className="exercise-context"><span>听音重点</span><p>{feedback ? phrase.note : "不要尝试把每个词切开听。先抓重读词，再从弱读、连读和辅音变化中还原完整词组。"}</p><div className="context-stat"><strong>{phrases.length}</strong><span>今日语料词组</span></div></aside>
     </div>
   );
 }

@@ -699,6 +699,7 @@ button { cursor: pointer; }
 .vocabulary-mode-switch button.is-active { color:#473cab; background:white; box-shadow:0 4px 12px rgba(35,30,48,.06); font-weight:650; }
 .completion-requirement { margin:-3px 0 15px; color:var(--muted); font-size:10px; }
 .exercise-layout { display:grid; grid-template-columns:minmax(0,1.75fr) minmax(240px,.65fr); gap:14px; }
+.exercise-layout.is-single-column { grid-template-columns:minmax(0,1fr); }
 .exercise-main,.exercise-context,.reading-passage,.reading-questions { border-radius:25px; background:white; }
 .exercise-main { min-height:520px; padding:30px; }
 .exercise-context { min-height:260px; padding:23px; }
@@ -760,10 +761,6 @@ button { cursor: pointer; }
 .dictation-batch-footer>button:disabled { opacity:.3; cursor:not-allowed; }
 .dictation-batch-footer>div:last-child { display:flex; gap:6px; }
 .dictation-batch-footer>div:last-child button.is-secondary { color:#4e47ad; background:#eeecfb; }
-.dictation-batch-guide ol { margin:19px 0; padding:0; display:grid; gap:9px; list-style:none; }
-.dictation-batch-guide li { display:grid; grid-template-columns:25px 1fr; align-items:center; gap:8px; color:#5f5962; font-size:10px; }
-.dictation-batch-guide li b { width:25px; height:25px; display:grid; place-items:center; border-radius:8px; color:#5048b1; background:#ece9fa; font-size:8px; }
-.dictation-batch-guide>button { width:100%; min-height:38px; margin-top:7px; }
 .inline-note-button { margin-top:13px; padding:8px 11px; border:0; border-radius:10px; color:#5143b6; background:#ebe7fa; font-size:10px; }
 .inline-note-button.is-saved { color:white; background:#5b4ec3; }
 .phrase-audio-actions { display:flex; gap:8px; margin:30px 0 14px; }
