@@ -50,6 +50,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /Speaking Part 3|真实考试结构|考官/);
   assert.match(app, /Form Completion|Choose TWO|提交 10 道答案/);
   assert.match(state, /dailyVocabularyDate|dailyVocabularySeen|dailyVocabularyKnown/);
+  assert.match(state, /studyPlanDays: number/);
+  assert.match(state, /studyPlanStartedAt: string/);
+  assert.match(state, /dailyVocabularyTarget/);
+  assert.match(state, /officialSessionsPerWeek/);
+  assert.match(state, /estimatedDailyMinutes/);
   assert.match(state, /vocabularyLibraryVersion = "3600-v1"/);
   assert.match(state, /isCurrentVocabularyLibrary/);
   assert.match(state, /speakingPart3Turns/);
@@ -165,6 +170,13 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /profile-water-gauge/);
   assert.match(app, /profile-water-fill/);
   assert.match(app, /每完成一项今日任务，水位会上升 25%/);
+  assert.match(app, /PERSONALISED STUDY PLAN/);
+  assert.match(app, /选择你的备考周期/);
+  assert.match(app, /自定义学习天数/);
+  assert.match(app, /重新生成计划/);
+  assert.match(app, /dailyVocabularyTarget\(progress\.studyPlanDays\)/);
+  assert.match(styles, /\.study-plan-card/);
+  assert.match(styles, /\.study-plan-presets/);
   assert.doesNotMatch(app, /\["今日词汇"|\["待强化词汇"/);
   assert.match(styles, /\.ai-tutor-shell/);
   assert.match(styles, /\.profile-water-gauge/);

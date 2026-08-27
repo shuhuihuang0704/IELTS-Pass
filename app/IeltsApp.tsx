@@ -14,10 +14,14 @@ import {
 } from "./learning-data";
 import {
   completionPercent,
+  dailyVocabularyTarget,
   defaultProgress,
+  estimatedDailyMinutes,
   localDayKey,
   localWeekKey,
   mergeStoredProgress,
+  normalizeStudyPlanDays,
+  officialSessionsPerWeek,
   rateReviewWord,
   recordAppStudyTime,
   recordStudyActivity,
@@ -926,31 +930,35 @@ function TodayView({
 }) {
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [showExtraStudy, setShowExtraStudy] = useState(false);
+  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const dailyMinutes = estimatedDailyMinutes(progress.studyPlanDays);
+  const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
   const carryoverSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]);
   const nextSkill = skills.find((skill) => skill.id === carryoverSkill)
     ?? skills.find((skill) => !progress.completed[skill.id])
     ?? skills[0];
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
   const weekKey = localWeekKey();
-  const completedOfficialSessions = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)));
+  const plannedOfficialSessions = officialTestSchedule.slice(0, officialSessionsPerWeek(progress.studyPlanDays));
+  const completedOfficialSessions = plannedOfficialSessions.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)));
   const todayIsoDay = ((new Date().getDay() + 6) % 7) + 1;
-  const nextOfficialSession = officialTestSchedule.find((session) => session.isoDay >= todayIsoDay && !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
-    ?? officialTestSchedule.find((session) => !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
-    ?? officialTestSchedule[0];
+  const nextOfficialSession = plannedOfficialSessions.find((session) => session.isoDay >= todayIsoDay && !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
+    ?? plannedOfficialSessions.find((session) => !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
+    ?? plannedOfficialSessions[0];
   return (
     <>
       <PageHeader eyebrow="TODAY · IELTS ACADEMIC" title="今天，只做好" accent="下一步。" onDictionarySearch={onDictionarySearch} />
       {progress.carryoverTasks.length > 0 && (
         <section className="carryover-strip">
           <div><span>ROLLED OVER FROM YESTERDAY</span><strong>先补完昨天没有完成的任务</strong><p>补做任务不会自动打勾；完成完整专项后才会从这里移除。</p></div>
-          <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); return skill ? <button onClick={() => onOpenSkill(skill.id)} key={skill.id}><span>{skill.short}</span><strong>{skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : "昨日未完成 →"}</small></button> : null; })}</div>
+          <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); return skill ? <button onClick={() => onOpenSkill(skill.id)} key={skill.id}><span>{skill.short}</span><strong>{skill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : "昨日未完成 →"}</small></button> : null; })}</div>
         </section>
       )}
       <div className="dashboard-grid">
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
-          <div className="scene-heading"><span>YOUR FOCUS · FOUR SKILLS</span><span>约 50 分钟</span></div>
-          <h2>完成今天的<br />雅思训练</h2><p>100 词 · 听力场景 · 口语互动 · Academic Reading</p>
+          <div className="scene-heading"><span>PLAN DAY {planDay} / {progress.studyPlanDays}</span><span>约 {dailyMinutes} 分钟</span></div>
+          <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · 听力场景 · 口语互动 · Academic Reading</p>
           <button className="voice-orb" aria-label="试听场景" onClick={() => speak("Hello, I'm calling about the room for rent.")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
             {skills.map((skill, index) => (
@@ -959,7 +967,7 @@ function TodayView({
                 key={skill.id}
                 onClick={() => onOpenSkill(skill.id)}
               >
-                <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{progress.carryoverTasks.includes(skill.id) ? "昨日未完成" : skill.duration}</small>
+                <span>{progress.completed[skill.id] ? "✓" : index + 1}</span><strong>{skill.short}</strong><small>{progress.carryoverTasks.includes(skill.id) ? "昨日未完成" : skill.id === "vocabulary" ? `${Math.ceil(vocabularyTarget * .15)} 分钟` : skill.duration}</small>
               </button>
             ))}
           </div>
@@ -968,13 +976,13 @@ function TodayView({
             aria-expanded={completedCount === 4 ? showExtraStudy : undefined}
             aria-controls={completedCount === 4 ? "extra-study-menu" : undefined}
             onClick={completedCount === 4 ? () => setShowExtraStudy((current) => !current) : onStart}
-          >{completedCount === 4 ? showExtraStudy ? "收起加练选择" : "继续增加学习" : `继续${nextSkill.label}`}<span>{completedCount === 4 && showExtraStudy ? "↑" : "→"}</span></button>
+          >{completedCount === 4 ? showExtraStudy ? "收起加练选择" : "继续增加学习" : `继续${nextSkill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : nextSkill.label}`}<span>{completedCount === 4 && showExtraStudy ? "↑" : "→"}</span></button>
         </section>
         <aside className="progress-panel" aria-label="学习进度">
           <div className="progress-intro">
             <span>今日完成度</span><strong>{percent}<small>%</small></strong>
             <div className="progress-track"><i style={{ width: `${percent}%` }} /></div>
-            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : progress.carryoverTasks.includes(nextSkill.id) ? `已完成 ${completedCount} / 4 项，先补做昨天的${nextSkill.label}。` : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.label}。`}</p>
+            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : progress.carryoverTasks.includes(nextSkill.id) ? `已完成 ${completedCount} / 4 项，先补做昨天的${nextSkill.id === "vocabulary" ? "词汇" : nextSkill.label}。` : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.id === "vocabulary" ? `${vocabularyTarget} 词` : nextSkill.label}。`}</p>
           </div>
           <button className="streak-row" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <button className="memory-row" onClick={() => onNavigate("review")}>
@@ -1009,7 +1017,7 @@ function TodayView({
       )}
       <section className="official-plan-strip">
         <div><span>WEEKLY OFFICIAL PRACTICE</span><strong>本周官方套题训练</strong><p>下一项：{nextOfficialSession.dayLabel} {nextOfficialSession.time} · {nextOfficialSession.title}</p></div>
-        <div className="official-plan-progress"><strong>{completedOfficialSessions.length}<small>/4</small></strong><span>本周已完成</span></div>
+        <div className="official-plan-progress"><strong>{completedOfficialSessions.length}<small>/{plannedOfficialSessions.length}</small></strong><span>本周已完成</span></div>
         <button onClick={() => onNavigate("practice")}>查看官方套题计划 <span>→</span></button>
       </section>
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
@@ -1124,17 +1132,19 @@ function OfficialPracticePlan({
   onOpenOfficialTest: (sessionId: string) => void;
 }) {
   const weekKey = localWeekKey();
-  const completedCount = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey))).length;
+  const sessionsPerWeek = officialSessionsPerWeek(progress.studyPlanDays);
+  const plannedSessions = officialTestSchedule.slice(0, sessionsPerWeek);
+  const completedCount = plannedSessions.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey))).length;
 
   return (
     <section className="official-practice-plan">
       <header className="official-practice-heading">
-        <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>每周 4 次 · 共约 3.5 小时 · 独立于每日基础训练</p></div>
-        <strong>{completedCount}<small>/4</small></strong>
+        <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>{progress.studyPlanDays} 天计划 · 每周 {sessionsPerWeek} 次 · 随备考周期自动调整</p></div>
+        <strong>{completedCount}<small>/{sessionsPerWeek}</small></strong>
       </header>
       <div className="official-source-note"><b>内容来源说明</b><p>Reading 使用 IELTS.org 官方完整 Academic Reading Sample Test（3 篇、1–40 题）。这是官方样题，不等同于已正式考过的 Cambridge 历年原卷；App 不会把两者混淆。</p></div>
       <div className="official-session-list">
-        {officialTestSchedule.map((session, index) => {
+        {plannedSessions.map((session, index) => {
           const recordId = officialPracticeRecordId(session, weekKey);
           const completed = progress.officialPracticeCompleted.includes(recordId);
           return (
@@ -2013,7 +2023,7 @@ function buildTutorReply(question: string, progress: LearningProgress): string {
   if (/单词|词汇|vocabulary|拼写|遗忘/.test(input)) return `你目前有 ${progress.reviewWords.length} 个词进入复习队列。新词先判断“认识 / 模糊 / 不熟悉”，模糊和不熟悉的词在本轮重复；复习时优先做主动回忆，再看中文和例句。拼写错误要单独进行听写，并按遗忘曲线在后续日期再次出现。`;
   if (/计划|进度|今天|下一步|怎么学|安排/.test(input)) {
     const done = Object.values(progress.completed).filter(Boolean).length;
-    return `你今天完成了 ${done}/4 项，当前完成度 ${completionPercent(progress)}%。建议先完成尚未打勾的今日任务，再进入官方套题；若四项都已完成，就复习今日错词或加练一组听力。学习时间会按你在 App 中的实际停留时间继续累计。`;
+    return `你选择的是 ${progress.studyPlanDays} 天计划，每日词汇目标为 ${dailyVocabularyTarget(progress.studyPlanDays)} 词。今天完成了 ${done}/4 项，当前完成度 ${completionPercent(progress)}%。建议先完成尚未打勾的今日任务，再进入本周套题；若四项都已完成，就复习今日错词或加练一组听力。`;
   }
   return "可以。请把具体的 IELTS 问题、题干、你的答案或不理解的句子发给我。我会先判断它属于词汇、听力、口语、阅读还是写作，再给出可直接执行的解法、示例和下一步练习。";
 }
@@ -2085,8 +2095,9 @@ function SceneView({
   onComplete: (skill: Skill, minutes: number) => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
+  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
   const headers: Record<Skill, { eyebrow: string; title: string; accent: string }> = {
-    vocabulary: { eyebrow: "DAILY VOCABULARY", title: "每天 100 词，", accent: "先眼熟再记牢。" },
+    vocabulary: { eyebrow: "DAILY VOCABULARY", title: `每天 ${vocabularyTarget} 词，`, accent: "先眼熟再记牢。" },
     listening: { eyebrow: "LISTENING · SECTION 1", title: "听清细节，", accent: "再做选择。" },
     speaking: { eyebrow: "SPEAKING · PART 3", title: "像面对考官一样，", accent: "展开观点。" },
     reading: { eyebrow: "ACADEMIC READING", title: "按真实题型，", accent: "完成定位。" },
@@ -2105,7 +2116,7 @@ function SceneView({
         carryoverTasks: fullyCompleted ? current.carryoverTasks.filter((item) => item !== "vocabulary") : current.carryoverTasks,
       };
       return fullyCompleted && !current.completed.vocabulary
-        ? recordStudyActivity(next, { id: "daily-skill:vocabulary", label: "词汇训练", minutes: 15 })
+        ? recordStudyActivity(next, { id: "daily-skill:vocabulary", label: "词汇训练", minutes: Math.ceil(vocabularyTarget * .15) })
         : next;
     });
   };
@@ -2120,7 +2131,7 @@ function SceneView({
             className={activeSkill === skill.id ? "is-active" : ""}
             key={skill.id}
             onClick={() => onSelectSkill(skill.id)}
-          ><span>{progress.completed[skill.id] ? "✓" : index + 1}</span>{skill.label}</button>
+          ><span>{progress.completed[skill.id] ? "✓" : index + 1}</span>{skill.id === "vocabulary" ? `每日 ${vocabularyTarget} 词` : skill.label}</button>
         ))}
       </div>
       <section className="exercise-surface">
@@ -2148,6 +2159,7 @@ function VocabularyPractice({
   onSectionComplete: (section: "daily" | "dictation") => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
+  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
   const [mode, setMode] = useState<"daily" | "typing" | "phrases">("daily");
   const completedDictationCount = vocabulary.filter((item) => progress.dailyDictationSeen.includes(item.word)).length;
   const [dictationGroup, setDictationGroup] = useState(() => Math.min(7, Math.floor(completedDictationCount / 10)));
@@ -2279,11 +2291,11 @@ function VocabularyPractice({
   return (
     <>
       <div className="vocabulary-mode-switch" role="tablist" aria-label="词汇练习模式">
-        <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 100 词 {progress.dailyVocabularyCompleted ? "✓" : ""}</button>
+        <button role="tab" aria-selected={mode === "daily"} className={mode === "daily" ? "is-active" : ""} onClick={() => setMode("daily")}>每日 {vocabularyTarget} 词 {progress.dailyVocabularyCompleted ? "✓" : ""}</button>
         <button role="tab" aria-selected={mode === "typing"} className={mode === "typing" ? "is-active" : ""} onClick={() => setMode("typing")}>场景听写 80 词 {progress.dailyDictationCompleted ? "✓" : ""}</button>
         <button role="tab" aria-selected={mode === "phrases"} className={mode === "phrases" ? "is-active" : ""} onClick={() => setMode("phrases")}>吞音词组 {connectedSpeechPhrases.length}</button>
       </div>
-      <p className="completion-requirement">完成每日 100 词和场景听写 80 词后，词汇任务才会打勾；吞音词组为专项加练。</p>
+      <p className="completion-requirement">完成每日 {vocabularyTarget} 词和场景听写 80 词后，词汇任务才会打勾；吞音词组为专项加练。</p>
       {mode === "daily" ? (
         <DailyVocabularySprint progress={progress} onComplete={() => onSectionComplete("daily")} updateProgress={updateProgress} />
       ) : mode === "typing" ? (
@@ -2404,8 +2416,11 @@ function DailyVocabularySprint({
   onComplete: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const dailyWords = useMemo(() => getDailyVocabulary(progress.dailyVocabularyDate), [progress.dailyVocabularyDate]);
+  const dailyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const dailyWords = useMemo(() => getDailyVocabulary(progress.dailyVocabularyDate, dailyTarget), [dailyTarget, progress.dailyVocabularyDate]);
   const total = dailyWords.length;
+  const groupSize = 20;
+  const roundCount = Math.ceil(total / groupSize);
   const dailyWordSet = useMemo(() => new Set(dailyWords.map((item) => item.word)), [dailyWords]);
   const [queue, setQueue] = useState(() => dailyWords.filter((item) => !progress.dailyVocabularyKnown.includes(item.word)));
   const [pendingRating, setPendingRating] = useState<WordRating | null>(null);
@@ -2453,23 +2468,24 @@ function DailyVocabularySprint({
   if (finished) {
     return (
       <div className="daily-complete">
-        <span className="daily-complete-mark">100</span>
-        <div><p>DAILY VOCABULARY COMPLETE</p><h2>今天的 100 个词，已经全部眼熟。</h2>
+        <span className="daily-complete-mark">{total}</span>
+        <div><p>DAILY VOCABULARY COMPLETE</p><h2>今天的 {total} 个词，已经全部眼熟。</h2>
           <span>全部达到“一眼认识” · 待复习词已按间隔计划保存</span>
         </div>
       </div>
     );
   }
 
-  const round = Math.min(5, Math.floor(knownCount / 20) + 1);
+  const round = Math.min(roundCount, Math.floor(knownCount / groupSize) + 1);
   return (
     <div className="exercise-layout daily-vocabulary-layout">
       <div className="exercise-main daily-vocabulary-main">
-        <div className="exercise-kicker"><span>每日 100 词 · 第 {round} 组</span><span>已确认 {knownCount} / {total}</span></div>
-        <div className="word-rounds" aria-label={`已认识 ${knownCount} / ${total} 个词`}>
-          {Array.from({ length: 5 }, (_, index) => {
-            const completed = Math.max(0, Math.min(20, knownCount - index * 20));
-            return <span key={index}><i style={{ width: `${completed * 5}%` }} /></span>;
+        <div className="exercise-kicker"><span>每日 {total} 词 · 第 {round} / {roundCount} 组</span><span>已确认 {knownCount} / {total}</span></div>
+        <div className="word-rounds" style={{ gridTemplateColumns: `repeat(${roundCount},1fr)` }} aria-label={`已认识 ${knownCount} / ${total} 个词`}>
+          {Array.from({ length: roundCount }, (_, index) => {
+            const groupTarget = Math.min(groupSize, total - index * groupSize);
+            const completed = Math.max(0, Math.min(groupTarget, knownCount - index * groupSize));
+            return <span key={index}><i style={{ width: `${completed / groupTarget * 100}%` }} /></span>;
           })}
         </div>
         <section className={`daily-word-card ${pendingRating ? "is-revealed" : ""}`}>
@@ -2497,7 +2513,7 @@ function DailyVocabularySprint({
       </div>
       <aside className="exercise-context daily-vocabulary-context">
         <span>今天的目标</span>
-        <strong>{knownCount}<small>/100</small></strong>
+        <strong>{knownCount}<small>/{total}</small></strong>
         <p>先核对中文含义再确认认识；若点了“记错了”，该词会回到本轮并进入遗忘曲线复习。</p>
         <div><b>{dailyVocabulary.length}</b><small>高频核心词库</small></div>
         <div><b>{fuzzyCount}</b><small>本轮模糊</small></div>
@@ -3207,10 +3223,32 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
 function ProfileView({ progress, percent, onReset, updateProgress, onDictionarySearch }: { progress: LearningProgress; percent: number; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onDictionarySearch: (query?: string) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
+  const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
+  const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const planSessions = officialSessionsPerWeek(progress.studyPlanDays);
+  const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
+  const planEndDate = new Date(`${progress.studyPlanStartedAt}T12:00:00`);
+  planEndDate.setDate(planEndDate.getDate() + progress.studyPlanDays - 1);
   const stats = [
     ["累计学习", `${progress.minutes} 分钟`],
     ["我的笔记", `${progress.notebook.length}`],
   ];
+  const applyStudyPlan = (days: number) => {
+    const nextDays = normalizeStudyPlanDays(days);
+    setCustomPlanDays(String(nextDays));
+    updateProgress((current) => {
+      if (current.studyPlanDays === nextDays) return current;
+      const targetWords = getDailyVocabulary(current.dailyVocabularyDate, dailyVocabularyTarget(nextDays));
+      const dailyVocabularyCompleted = targetWords.every((item) => current.dailyVocabularyKnown.includes(item.word));
+      return {
+        ...current,
+        studyPlanDays: nextDays,
+        studyPlanStartedAt: localDayKey(),
+        dailyVocabularyCompleted,
+        completed: { ...current.completed, vocabulary: dailyVocabularyCompleted && current.dailyDictationCompleted },
+      };
+    });
+  };
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} onDictionarySearch={onDictionarySearch} />;
   return (
     <>
@@ -3224,6 +3262,17 @@ function ProfileView({ progress, percent, onReset, updateProgress, onDictionaryS
           <button className="profile-streak-card" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <div className="profile-grid">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
         </div>
+      </section>
+      <section className="study-plan-card">
+        <header><div><span>PERSONALISED STUDY PLAN</span><h2>选择你的备考周期</h2><p>计划越长，每日任务越轻；已掌握词汇、复习记录和笔记都会保留。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
+        <div className="study-plan-summary">
+          <article><span>每日词汇</span><strong>{planVocabularyTarget}<small> 词</small></strong></article>
+          <article><span>套题频率</span><strong>{planSessions}<small> 次 / 周</small></strong></article>
+          <article><span>每日预计</span><strong>{estimatedDailyMinutes(progress.studyPlanDays)}<small> 分钟</small></strong></article>
+          <article><span>预计结束</span><strong>{planEndDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}</strong></article>
+        </div>
+        <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days)} 词 · 每周 {officialSessionsPerWeek(days)} 套</small></button>)}</div>
+        <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
       <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
         <span className="profile-wordbook-mark">Aa</span>

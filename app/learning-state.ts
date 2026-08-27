@@ -41,6 +41,8 @@ export type DailyStudyRecord = {
 
 export type LearningProgress = {
   vocabularyLibraryVersion: string;
+  studyPlanDays: number;
+  studyPlanStartedAt: string;
   completed: Record<Skill, boolean>;
   masteredWords: string[];
   reviewWords: string[];
@@ -71,6 +73,26 @@ export type LearningProgress = {
 };
 
 export const vocabularyLibraryVersion = "3600-v1";
+export const vocabularyPlanSize = 3600;
+
+export function normalizeStudyPlanDays(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(30, Math.min(180, Math.round(value)))
+    : 36;
+}
+
+export function dailyVocabularyTarget(planDays: number) {
+  return Math.ceil(vocabularyPlanSize / normalizeStudyPlanDays(planDays));
+}
+
+export function officialSessionsPerWeek(planDays: number) {
+  const days = normalizeStudyPlanDays(planDays);
+  return days <= 45 ? 4 : days <= 90 ? 3 : 2;
+}
+
+export function estimatedDailyMinutes(planDays: number) {
+  return 35 + Math.ceil(dailyVocabularyTarget(planDays) * .15);
+}
 
 export function localDayKey(date = new Date()) {
   const year = date.getFullYear();
@@ -113,6 +135,8 @@ export function calculateStudyStreak(
 
 export const defaultProgress: LearningProgress = {
   vocabularyLibraryVersion,
+  studyPlanDays: 36,
+  studyPlanStartedAt: localDayKey(),
   completed: { vocabulary: false, listening: false, speaking: false, reading: false },
   masteredWords: [],
   reviewWords: [],
@@ -260,6 +284,10 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   const today = localDayKey();
   const isCurrentDay = stored.dailyVocabularyDate === today;
   const isCurrentVocabularyLibrary = stored.vocabularyLibraryVersion === vocabularyLibraryVersion;
+  const studyPlanDays = normalizeStudyPlanDays(stored.studyPlanDays);
+  const studyPlanStartedAt = typeof stored.studyPlanStartedAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(stored.studyPlanStartedAt)
+    ? stored.studyPlanStartedAt
+    : today;
   const isCurrentVocabularyDay = isCurrentDay && isCurrentVocabularyLibrary;
   const completed = isCurrentDay
     ? { ...defaultProgress.completed, ...(stored.completed ?? {}) }
@@ -296,6 +324,8 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     ...defaultProgress,
     ...stored,
     vocabularyLibraryVersion,
+    studyPlanDays,
+    studyPlanStartedAt,
     completed,
     masteredWords: Array.isArray(stored.masteredWords) ? stored.masteredWords : [],
     reviewWords,

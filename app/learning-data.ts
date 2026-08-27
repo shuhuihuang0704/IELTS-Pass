@@ -9,7 +9,7 @@ export const skills: Array<{
   description: string;
   duration: string;
 }> = [
-  { id: "vocabulary", short: "词", label: "每日 100 词", description: "5 × 20 高频词速刷 + 80 词场景听写", duration: "15 分钟" },
+  { id: "vocabulary", short: "词", label: "每日词汇", description: "按备考周期生成高频词速刷 + 80 词场景听写", duration: "按计划" },
   { id: "listening", short: "听", label: "听力精练", description: "Section 1 填空、多选、匹配与单选", duration: "12 分钟" },
   { id: "speaking", short: "说", label: "口语 Part 3", description: "真人考官式抽象讨论与追问", duration: "5 分钟" },
   { id: "reading", short: "读", label: "阅读套题", description: "匹配、单选、判断与摘要填空", duration: "18 分钟" },
@@ -517,7 +517,7 @@ export const dailyVocabulary = Array.from({ length: 36 }, (_, dayIndex) => {
 
 export function getDailyVocabulary(dayKey: string, count = 100) {
   const dayNumber = Math.floor(new Date(`${dayKey}T00:00:00`).getTime() / 86_400_000);
-  const start = ((dayNumber % dailyVocabulary.length) * count) % dailyVocabulary.length;
+  const start = ((dayNumber % dailyVocabulary.length) * 100) % dailyVocabulary.length;
   return Array.from({ length: Math.min(count, dailyVocabulary.length) }, (_, index) =>
     dailyVocabulary[(start + index) % dailyVocabulary.length],
   );
