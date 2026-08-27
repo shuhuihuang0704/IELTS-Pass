@@ -248,6 +248,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /buildOfficialQuestionNote/);
   assert.match(app, /enrichLegacyOfficialNotebookEntry/);
   assert.match(app, /readingNotebookReview/);
+  assert.match(app, /listeningNotebookReview/);
+  assert.match(app, /officialAnswerAudioMedia/);
+  assert.match(app, /答案对应音频/);
+  assert.match(app, /只回听这道题答案出现前后的片段/);
+  assert.match(app, /segmentDuration/);
   assert.match(app, /readingQuestionOptions/);
   assert.match(app, /notebookOptionMatchesAnswer/);
   assert.match(app, /我的选择/);
@@ -257,6 +262,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /<article><span>我的作答<\/span>/);
   assert.match(styles, /\.notebook-reading-review \.is-correct-answer button/);
   assert.match(styles, /\.notebook-reading-review \.is-options li\.is-user-answer/);
+  assert.match(styles, /\.notebook-listening-review \.is-audio button/);
   assert.match(app, /题目位置：题册 P/);
   assert.match(app, /原文依据：/);
   assert.match(app, /officialQuestionMedia/);

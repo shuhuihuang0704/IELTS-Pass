@@ -24,6 +24,8 @@ export type NotebookEntry = {
     text?: string;
     startSeconds?: number;
     endSeconds?: number;
+    segmentIndex?: number;
+    segmentCount?: number;
   };
   reference?: {
     label: string;

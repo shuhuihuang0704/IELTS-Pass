@@ -157,6 +157,18 @@ type OfficialTestMaterial = {
   audioTracks?: OfficialAudioTrack[];
 };
 
+function officialAnswerAudioMedia(task: OfficialTaskSegment, answer: OfficialAnswer, audioTrack?: OfficialAudioTrack): NotebookEntry["media"] {
+  if (!audioTrack) return undefined;
+  const answers = task.answers ?? [];
+  return {
+    kind: "audio",
+    label: `播放 Q${answer.number} 答案对应片段`,
+    url: audioTrack.url,
+    segmentIndex: Math.max(0, answers.findIndex((item) => item.number === answer.number)),
+    segmentCount: Math.max(1, answers.length),
+  };
+}
+
 const listeningMaterial: OfficialTestMaterial = {
   id: "listening",
   label: "Listening",
@@ -457,7 +469,7 @@ function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry 
   return {
     ...entry,
     detail,
-    media: entry.media ?? (audioTrack ? { kind: "audio", label: `播放 ${task.label} 对应音频`, url: audioTrack.url } : undefined),
+    media: officialAnswerAudioMedia(task, answer, audioTrack) ?? entry.media,
     reference: entry.reference ?? { label: `${task.questionLabel} · 查看题目原页`, url: material.pdfUrl, page: task.questionPage },
   };
 }
@@ -506,6 +518,25 @@ function notebookOptionMatchesAnswer(option: string, answer: string) {
   const normalizedOption = option.trim().toLowerCase();
   const normalizedAnswer = answer.trim().toLowerCase();
   return Boolean(normalizedAnswer) && (normalizedOption === normalizedAnswer || normalizedOption.startsWith(`${normalizedAnswer}.`) || normalizedOption.endsWith(`. ${normalizedAnswer}`));
+}
+
+type ListeningNotebookReview = {
+  question: string;
+  options: string[];
+  userAnswer: string;
+  correctAnswer: string;
+};
+
+function listeningNotebookReview(entry: NotebookEntry): ListeningNotebookReview | undefined {
+  const isListeningEntry = entry.source.includes("听力") || entry.source.toLowerCase().includes("listening") || entry.detail.includes("听力复盘：");
+  if (entry.kind !== "question" || entry.media?.kind !== "audio" || !isListeningEntry) return undefined;
+  const field = (label: string) => entry.detail.split("\n").find((line) => line.startsWith(`${label}：`))?.slice(label.length + 1).trim() ?? "";
+  return {
+    question: field("题目") || entry.title,
+    options: field("选项").split("｜").map((option) => option.trim()).filter(Boolean),
+    userAnswer: field("我的答案") || "未作答",
+    correctAnswer: field("正确答案"),
+  };
 }
 
 function officialPracticeRecordId(session: OfficialTestSession, weekKey = localWeekKey()) {
@@ -1524,9 +1555,7 @@ function OfficialTestRunner({
     if (audioTrack) lines.push("听力复盘：使用右侧音频按钮回听当前独立 Task，重点核对答案出现前后的同义替换和拼写。");
     return lines.join("\n");
   };
-  const officialQuestionMedia = audioTrack
-    ? { kind: "audio" as const, label: `播放 ${task.label} 对应音频`, url: audioTrack.url }
-    : undefined;
+  const officialQuestionMedia = (answer: OfficialAnswer) => officialAnswerAudioMedia(task, answer, audioTrack);
   const officialQuestionReference = { label: `${task.questionLabel} · 查看题目原页`, url: material.pdfUrl, page: task.questionPage };
   const submitCurrentTask = (responseOverride?: Record<string, string>) => {
     const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
@@ -1546,7 +1575,7 @@ function OfficialTestRunner({
         return {
           ...entry,
           detail: buildOfficialQuestionNote(answer, response, true),
-          media: officialQuestionMedia,
+          media: officialQuestionMedia(answer),
           reference: officialQuestionReference,
         };
       });
@@ -1691,7 +1720,7 @@ function OfficialTestRunner({
                           title: `Q${answer.number} · ${task.label}`,
                           detail: buildOfficialQuestionNote(answer, officialResponses[responseKey] || "", taskSubmitted),
                           source: `${session.title} · ${session.setCode}`,
-                          media: officialQuestionMedia,
+                          media: officialQuestionMedia(answer),
                           reference: officialQuestionReference,
                         }))}
                       >{savedToNotebook ? "★ 已加入" : taskSubmitted && !correct ? "☆ 加入错题本" : "☆ 标记"}</button>
@@ -3837,6 +3866,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
     }
     notebookAudioRef.current?.pause();
     const audio = new Audio(media.url);
+    let playbackEndSeconds = media.endSeconds;
     notebookAudioRef.current = audio;
     setActiveNotebookAudioId(entry.id);
     const stopPlayback = () => {
@@ -3844,11 +3874,17 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
       setActiveNotebookAudioId("");
     };
     audio.onloadedmetadata = () => {
-      audio.currentTime = Math.min(media.startSeconds ?? 0, audio.duration || Number.POSITIVE_INFINITY);
+      let playbackStartSeconds = media.startSeconds ?? 0;
+      if (media.startSeconds === undefined && media.segmentCount && media.segmentIndex !== undefined && Number.isFinite(audio.duration)) {
+        const segmentDuration = audio.duration / media.segmentCount;
+        playbackStartSeconds = Math.max(0, segmentDuration * media.segmentIndex - 3);
+        playbackEndSeconds = Math.min(audio.duration, segmentDuration * (media.segmentIndex + 1) + 4);
+      }
+      audio.currentTime = Math.min(playbackStartSeconds, audio.duration || Number.POSITIVE_INFINITY);
       void audio.play().catch(stopPlayback);
     };
     audio.ontimeupdate = () => {
-      if (media.endSeconds && audio.currentTime >= media.endSeconds) {
+      if (playbackEndSeconds && audio.currentTime >= playbackEndSeconds) {
         audio.pause();
         stopPlayback();
       }
@@ -3880,16 +3916,21 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
             ) : progress.notebook.map((storedEntry) => {
               const entry = enrichLegacyOfficialNotebookEntry(storedEntry);
               const readingReview = readingNotebookReview(entry);
+              const listeningReview = listeningNotebookReview(entry);
               const answerRevealed = revealedNotebookAnswerIds.includes(entry.id);
               return <article className="notebook-entry" key={entry.id}>
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
-                <div className={`notebook-entry-body${readingReview ? " is-reading-review" : ""}`}><div><h2>{entry.title}</h2>{readingReview ? <section className="notebook-reading-review">
+                <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div><h2>{entry.title}</h2>{readingReview ? <section className="notebook-reading-review">
                   <article className="is-source"><span>原文对应句</span>{readingReview.excerpt ? <blockquote>{readingReview.excerpt}</blockquote> : <p>当前笔记没有保存对应原句，请展开题目原页复盘。</p>}<small>{readingReview.location}</small></article>
                   <article><span>题目</span><p>{readingReview.question}</p></article>
                   {readingReview.options.length > 0 && <article className="is-options"><span>选项</span><ol>{readingReview.options.map((option) => { const selected = notebookOptionMatchesAnswer(option, readingReview.userAnswer); return <li className={selected ? "is-user-answer" : ""} key={option}><p>{option}</p>{selected && <small>我的选择</small>}</li>; })}</ol></article>}
                   <article className="is-correct-answer"><span>正确答案</span>{readingReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{readingReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
                   <article className="is-explanation"><span>解析</span><p>{readingReview.explanation}</p></article>
-                </section> : <p>{entry.detail}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
+                </section> : listeningReview ? <section className="notebook-listening-review">
+                  <article className="is-audio"><span>答案对应音频</span><button type="button" className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media?.label ?? "播放答案对应片段"}`}</button><small>只回听这道题答案出现前后的片段</small></article>
+                  <article><span>题目</span><p>{listeningReview.question}</p>{listeningReview.options.length > 0 && <ol>{listeningReview.options.map((option) => <li className={notebookOptionMatchesAnswer(option, listeningReview.userAnswer) ? "is-user-answer" : ""} key={option}>{option}</li>)}</ol>}</article>
+                  <article className="is-correct-answer"><span>正确答案</span>{listeningReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{listeningReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
+                </section> : <p>{entry.detail}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && !listeningReview && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
                 {entry.reference && <details className="notebook-entry-reference"><summary>{entry.reference.label}</summary><iframe title={`${entry.title} · 题目原页`} src={`${entry.reference.url}#page=${entry.reference.page}&toolbar=0&navpanes=0&view=FitH`} /></details>}
                 <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
                   const note = event.target.value;
