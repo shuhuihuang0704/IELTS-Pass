@@ -12,29 +12,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "public" / "listening-section-1-v2.wav"
 CAPTIONS = ROOT / "public" / "listening-section-1.vtt"
-SAMPLE_RATE = 24_000
+SAMPLE_RATE = 44_100
 
-FEMALE_VOICE = "Shelley (English (UK))"
+FEMALE_VOICE = "Karen"
 MALE_VOICE = "Daniel"
 
 TURNS = [
-    ("Receptionist (female)", FEMALE_VOICE, 166, "Good morning, Westbridge University Residence. How can I help?", 420),
-    ("Student (male)", MALE_VOICE, 184, "Hello. I'm calling to complete my accommodation application.", 520),
-    ("Receptionist (female)", FEMALE_VOICE, 166, "Certainly. First, can I take your family name?", 320),
-    ("Student (male)", MALE_VOICE, 180, "It's Chen. C, H, E, N.", 520),
-    ("Receptionist (female)", FEMALE_VOICE, 166, "Thank you. And when will you arrive?", 300),
-    ("Student (male)", MALE_VOICE, 182, "On the fourteenth of October. I originally wrote the twelfth, but my flight changed.", 420),
-    ("Receptionist (female)", FEMALE_VOICE, 164, "Right, the fourteenth of October. Do you want a shared room?", 300),
-    ("Student (male)", MALE_VOICE, 184, "No, a single room, please. I need somewhere quiet to study.", 420),
-    ("Receptionist (female)", FEMALE_VOICE, 166, "Any dietary requirement?", 280),
-    ("Student (male)", MALE_VOICE, 184, "Yes, vegetarian. I eat dairy products, but no meat or fish.", 560),
-    ("Receptionist (female)", FEMALE_VOICE, 168, "Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building.", 500),
-    ("Student (male)", MALE_VOICE, 186, "That's fine. What documents do you need?", 300),
-    ("Receptionist (female)", FEMALE_VOICE, 166, "Please send a copy of your passport by email. You can show the original at reception when you arrive. The deposit must be paid by bank transfer. We cannot accept cash for that.", 420),
-    ("Student (male)", MALE_VOICE, 186, "I understand. What time can I collect my key?", 300),
-    ("Receptionist (female)", FEMALE_VOICE, 164, "Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable.", 420),
-    ("Student (male)", MALE_VOICE, 184, "Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.", 360),
-    ("Receptionist (female)", FEMALE_VOICE, 166, "That makes sense. I'll email your confirmation today.", 650),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Good morning, Westbridge University Residence. How can I help?", 460),
+    ("Student (British male)", MALE_VOICE, 172, "Hello. I'm calling to complete my accommodation application.", 520),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Certainly. First, can I take your family name?", 340),
+    ("Student (British male)", MALE_VOICE, 170, "It's Chen. C, H, E, N.", 520),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Thank you. And when will you arrive?", 320),
+    ("Student (British male)", MALE_VOICE, 170, "On the fourteenth of October. I originally wrote the twelfth, but my flight changed.", 420),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "Right, the fourteenth of October. Do you want a shared room?", 320),
+    ("Student (British male)", MALE_VOICE, 172, "No, a single room, please. I need somewhere quiet to study.", 420),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Any dietary requirement?", 300),
+    ("Student (British male)", MALE_VOICE, 172, "Yes, vegetarian. I eat dairy products, but no meat or fish.", 560),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 162, "Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building.", 540),
+    ("Student (British male)", MALE_VOICE, 174, "That's fine. What documents do you need?", 300),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Please send a copy of your passport by email. You can show the original at reception when you arrive. The deposit must be paid by bank transfer. We cannot accept cash for that.", 460),
+    ("Student (British male)", MALE_VOICE, 174, "I understand. What time can I collect my key?", 300),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable.", 460),
+    ("Student (British male)", MALE_VOICE, 172, "Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.", 360),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "That makes sense. I'll email your confirmation today.", 650),
 ]
 
 

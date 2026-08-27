@@ -653,9 +653,9 @@ function weeklyOpeningTask(session: OfficialTestSession, weekKey = localWeekKey(
 type IeltsVoiceRole = "examiner" | "female" | "male";
 
 const preferredIeltsVoiceNames: Record<IeltsVoiceRole, string[]> = {
-  examiner: ["Microsoft Sonia Online (Natural)", "Google UK English Female", "Serena", "Kate", "Shelley", "Flo", "Daniel"],
-  female: ["Microsoft Sonia Online (Natural)", "Google UK English Female", "Serena", "Kate", "Shelley", "Flo", "Sandy", "Karen", "Moira"],
-  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Daniel", "Oliver", "Arthur", "George", "Ryan", "Reed"],
+  examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Moira", "Serena", "Kate", "Daniel"],
+  female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Moira", "Serena", "Kate"],
+  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Daniel", "Oliver", "Arthur", "George", "Ryan"],
 };
 
 function preferredIeltsVoice(role: IeltsVoiceRole = "examiner") {
@@ -3427,7 +3427,7 @@ function ListeningPractice({
           <div className={`listening-player is-${playerState}`}>
             <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
-            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : "播放双人英式完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · Band {difficulty.band}.0 训练语速 {difficulty.listening.rate.toFixed(2)}×</small></span>
+            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : "播放英澳双人完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · Band {difficulty.band}.0 训练语速 {difficulty.listening.rate.toFixed(2)}×</small></span>
           </div>
           <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
         </div>

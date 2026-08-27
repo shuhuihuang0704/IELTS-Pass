@@ -58,6 +58,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /页面在前台可见时累计学习时间/);
   assert.match(app, /SpeechSynthesisUtterance/);
   assert.match(app, /preferredIeltsVoiceNames/);
+  assert.doesNotMatch(app, /"Flo"|"Sandy"|"Reed"/);
   assert.match(app, /createIeltsUtterance/);
   assert.match(app, /utterance\.pitch/);
   assert.match(app, /IELTS 英式标准发音/);
@@ -196,7 +197,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(dailyPractice, /listening-section-1-v2\.wav/);
   assert.match(dailyPractice, /listening-arts-centre\.wav/);
   assert.match(dailyPractice, /listening-wildlife-volunteer\.wav/);
-  assert.match(dailyPractice, /英国女接待员 × 英国男学生/);
+  assert.match(dailyPractice, /澳大利亚女接待员 × 英国男学生/);
+  assert.match(dailyPractice, /au-female-uk-male-v4/);
   assert.match(dailyPractice, /dailyRotationIndex/);
   assert.match(dailyPractice, /getDailyListeningExercise/);
   assert.match(dailyPractice, /getDailyReadingExercise/);

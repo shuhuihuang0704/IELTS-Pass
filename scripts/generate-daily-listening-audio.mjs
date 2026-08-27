@@ -6,6 +6,8 @@ import { join, resolve } from "node:path";
 const conversations = [
   {
     output: "public/listening-arts-centre.wav",
+    captions: "public/listening-arts-centre.vtt",
+    speakers: { female: "Coordinator (Australian female)", male: "Caller (British male)" },
     lines: [
       ["female", "Good afternoon, Riverside Arts Centre."],
       ["male", "Hello. I'd like to book an evening course."],
@@ -28,6 +30,8 @@ const conversations = [
   },
   {
     output: "public/listening-wildlife-volunteer.wav",
+    captions: "public/listening-wildlife-volunteer.vtt",
+    speakers: { female: "Supervisor (Australian female)", male: "Applicant (British male)" },
     lines: [
       ["female", "Good morning, Northwood Wildlife Park."],
       ["male", "Hello. I'm calling about the volunteer programme."],
@@ -67,12 +71,41 @@ function readWave(path) {
   return { format, data };
 }
 
+function formatTimestamp(seconds) {
+  const wholeMilliseconds = Math.round(seconds * 1000);
+  const hours = Math.floor(wholeMilliseconds / 3_600_000);
+  const minutes = Math.floor(wholeMilliseconds % 3_600_000 / 60_000);
+  const remainder = wholeMilliseconds % 60_000 / 1000;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${remainder.toFixed(3).padStart(6, "0")}`;
+}
+
+function pauseAfter(text, index) {
+  if (index === 0) return 0.46;
+  if (text.length > 145) return 0.58;
+  if (text.endsWith("?")) return 0.34;
+  if (text.length < 28) return 0.42;
+  return 0.48;
+}
+
 function writeWave(path, parts) {
   const format = parts[0].format;
   const sampleRate = format.readUInt32LE(4);
   const blockAlign = format.readUInt16LE(12);
-  const silence = Buffer.alloc(Math.round(sampleRate * blockAlign * 0.38));
-  const data = Buffer.concat(parts.flatMap((part, index) => index === parts.length - 1 ? [part.data] : [part.data, silence]));
+  const buffers = [];
+  const captions = [];
+  let elapsedFrames = 0;
+  parts.forEach((part, index) => {
+    const start = elapsedFrames / sampleRate;
+    buffers.push(part.data);
+    elapsedFrames += part.data.length / blockAlign;
+    captions.push({ start, end: elapsedFrames / sampleRate, speaker: part.speaker, text: part.text });
+    if (index < parts.length - 1) {
+      const silence = Buffer.alloc(Math.round(sampleRate * blockAlign * part.pauseSeconds));
+      buffers.push(silence);
+      elapsedFrames += silence.length / blockAlign;
+    }
+  });
+  const data = Buffer.concat(buffers);
   const header = Buffer.alloc(12);
   header.write("RIFF", 0);
   header.writeUInt32LE(4 + 8 + format.length + 8 + data.length, 4);
@@ -84,6 +117,7 @@ function writeWave(path, parts) {
   dataHeader.write("data", 0);
   dataHeader.writeUInt32LE(data.length, 4);
   writeFileSync(path, Buffer.concat([header, formatHeader, format, dataHeader, data]));
+  return captions;
 }
 
 const temporaryDirectory = mkdtempSync(join(tmpdir(), "ielts-listening-"));
@@ -92,12 +126,14 @@ try {
     const parts = conversation.lines.map(([role, text], index) => {
       const aiffPath = join(temporaryDirectory, `${index}.aiff`);
       const wavPath = join(temporaryDirectory, `${index}.wav`);
-      const voice = role === "female" ? "Flo (English (UK))" : "Daniel";
-      execFileSync("/usr/bin/say", ["-v", voice, "-r", "168", "-o", aiffPath, text]);
-      execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@24000", aiffPath, wavPath]);
-      return readWave(wavPath);
+      const voice = role === "female" ? "Karen" : "Daniel";
+      const rate = role === "female" ? "160" : "172";
+      execFileSync("/usr/bin/say", ["-v", voice, "-r", rate, "-o", aiffPath, text]);
+      execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@44100", aiffPath, wavPath]);
+      return { ...readWave(wavPath), speaker: conversation.speakers[role], text, pauseSeconds: pauseAfter(text, index) };
     });
-    writeWave(resolve(conversation.output), parts);
+    const captions = writeWave(resolve(conversation.output), parts);
+    writeFileSync(resolve(conversation.captions), `WEBVTT\n\n${captions.map((caption) => `${formatTimestamp(caption.start)} --> ${formatTimestamp(caption.end)}\n${caption.speaker}: ${caption.text}`).join("\n\n")}\n`);
   }
 } finally {
   rmSync(temporaryDirectory, { recursive: true, force: true });
