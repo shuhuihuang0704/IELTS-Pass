@@ -242,7 +242,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /repeatGap/);
   assert.match(app, /今日到期复习/);
   assert.match(app, /我的笔记/);
-  assert.match(app, /加入错题本/);
+  assert.doesNotMatch(app, /加入错题本/);
+  assert.doesNotMatch(app, /question-note-button/);
   assert.match(app, /加入笔记/);
   assert.match(app, /toggleNotebookEntry/);
   assert.match(app, /buildOfficialQuestionNote/);

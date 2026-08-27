@@ -440,8 +440,6 @@ button { cursor: pointer; }
 .official-reading-analysis strong { color:#5143b6; }
 .official-reading-analysis>div span { color:#6b6046; font-weight:650; }
 .official-reading-analysis>button { min-height:30px; justify-self:start; padding:0 10px; border:0; border-radius:9px; color:#695013; background:#f5df87; font-size:8px; font-weight:700; }
-.question-note-button { grid-column:1 / -1; min-height:27px; border:0; border-radius:8px; color:#675e69; background:#f2eff3; font-size:8px; }
-.question-note-button.is-saved { color:#5143b6; background:#ebe7fa; font-weight:700; }
 .official-answer-sheet>footer { margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .official-answer-sheet>footer span { color:#6f6870; font-size:9px; }
 .official-answer-sheet>footer button { min-height:36px; padding:0 14px; border:0; border-radius:9px; color:white; background:var(--ink); font-size:9px; white-space:nowrap; }

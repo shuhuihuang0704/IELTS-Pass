@@ -1702,8 +1702,6 @@ function OfficialTestRunner({
                 {taskAnswers.map((answer) => {
                   const responseKey = `${taskKey}:${answer.number}`;
                   const correct = taskSubmitted && officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey);
-                  const noteId = `question:${session.setCode}:${task.id}:${answer.number}`;
-                  const savedToNotebook = progress.notebook.some((entry) => entry.id === noteId);
                   const sourceEvidence = readingSourceEvidence[`${task.id}:${answer.number}`];
                   return (
                     <div className={`official-answer-item ${taskSubmitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={answer.number}>
@@ -1716,19 +1714,6 @@ function OfficialTestRunner({
                       ) : (
                         <input aria-label={`Question ${answer.number}`} autoComplete="off" disabled={taskSubmitted} placeholder="输入答案" value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))} />
                       )}
-                      <button
-                        className={savedToNotebook ? "question-note-button is-saved" : "question-note-button"}
-                        type="button"
-                        onClick={() => updateProgress((current) => toggleNotebookEntry(current, {
-                          id: noteId,
-                          kind: "question",
-                          title: `Q${answer.number} · ${task.label}`,
-                          detail: buildOfficialQuestionNote(answer, officialResponses[responseKey] || "", taskSubmitted),
-                          source: `${session.title} · ${session.setCode}`,
-                          media: officialQuestionMedia(answer),
-                          reference: officialQuestionReference,
-                        }))}
-                      >{savedToNotebook ? "★ 已加入" : taskSubmitted && !correct ? "☆ 加入错题本" : "☆ 标记"}</button>
                       {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <div className="official-reading-analysis"><div><strong>原文定位</strong><span>{sourceEvidence?.location ?? "当前题暂无精确定位"}</span></div><p><strong>判断依据</strong><span>{answer.explanation}</span></p><p><strong>解题方法</strong><span>{readingAnalysisMethod(answer)}</span></p>{sourceEvidence && <button type="button" onClick={() => showReadingEvidence(answer.number)}>荧光笔定位原文 →</button>}</div>}</small>}
                     </div>
                   );
