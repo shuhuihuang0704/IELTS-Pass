@@ -428,7 +428,6 @@ const officialTestSchedule: OfficialTestSession[] = [
 ];
 
 function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry {
-  if (entry.detail.includes("题目位置：题册 P")) return entry;
   const match = entry.id.match(/^question:([^:]+):([^:]+):([^:]+)$/);
   if (!match) return entry;
   const [, setCode, taskId, questionNumber] = match;
@@ -437,6 +436,7 @@ function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry 
   const task = material?.tasks.find((item) => item.id === taskId);
   const answer = task?.answers?.find((item) => item.number === questionNumber);
   if (!session || !material || !task || !answer) return entry;
+  if (entry.detail.includes("题目位置：题册 P") && (!answer.choices?.length || entry.detail.includes("选项："))) return entry;
   const response = entry.detail.match(/我的答案：([^\n]+)/)?.[1] ?? "未作答";
   const wasSubmitted = entry.detail.includes("正确答案：");
   const sourceEvidence = readingSourceEvidence[`${task.id}:${answer.number}`];
@@ -448,6 +448,7 @@ function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry 
     `题目：${task.questionLabel} · Q${answer.number}`,
     `题型：${task.label}`,
     `题目位置：题册 P${task.questionPage}`,
+    ...(answer.choices?.length ? [`选项：${answer.choices.join("｜")}`] : []),
     `我的答案：${response}`,
     ...(wasSubmitted ? [`正确答案：${answer.displayAnswer}`, `解析：${reviewTip}`] : ["提交本 Task 后，这条笔记会自动补充正确答案、解析和原文定位。"]),
     ...(wasSubmitted && sourceEvidence ? [`原文定位：${sourceEvidence.location}`, `原文依据：${sourceEvidence.excerpt}`] : []),
@@ -463,6 +464,7 @@ function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry 
 
 type ReadingNotebookReview = {
   question: string;
+  options: string[];
   location: string;
   excerpt: string;
   userAnswer: string;
@@ -473,14 +475,37 @@ type ReadingNotebookReview = {
 function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | undefined {
   if (entry.kind !== "question" || (!entry.source.includes("阅读") && !entry.detail.includes("原文定位："))) return undefined;
   const field = (label: string) => entry.detail.split("\n").find((line) => line.startsWith(`${label}：`))?.slice(label.length + 1).trim() ?? "";
+  let options = field("选项").split("｜").map((option) => option.trim()).filter(Boolean);
+  const dailyMatch = entry.id.match(/^question:reading:([^:]+):([^:]+):([^:]+)$/);
+  if (options.length === 0 && dailyMatch) {
+    const [, exerciseDate, setCode, questionId] = dailyMatch;
+    const dailySet = getDailyReadingExercise(exerciseDate);
+    if (dailySet.code === setCode) {
+      const exercise = dailySet.exercise;
+      if (exercise.matchingHeadings.some((question) => question.id === questionId)) options = exercise.headings.map((heading) => `${heading.id}. ${heading.text}`);
+      else if (exercise.matchingInformation.some((question) => question.id === questionId)) options = exercise.paragraphs.map((paragraph) => `${paragraph.label}. Paragraph ${paragraph.label}`);
+      else {
+        const choiceQuestion = exercise.multipleChoice.find((question) => question.id === questionId)
+          ?? exercise.trueFalseNotGiven.find((question) => question.id === questionId);
+        options = choiceQuestion ? choiceQuestion.options.map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`) : exercise.summary.wordBank;
+      }
+    }
+  }
   return {
     question: field("题目") || entry.title,
+    options,
     location: field("原文定位") || field("题目位置") || "当前笔记没有保存精确段落，请展开题目原页复盘。",
     excerpt: field("原文依据") || field("原文"),
     userAnswer: field("我的答案") || "未作答",
     correctAnswer: field("正确答案"),
     explanation: field("解析") || "提交题目后会补充答案解析。",
   };
+}
+
+function notebookOptionMatchesAnswer(option: string, answer: string) {
+  const normalizedOption = option.trim().toLowerCase();
+  const normalizedAnswer = answer.trim().toLowerCase();
+  return Boolean(normalizedAnswer) && (normalizedOption === normalizedAnswer || normalizedOption.startsWith(`${normalizedAnswer}.`) || normalizedOption.endsWith(`. ${normalizedAnswer}`));
 }
 
 function officialPracticeRecordId(session: OfficialTestSession, weekKey = localWeekKey()) {
@@ -1490,6 +1515,7 @@ function OfficialTestRunner({
       `题目：${task.questionLabel} · Q${answer.number}`,
       `题型：${task.label}`,
       `题目位置：题册 P${task.questionPage}`,
+      ...(answer.choices?.length ? [`选项：${answer.choices.join("｜")}`] : []),
       `我的答案：${response || "未作答"}`,
     ];
     if (!submitted) return [...lines, "提交本 Task 后，这条笔记会自动补充正确答案、解析和原文定位。"].join("\n");
@@ -3664,11 +3690,20 @@ function ReadingPractice({
       ? `${readingExercise.summary.textBeforeFirstGap} _____`
       : `${readingExercise.summary.textBetweenGaps} _____ ${readingExercise.summary.textAfterSecondGap}`;
   };
+  const readingQuestionOptions = (id: string) => {
+    if (readingExercise.matchingHeadings.some((question) => question.id === id)) return readingExercise.headings.map((heading) => `${heading.id}. ${heading.text}`);
+    if (readingExercise.matchingInformation.some((question) => question.id === id)) return readingExercise.paragraphs.map((paragraph) => `${paragraph.label}. Paragraph ${paragraph.label}`);
+    const choiceQuestion = readingExercise.multipleChoice.find((question) => question.id === id)
+      ?? readingExercise.trueFalseNotGiven.find((question) => question.id === id);
+    if (choiceQuestion) return choiceQuestion.options.map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`);
+    return readingExercise.summary.wordBank;
+  };
   const renderAnalysis = (id: string, number: number) => {
     if (score === null) return null;
     const evidence = readingReviewEvidence[id as keyof typeof readingReviewEvidence];
     const correct = answers[id] === answerKey[id];
     const prompt = readingQuestionPrompt(id);
+    const options = readingQuestionOptions(id);
     const noteId = `question:reading:${exerciseDate}:${readingSet.code}:${id}`;
     const saved = progress.notebook.some((entry) => entry.id === noteId);
     return <aside className={`reading-answer-analysis ${correct ? "is-correct" : "is-incorrect"}`}>
@@ -3681,7 +3716,7 @@ function ReadingPractice({
         id: noteId,
         kind: "question",
         title: `Q${number} · ${readingExercise.title}`,
-        detail: `题目：${prompt}\n我的答案：${answers[id] || "未作答"}\n正确答案：${answerKey[id]}\n原文定位：${evidence.location}\n原文：${evidence.quotes.map((quote) => quote.text).join(" ")}\n解析：${evidence.explanation}`,
+        detail: `题目：${prompt}\n选项：${options.join("｜")}\n我的答案：${answers[id] || "未作答"}\n正确答案：${answerKey[id]}\n原文定位：${evidence.location}\n原文：${evidence.quotes.map((quote) => quote.text).join(" ")}\n解析：${evidence.explanation}`,
         source: `阅读套题 · ${exerciseDate} · ${readingSet.code}`,
       }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含原文定位）"}</button>
     </aside>;
@@ -3850,6 +3885,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
                 <div className={`notebook-entry-body${readingReview ? " is-reading-review" : ""}`}><div><h2>{entry.title}</h2>{readingReview ? <section className="notebook-reading-review">
                   <article><span>题目</span><p>{readingReview.question}</p></article>
+                  {readingReview.options.length > 0 && <article className="is-options"><span>选项</span><ol>{readingReview.options.map((option) => { const selected = notebookOptionMatchesAnswer(option, readingReview.userAnswer); return <li className={selected ? "is-user-answer" : ""} key={option}><p>{option}</p>{selected && <small>我的选择</small>}</li>; })}</ol></article>}
                   <article className="is-location"><span>文章定位</span><p>{readingReview.location}</p>{readingReview.excerpt && <blockquote>{readingReview.excerpt}</blockquote>}</article>
                   <article><span>我的作答</span><strong>{readingReview.userAnswer}</strong></article>
                   <article className="is-correct-answer"><span>正确答案</span>{readingReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{readingReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
