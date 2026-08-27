@@ -28,6 +28,7 @@ type DailyListeningSet = {
   audioSrc: string;
   captionsSrc: string;
   voiceLabel: string;
+  audioCues: Record<ListeningEvidenceKey, { startSeconds: number; endSeconds: number }>;
 };
 
 type ReadingExercise = {
@@ -75,6 +76,13 @@ const artsCentreListening: DailyListeningSet = {
   audioSrc: "/listening-arts-centre.wav",
   captionsSrc: "/listening-arts-centre.vtt",
   voiceLabel: "英国女课程顾问 × 英国男学员",
+  audioCues: {
+    l1: { startSeconds: 8, endSeconds: 12 }, l2: { startSeconds: 14, endSeconds: 18 },
+    l3: { startSeconds: 18, endSeconds: 25 }, l4: { startSeconds: 27, endSeconds: 34 },
+    facilities: { startSeconds: 37, endSeconds: 48 }, l7: { startSeconds: 51, endSeconds: 57 },
+    l8: { startSeconds: 51, endSeconds: 57 }, l9: { startSeconds: 60, endSeconds: 66 },
+    l10: { startSeconds: 66, endSeconds: 73 },
+  },
   exercise: {
     title: "Community Arts Centre Course Booking",
     subtitle: "Listening Section 1 · Daily Set B",
@@ -118,6 +126,13 @@ const wildlifeListening: DailyListeningSet = {
   audioSrc: "/listening-wildlife-volunteer.wav",
   captionsSrc: "/listening-wildlife-volunteer.vtt",
   voiceLabel: "英国女志愿者主管 × 英国男申请者",
+  audioCues: {
+    l1: { startSeconds: 8, endSeconds: 12 }, l2: { startSeconds: 14, endSeconds: 21 },
+    l3: { startSeconds: 23, endSeconds: 26 }, l4: { startSeconds: 28, endSeconds: 31 },
+    facilities: { startSeconds: 31, endSeconds: 43 }, l7: { startSeconds: 45, endSeconds: 49 },
+    l8: { startSeconds: 49, endSeconds: 54 }, l9: { startSeconds: 56, endSeconds: 62 },
+    l10: { startSeconds: 63, endSeconds: 71 },
+  },
   exercise: {
     title: "Wildlife Park Volunteer Registration",
     subtitle: "Listening Section 1 · Daily Set C",
@@ -164,6 +179,13 @@ const listeningSets: DailyListeningSet[] = [
     audioSrc: "/listening-section-1-v2.wav?voices=uk-female-male-v3",
     captionsSrc: "/listening-section-1.vtt?voices=uk-female-male-v3",
     voiceLabel: "英国女接待员 × 英国男学生",
+    audioCues: {
+      l1: { startSeconds: 12, endSeconds: 16 }, l2: { startSeconds: 18, endSeconds: 24 },
+      l3: { startSeconds: 24, endSeconds: 32 }, l4: { startSeconds: 32, endSeconds: 39 },
+      facilities: { startSeconds: 39, endSeconds: 56 }, l7: { startSeconds: 59, endSeconds: 65 },
+      l8: { startSeconds: 65, endSeconds: 70 }, l9: { startSeconds: 73, endSeconds: 81 },
+      l10: { startSeconds: 80, endSeconds: 89 },
+    },
   },
   artsCentreListening,
   wildlifeListening,

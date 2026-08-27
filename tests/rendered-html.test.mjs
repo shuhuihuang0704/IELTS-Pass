@@ -143,6 +143,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /reviewSchedule/);
   assert.match(state, /NotebookEntry/);
   assert.match(state, /notebook: NotebookEntry\[\]/);
+  assert.match(state, /kind: "audio" \| "speech"/);
   assert.match(state, /reviewIntervals = \[1, 3, 7, 14, 30, 60\]/);
   assert.match(state, /scheduleWordForReview/);
   assert.match(state, /rateReviewWord/);
@@ -176,6 +177,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(dailyPractice, /getDailyListeningExercise/);
   assert.match(dailyPractice, /getDailyReadingExercise/);
   assert.match(dailyPractice, /getDailySpeakingScenario/);
+  assert.match(dailyPractice, /audioCues/);
   assert.match(app, /type IeltsVoiceRole = "examiner" \| "female" \| "male"/);
   assert.match(app, /listening-scrubber/);
   assert.match(app, /currentTime = nextTime/);
@@ -372,6 +374,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /setChoiceAnswers\(\{\}\)/);
   assert.match(app, /↺ 再写一遍/);
   assert.match(app, /renderListeningAnalysis/);
+  assert.match(app, /renderListeningNoteButton/);
+  assert.match(app, /加入笔记（含本题音频）/);
   assert.match(app, /personalisedListeningFeedback/);
   assert.match(app, /isLikelySpellingMistake/);
   assert.match(app, /需要着重加强记住/);
@@ -383,6 +387,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /setAnswers\(\{\}\)/);
   assert.match(app, /setActiveReviewId\(null\)/);
   assert.match(app, /onClick=\{redoReading\}>↺ 再写一遍/);
+  assert.match(app, /加入笔记（含原文定位）/);
   assert.match(app, /正确答案：\{question\.answers\[0\]\}/);
   assert.match(app, /disabled=\{score === null\}/);
   assert.match(app, /提交后解锁原文/);
@@ -511,6 +516,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /TOPIC TEMPLATE/);
   assert.match(app, /TARGETED VOICE PRACTICE/);
   assert.match(app, /回答完成后生成的语音不足与改进建议/);
+  assert.match(app, /加入笔记（含考官语音）/);
+  assert.match(app, /playNotebookMedia/);
+  assert.match(app, /media\.endSeconds/);
   assert.match(app, /submitted && <section className="speaking-topic-template"/);
   assert.match(app, /!speakingTaskMode \|\| taskSubmitted/);
   assert.match(app, /REVIEW MATERIAL LOCKED/);

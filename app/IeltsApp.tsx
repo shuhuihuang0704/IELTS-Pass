@@ -2417,12 +2417,12 @@ function SceneView({
       </div>
       <section className="exercise-surface">
         {activeSkill === "vocabulary" && <VocabularyPractice key={`vocabulary:${contentDate}`} contentDate={contentDate} mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
-        {activeSkill === "listening" && <ListeningPractice key={`listening:${contentDate}`} exerciseDate={contentDate} onComplete={(score, fullyAnswered) => {
+        {activeSkill === "listening" && <ListeningPractice key={`listening:${contentDate}`} exerciseDate={contentDate} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
           if (fullyAnswered) onComplete("listening", 12);
         }} />}
         {activeSkill === "speaking" && <SpeakingPractice key={`speaking:${contentDate}`} exerciseDate={contentDate} progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
-        {activeSkill === "reading" && <ReadingPractice key={`reading:${contentDate}`} exerciseDate={contentDate} onComplete={(score, fullyAnswered) => {
+        {activeSkill === "reading" && <ReadingPractice key={`reading:${contentDate}`} exerciseDate={contentDate} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, readingScore: score }));
           if (fullyAnswered) onComplete("reading", 18);
         }} />}
@@ -2932,7 +2932,17 @@ function DailyVocabularySprint({
   );
 }
 
-function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string; onComplete: (score: number, fullyAnswered: boolean) => void }) {
+function ListeningPractice({
+  exerciseDate,
+  progress,
+  updateProgress,
+  onComplete,
+}: {
+  exerciseDate: string;
+  progress: LearningProgress;
+  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+  onComplete: (score: number, fullyAnswered: boolean) => void;
+}) {
   const listeningSet = getDailyListeningExercise(exerciseDate);
   const listeningExercise = listeningSet.exercise;
   const listeningReviewEvidence = listeningSet.evidence;
@@ -3077,6 +3087,28 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
     </aside>;
   };
 
+  const renderListeningNoteButton = (
+    id: ListeningEvidenceKey,
+    number: string,
+    prompt: string,
+    userAnswer: string,
+    correctAnswer: string,
+  ) => {
+    if (score === null) return null;
+    const noteId = `question:listening:${exerciseDate}:${listeningSet.code}:${number}`;
+    const saved = progress.notebook.some((entry) => entry.id === noteId);
+    const evidence = listeningReviewEvidence[id];
+    const cue = listeningSet.audioCues[id];
+    return <button type="button" className={`practice-note-button${saved ? " is-saved" : ""}`} onClick={() => updateProgress((current) => toggleNotebookEntry(current, {
+      id: noteId,
+      kind: "question",
+      title: `Q${number} · ${prompt}`,
+      detail: `题目：${prompt}\n我的答案：${userAnswer || "未作答"}\n正确答案：${correctAnswer}\n原文：${evidence.quote}`,
+      source: `听力精听 · ${exerciseDate} · ${listeningSet.code}`,
+      media: { kind: "audio", label: `播放 Q${number} 对应音频`, url: listeningSet.audioSrc, ...cue },
+    }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含本题音频）"}</button>;
+  };
+
   const invalidateSubmission = () => {
     setScore(null);
     setShowTranscript(false);
@@ -3143,6 +3175,7 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
                 {score !== null && <small className="submitted-correct-answer">正确答案：{question.answers[0]}</small>}
               </label>
               {renderListeningAnalysis(question.id as "l1" | "l2" | "l3" | "l4", String(index + 1), formAnswers[question.id] ?? "", question.answers[0], formCorrect(question.id))}
+              {renderListeningNoteButton(question.id as "l1" | "l2" | "l3" | "l4", String(index + 1), question.label, formAnswers[question.id] ?? "", question.answers[0])}
             </div>)}
           </div>
         </section>
@@ -3158,6 +3191,7 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
           </div>
           <small className="selection-count">{score === null ? `已选择 ${selectedFacilities.length} / 2 项` : `正确答案：${listeningExercise.multipleSelect.answers.join("、")}`}</small>
           {renderListeningAnalysis("facilities", "5–6", selectedFacilities.join("、"), listeningExercise.multipleSelect.answers.join("、"), facilitiesCorrect)}
+          {renderListeningNoteButton("facilities", "5–6", listeningExercise.multipleSelect.prompt, selectedFacilities.join("、"), listeningExercise.multipleSelect.answers.join("、"))}
         </section>
 
         <section className="listening-question-group">
@@ -3167,7 +3201,7 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
             const resultClass = score === null ? "" : matchingAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
             const userOption = listeningExercise.matching.options.find((option) => option.id === matchingAnswers[question.id]);
             const correctOption = listeningExercise.matching.options.find((option) => option.id === question.answer);
-            return <div className="matching-answer-row" key={question.id}><label className={`matching-row ${resultClass}`}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}{renderListeningAnalysis(question.id as "l7" | "l8", String(index + 7), userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer, matchingAnswers[question.id] === question.answer)}</div>;
+            return <div className="matching-answer-row" key={question.id}><label className={`matching-row ${resultClass}`}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}{renderListeningAnalysis(question.id as "l7" | "l8", String(index + 7), userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer, matchingAnswers[question.id] === question.answer)}{renderListeningNoteButton(question.id as "l7" | "l8", String(index + 7), question.label, userOption ? `${userOption.id} · ${userOption.label}` : "", correctOption ? `${correctOption.id} · ${correctOption.label}` : question.answer)}</div>;
           })}
         </section>
 
@@ -3175,7 +3209,7 @@ function ListeningPractice({ exerciseDate, onComplete }: { exerciseDate: string;
           <div className="question-type"><span>Questions 9–10</span><strong>Multiple Choice · Choose ONE</strong><p>Choose the correct letter, A, B or C.</p></div>
           {listeningExercise.multipleChoice.map((question, index) => {
             const resultClass = score === null ? "" : choiceAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <div className="listening-answer-item" key={question.id}><fieldset className={`question-block ${resultClass}`}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</fieldset>{renderListeningAnalysis(question.id as "l9" | "l10", String(index + 9), choiceAnswers[question.id] ?? "", question.answer, choiceAnswers[question.id] === question.answer)}</div>;
+            return <div className="listening-answer-item" key={question.id}><fieldset className={`question-block ${resultClass}`}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</fieldset>{renderListeningAnalysis(question.id as "l9" | "l10", String(index + 9), choiceAnswers[question.id] ?? "", question.answer, choiceAnswers[question.id] === question.answer)}{renderListeningNoteButton(question.id as "l9" | "l10", String(index + 9), question.prompt, choiceAnswers[question.id] ?? "", question.answer)}</div>;
           })}
         </section>
 
@@ -3219,6 +3253,12 @@ function SpeakingPractice({
   const [micStatus, setMicStatus] = useState("");
   const [micState, setMicState] = useState<"idle" | "listening">("idle");
   const [answerFeedback, setAnswerFeedback] = useState("");
+  const [lastSubmittedAnswer, setLastSubmittedAnswer] = useState<{
+    turn: number;
+    question: string;
+    answer: string;
+    feedback: string;
+  } | null>(null);
   const [showExaminerSubtitles, setShowExaminerSubtitles] = useState(false);
   const [speakingStarted, setSpeakingStarted] = useState(false);
   const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
@@ -3292,8 +3332,10 @@ function SpeakingPractice({
     const hasDevelopment = /because|since|for example|for instance|however|although|whereas|therefore|so that/i.test(text);
     if (wordCount < 10) {
       const reply = "Could you explain that in a little more detail?";
+      const feedback = "回答已经提交，但内容偏短：请补充观点、原因和一个例子，尽量再展开 2–3 句。";
       setDraft("");
-      setAnswerFeedback("回答已经提交，但内容偏短：请补充观点、原因和一个例子，尽量再展开 2–3 句。");
+      setAnswerFeedback(feedback);
+      setLastSubmittedAnswer({ turn: completedTurns, question: activeExaminerPrompt, answer: text, feedback });
       setActiveExaminerPrompt(reply);
       setShowExaminerSubtitles(false);
       playExaminerPrompt(reply);
@@ -3304,10 +3346,12 @@ function SpeakingPractice({
     const reply = finished
       ? "Thank you. That is the end of the speaking test."
       : speakingScenario.questions[nextTurns];
-    setDraft("");
-    setAnswerFeedback(hasDevelopment
+    const feedback = hasDevelopment
       ? `本轮完成：${wordCount} 词，并使用了展开信号。继续保持观点—原因—例子的结构。`
-      : `本轮完成：${wordCount} 词。下一题可加入 because、for example 或 however，让论证更清楚。`);
+      : `本轮完成：${wordCount} 词。下一题可加入 because、for example 或 however，让论证更清楚。`;
+    setDraft("");
+    setAnswerFeedback(feedback);
+    setLastSubmittedAnswer({ turn: completedTurns, question: activeExaminerPrompt, answer: text, feedback });
     updateProgress((current) => ({
       ...current,
       speakingPart3Turns: nextTurns,
@@ -3376,6 +3420,9 @@ function SpeakingPractice({
     }
   };
 
+  const speakingNoteId = lastSubmittedAnswer ? `question:speaking:${exerciseDate}:${lastSubmittedAnswer.turn}` : "";
+  const speakingNoteSaved = Boolean(speakingNoteId && progress.notebook.some((entry) => entry.id === speakingNoteId));
+
   return (
     <div className="exercise-layout speaking-layout is-single-column">
       <div className="exercise-main conversation-panel">
@@ -3391,12 +3438,30 @@ function SpeakingPractice({
         <form className="speaking-form" onSubmit={send}><button disabled={!speakingStarted} type="button" className={`mic-button ${micState === "listening" ? "is-listening" : ""}`} onClick={startMicrophone} aria-pressed={micState === "listening"} aria-label={micState === "listening" ? "停止语音输入" : "开始语音输入"}>●</button><input disabled={!speakingStarted} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={speakingStarted ? "用英语回答考官，尽量说明原因并举例…" : "请先点击开始口语模拟"} aria-label="口语回答" /><button disabled={!speakingStarted || !draft.trim() || micState === "listening"} type="submit">提交回答</button></form>
         <div className="mic-status" aria-live="polite">{micStatus || (speakingStarted ? "点击左侧麦克风说英语，识别后提交；也可以直接打字回答。" : "点击开始后，考官会先读出问题。")}</div>
         {answerFeedback && <div className="speaking-feedback" aria-live="polite">{answerFeedback}</div>}
+        {lastSubmittedAnswer && <button type="button" className={`practice-note-button speaking-note-button${speakingNoteSaved ? " is-saved" : ""}`} onClick={() => updateProgress((current) => toggleNotebookEntry(current, {
+          id: speakingNoteId,
+          kind: "question",
+          title: `口语问题 ${lastSubmittedAnswer.turn + 1}`,
+          detail: `考官问题：${lastSubmittedAnswer.question}\n我的回答：${lastSubmittedAnswer.answer}\n反馈：${lastSubmittedAnswer.feedback}`,
+          source: `口语练习 · ${exerciseDate} · ${speakingScenario.part}`,
+          media: { kind: "speech", label: "播放考官问题", text: lastSubmittedAnswer.question },
+        }))}>{speakingNoteSaved ? "★ 已加入笔记" : "☆ 加入笔记（含考官语音）"}</button>}
       </div>
     </div>
   );
 }
 
-function ReadingPractice({ exerciseDate, onComplete }: { exerciseDate: string; onComplete: (score: number, fullyAnswered: boolean) => void }) {
+function ReadingPractice({
+  exerciseDate,
+  progress,
+  updateProgress,
+  onComplete,
+}: {
+  exerciseDate: string;
+  progress: LearningProgress;
+  updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
+  onComplete: (score: number, fullyAnswered: boolean) => void;
+}) {
   const readingSet = getDailyReadingExercise(exerciseDate);
   const readingExercise = readingSet.exercise;
   const readingReviewEvidence = readingSet.evidence;
@@ -3448,16 +3513,39 @@ function ReadingPractice({ exerciseDate, onComplete }: { exerciseDate: string; o
     const evidence = readingReviewEvidence[id as keyof typeof readingReviewEvidence];
     window.requestAnimationFrame(() => document.getElementById(`reading-paragraph-${evidence.quotes[0].paragraph}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
   };
+  const readingQuestionPrompt = (id: string) => {
+    const headingQuestion = readingExercise.matchingHeadings.find((question) => question.id === id);
+    if (headingQuestion) return `Choose the correct heading for Paragraph ${headingQuestion.paragraph}.`;
+    const question = [
+      ...readingExercise.matchingInformation,
+      ...readingExercise.multipleChoice,
+      ...readingExercise.trueFalseNotGiven,
+    ].find((item) => item.id === id);
+    if (question) return question.prompt;
+    return id === "s1"
+      ? `${readingExercise.summary.textBeforeFirstGap} _____`
+      : `${readingExercise.summary.textBetweenGaps} _____ ${readingExercise.summary.textAfterSecondGap}`;
+  };
   const renderAnalysis = (id: string, number: number) => {
     if (score === null) return null;
     const evidence = readingReviewEvidence[id as keyof typeof readingReviewEvidence];
     const correct = answers[id] === answerKey[id];
+    const prompt = readingQuestionPrompt(id);
+    const noteId = `question:reading:${exerciseDate}:${readingSet.code}:${id}`;
+    const saved = progress.notebook.some((entry) => entry.id === noteId);
     return <aside className={`reading-answer-analysis ${correct ? "is-correct" : "is-incorrect"}`}>
       <header><strong>Q{number} · {correct ? "回答正确" : answers[id] ? "需要复盘" : "未作答"}</strong><span>你的答案：{answers[id] || "未作答"} · 正确答案：{answerKey[id]}</span></header>
       <div><b>原文定位</b><p>{evidence.location}</p></div>
       <div><b>答案解析</b><p>{evidence.explanation}</p></div>
       <div><b>解题方法</b><p>{evidence.method}</p></div>
       <button type="button" className={activeReviewId === id ? "is-active" : ""} onClick={() => showEvidence(id)}>{activeReviewId === id ? "✓ 原文已标注" : "荧光笔标注原文 →"}</button>
+      <button type="button" className={`practice-note-button${saved ? " is-saved" : ""}`} onClick={() => updateProgress((current) => toggleNotebookEntry(current, {
+        id: noteId,
+        kind: "question",
+        title: `Q${number} · ${readingExercise.title}`,
+        detail: `题目：${prompt}\n我的答案：${answers[id] || "未作答"}\n正确答案：${answerKey[id]}\n原文定位：${evidence.location}\n原文：${evidence.quotes.map((quote) => quote.text).join(" ")}\n解析：${evidence.explanation}`,
+        source: `阅读套题 · ${exerciseDate} · ${readingSet.code}`,
+      }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含原文定位）"}</button>
     </aside>;
   };
 
@@ -3543,12 +3631,57 @@ function ReadingPractice({ exerciseDate, onComplete }: { exerciseDate: string; o
 
 function ReviewView({ progress, updateProgress }: { progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [mode, setMode] = useState<"notebook" | "review">("notebook");
+  const [activeNotebookAudioId, setActiveNotebookAudioId] = useState("");
+  const notebookAudioRef = useRef<HTMLAudioElement | null>(null);
   const today = localDayKey();
   const reviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
   const reviewItems = progress.reviewWords.filter((item) => (progress.reviewSchedule[item]?.dueDate ?? today) <= today);
   const scheduledCount = progress.reviewWords.length - reviewItems.length;
   const wordNotes = progress.notebook.filter((entry) => entry.kind === "word").length;
   const questionNotes = progress.notebook.length - wordNotes;
+  useEffect(() => () => {
+    notebookAudioRef.current?.pause();
+    notebookAudioRef.current = null;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, []);
+  const playNotebookMedia = (entry: NotebookEntry) => {
+    const media = entry.media;
+    if (!media) return;
+    if (media.kind === "speech" && media.text) {
+      notebookAudioRef.current?.pause();
+      notebookAudioRef.current = null;
+      setActiveNotebookAudioId("");
+      speak(media.text, .94);
+      return;
+    }
+    if (!media.url) return;
+    if (activeNotebookAudioId === entry.id && notebookAudioRef.current) {
+      notebookAudioRef.current.pause();
+      notebookAudioRef.current = null;
+      setActiveNotebookAudioId("");
+      return;
+    }
+    notebookAudioRef.current?.pause();
+    const audio = new Audio(media.url);
+    notebookAudioRef.current = audio;
+    setActiveNotebookAudioId(entry.id);
+    const stopPlayback = () => {
+      if (notebookAudioRef.current === audio) notebookAudioRef.current = null;
+      setActiveNotebookAudioId("");
+    };
+    audio.onloadedmetadata = () => {
+      audio.currentTime = Math.min(media.startSeconds ?? 0, audio.duration || Number.POSITIVE_INFINITY);
+      void audio.play().catch(stopPlayback);
+    };
+    audio.ontimeupdate = () => {
+      if (media.endSeconds && audio.currentTime >= media.endSeconds) {
+        audio.pause();
+        stopPlayback();
+      }
+    };
+    audio.onended = stopPlayback;
+    audio.onerror = stopPlayback;
+  };
   const rateItem = (item: string, rating: WordRating) => {
     updateProgress((current) => {
       const rated = rateReviewWord(current, item, rating);
@@ -3572,8 +3705,8 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               <div className="empty-state"><strong>笔记本还是空的</strong><p>在单词卡点击“加入笔记”，或在真题答题卡点击“标记”，内容就会保存在这里。</p></div>
             ) : progress.notebook.map((entry) => (
               <article className="notebook-entry" key={entry.id}>
-                <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "错题"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
-                <div className="notebook-entry-body"><div><h2>{entry.title}</h2><p>{entry.detail}</p></div>{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}</div>
+                <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
+                <div className="notebook-entry-body"><div><h2>{entry.title}</h2><p>{entry.detail}</p></div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
                 <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
                   const note = event.target.value;
                   updateProgress((current) => ({ ...current, notebook: current.notebook.map((item) => item.id === entry.id ? { ...item, note } : item) }));

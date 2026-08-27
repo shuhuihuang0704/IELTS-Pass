@@ -17,6 +17,14 @@ export type NotebookEntry = {
   source: string;
   note: string;
   createdAt: string;
+  media?: {
+    kind: "audio" | "speech";
+    label: string;
+    url?: string;
+    text?: string;
+    startSeconds?: number;
+    endSeconds?: number;
+  };
 };
 
 export type PersonalWordbookEntry = {
