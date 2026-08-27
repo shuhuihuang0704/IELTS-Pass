@@ -503,10 +503,14 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /HIGHLIGHTED SOURCE|原文荧光定位/);
   assert.match(app, /official-reading-passage-page-/);
   assert.match(app, /scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/);
-  assert.match(app, /&search=\$\{encodeURIComponent\(activeReadingSearchText\)\}/);
+  assert.doesNotMatch(app, /activeReadingSearchText|&search=/);
+  assert.match(app, /readingSourceHighlights/);
+  assert.match(app, /official-reading-highlight-layer/);
+  assert.match(app, /official-reading-highlight-\$\{questionNumber\}-0/);
   assert.match(app, /✓ 已在原文标出/);
   assert.doesNotMatch(styles, /\.official-reading-evidence/);
-  assert.match(styles, /\.official-pdf-page-lock\.is-evidence-page/);
+  assert.doesNotMatch(styles, /\.official-pdf-page-lock\.is-evidence-page/);
+  assert.match(styles, /\.official-reading-highlight-layer i/);
   assert.match(app, /NOT GIVEN 核验范围/);
   assert.match(app, /readingAnalysisMethod/);
   assert.match(app, /fullyCompleted/);

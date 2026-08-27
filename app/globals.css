@@ -395,7 +395,8 @@ button { cursor: pointer; }
 .official-reading-pair>.official-paper-frame { margin:0; }
 .official-reading-page-stack { display:grid; gap:8px; }
 .official-reading-page-stack .official-paper-frame { margin:0; }
-.official-reading-page-stack .official-pdf-page-lock.is-evidence-page { outline:4px solid rgba(247,207,50,.72); outline-offset:-4px; box-shadow:0 0 0 7px rgba(247,207,50,.14),0 12px 28px rgba(99,78,15,.14); }
+.official-reading-highlight-layer { position:absolute; inset:0; z-index:2; pointer-events:none; }
+.official-reading-highlight-layer i { position:absolute; display:block; border-radius:2px; background:rgba(255,222,62,.58); box-shadow:0 0 0 1px rgba(236,189,0,.16); mix-blend-mode:multiply; transform:scaleY(1.22); transform-origin:center; }
 .official-reading-continue { margin:10px 0; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; border-radius:11px; color:#544a80; background:#ece8f8; }
 .official-reading-continue span { font-size:8px; }
 .official-reading-continue b { font-size:10px; }

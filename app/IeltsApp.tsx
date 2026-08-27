@@ -325,6 +325,49 @@ const readingSourceEvidence: Record<string, ReadingSourceEvidence> = {
   "reading-passage-3:39": { location: "B 段，第 8–13 行 · 官方文章册 P9", excerpt: "Maintaining motivation is one of the most difficult long-term tasks we face ... The type we are has a profound impact on how we approach challenges and our chances of success." },
   "reading-passage-3:40": { location: "A 段，第 1–6 行；B 段，第 1–3 行 · 官方文章册 P9", excerpt: "our lives and those of elite sporting champions are not without parallel ... The psychological tools used to develop personal drive and self-belief to record levels can be applied effectively to ordinary situations." },
 };
+type ReadingSourceHighlight = { page: number; rects: Array<[number, number, number, number]> };
+const readingSourceHighlights: Record<string, ReadingSourceHighlight> = {
+  "reading-passage-1:1": { page: 2, rects: [[12.1,26.29,74.24,2.14],[12.1,28.74,75.43,2.14]] },
+  "reading-passage-1:2": { page: 2, rects: [[53.77,36.13,38.32,2.14],[12.1,38.58,72.7,2.14],[12.1,41.03,27.7,2.14]] },
+  "reading-passage-1:3": { page: 2, rects: [[12.1,65.63,70.89,2.14],[12.1,68.1,79.45,2.14],[12.1,70.55,50.24,2.14]] },
+  "reading-passage-1:4": { page: 2, rects: [[63.16,70.55,27.71,2.14],[12.1,73.02,76.93,2.14],[12.1,75.47,61.33,2.14]] },
+  "reading-passage-1:5": { page: 2, rects: [[56.11,77.93,37.64,2.14],[12.1,80.39,81.45,2.14],[12.1,82.86,58.26,2.14]] },
+  "reading-passage-1:6": { page: 3, rects: [[26.36,38.38,66.02,2.14],[12.1,40.83,53.91,2.14]] },
+  "reading-passage-1:7": { page: 3, rects: [[71.72,58.06,19.32,2.14],[12.1,60.51,79.27,2.14],[12.1,62.98,52.74,2.14]] },
+  "reading-passage-1:8": { page: 3, rects: [[65.68,62.98,17.28,2.14],[12.1,65.43,74.73,2.14],[12.1,67.9,27.37,2.14]] },
+  "reading-passage-1:9": { page: 3, rects: [[58.95,80.19,32.07,2.14],[12.1,82.66,78.79,2.14],[12.1,85.11,60.63,2.14]] },
+  "reading-passage-1:10": { page: 4, rects: [[59.44,40.83,33.43,2.14],[12.1,43.3,67.71,2.14]] },
+  "reading-passage-1:11": { page: 4, rects: [[73.22,23.62,5.39,2.14],[12.1,26.07,79.45,2.14],[12.1,28.54,35.28,2.14]] },
+  "reading-passage-1:12": { page: 4, rects: [[48.22,28.54,39.94,2.14],[12.1,30.99,73.39,2.14],[12.1,33.46,65.83,2.14]] },
+  "reading-passage-1:13": { page: 4, rects: [[12.1,62.98,70.55,2.14],[12.1,65.43,29.55,2.14]] },
+  "reading-passage-2:14": { page: 5, rects: [[12.1,21.37,78.26,2.14],[12.1,23.82,80.63,2.14],[12.1,26.29,66.52,2.14]] },
+  "reading-passage-2:15": { page: 5, rects: [[34.45,36.13,51.56,2.14],[12.1,38.58,73.39,2.14],[12.1,41.03,56.59,2.14]] },
+  "reading-passage-2:16": { page: 5, rects: [[75.39,65.63,17.29,2.14],[12.1,68.1,70.22,2.14],[12.1,70.55,74.58,2.14]] },
+  "reading-passage-2:17": { page: 5, rects: [[12.1,77.93,79.59,2.14],[12.1,80.39,78.1,2.14],[12.1,82.86,25.35,2.14]] },
+  "reading-passage-2:18": { page: 7, rects: [[34.25,82.66,49.2,2.14],[12.1,85.11,79.6,2.14],[12.1,87.57,8.91,2.14]] },
+  "reading-passage-2:19": { page: 6, rects: [[45.34,38.38,42.17,2.14],[12.1,40.83,13.95,2.14],[55.58,43.3,33.1,2.14],[32.6,53.14,60.97,2.14],[12.1,55.59,67.36,2.14]] },
+  "reading-passage-2:20": { page: 6, rects: [[45.34,38.38,42.17,2.14],[12.1,40.83,13.95,2.14],[55.58,43.3,33.1,2.14],[32.6,53.14,60.97,2.14],[12.1,55.59,67.36,2.14]] },
+  "reading-passage-2:21": { page: 7, rects: [[21.84,23.62,60.79,2.14],[12.1,26.07,11.74,2.14],[78.79,35.91,11.76,2.14],[12.1,38.38,57.11,2.14]] },
+  "reading-passage-2:22": { page: 7, rects: [[21.84,23.62,60.79,2.14],[12.1,26.07,11.74,2.14],[78.79,35.91,11.76,2.14],[12.1,38.38,57.11,2.14]] },
+  "reading-passage-2:23": { page: 8, rects: [[46.35,28.54,31.07,2.14],[12.1,30.99,77.58,2.14],[12.1,33.46,13.43,2.14]] },
+  "reading-passage-2:24": { page: 8, rects: [[12.1,38.38,76.09,2.14],[12.1,40.83,78.1,2.14],[12.1,43.3,68.5,2.14]] },
+  "reading-passage-2:25": { page: 8, rects: [[12.1,38.38,76.09,2.14],[12.1,40.83,78.1,2.14],[12.1,43.3,68.5,2.14]] },
+  "reading-passage-2:26": { page: 8, rects: [[89.01,58.06,4.54,2.14],[12.1,60.51,75.27,2.14],[12.1,62.98,72.87,2.14],[12.1,65.43,77.09,2.14],[12.1,67.9,15.27,2.14]] },
+  "reading-passage-3:27": { page: 11, rects: [[64.65,18.7,23.44,2.14],[12.1,21.15,29.28,2.14],[76.6,23.62,16.94,2.14],[12.1,26.07,80.62,2.14],[12.1,28.54,15.16,2.14]] },
+  "reading-passage-3:28": { page: 10, rects: [[12.1,65.43,72.86,2.14],[12.1,67.9,57.4,2.14]] },
+  "reading-passage-3:29": { page: 9, rects: [[20.66,70.35,68.37,2.14],[12.1,72.82,72.76,2.14],[12.1,75.27,37.45,2.14]] },
+  "reading-passage-3:30": { page: 11, rects: [[43.85,62.98,44.33,2.14],[12.1,65.43,51.23,2.14]] },
+  "reading-passage-3:31": { page: 10, rects: [[30.38,21.15,45.54,2.14],[76.9,26.07,4.7,2.14],[12.1,28.54,79.48,2.14],[12.1,30.99,29.9,2.14]] },
+  "reading-passage-3:32": { page: 12, rects: [[21.34,35.91,61.7,2.14],[12.1,38.38,77.09,2.14],[12.1,40.83,65.33,2.14]] },
+  "reading-passage-3:33": { page: 11, rects: [[27.39,50.67,61.48,2.14],[12.1,53.14,72.88,2.14],[12.1,55.59,44,2.14]] },
+  "reading-passage-3:34": { page: 9, rects: [[52.47,85.11,31.45,2.14],[12.1,87.57,75.92,2.14]] },
+  "reading-passage-3:35": { page: 11, rects: [[12.1,82.66,79.78,2.14],[12.1,85.11,49.14,2.14]] },
+  "reading-passage-3:36": { page: 10, rects: [[12.1,80.19,75.16,2.14],[40.03,82.66,49.87,2.14],[74.41,85.11,10.94,2.14],[12.1,87.57,50.37,2.14]] },
+  "reading-passage-3:37": { page: 11, rects: [[38.48,38.38,52.88,2.14],[12.1,40.83,75.61,2.14],[12.1,43.3,11.6,2.14]] },
+  "reading-passage-3:38": { page: 9, rects: [[62.69,65.43,16.79,2.14],[12.1,67.9,81.97,2.14],[12.1,70.35,6.87,2.14],[51.22,75.27,31.23,2.14],[12.1,77.74,77.26,2.14],[12.1,80.19,35.1,2.14]] },
+  "reading-passage-3:39": { page: 9, rects: [[62.69,65.43,16.79,2.14],[12.1,67.9,81.97,2.14],[12.1,70.35,6.87,2.14],[51.22,75.27,31.23,2.14],[12.1,77.74,77.26,2.14],[12.1,80.19,35.1,2.14]] },
+  "reading-passage-3:40": { page: 9, rects: [[55.81,28.54,38.13,2.14],[12.1,30.99,34.26,2.14],[12.1,45.75,79.79,2.14],[12.1,48.22,80.96,2.14],[12.1,50.67,31.76,2.14]] },
+};
 const writingMaterial: OfficialTestMaterial = {
   id: "writing",
   label: "Academic Writing · Task 1 + Task 2",
@@ -1532,10 +1575,8 @@ function OfficialTestRunner({
   const taskRecordKey = officialTaskRecordId(session, material, task);
   const taskAttemptHistory = progress.officialTaskAttemptHistory[taskRecordKey] ?? [];
   const taskAnswers = task.answers ?? [];
-  const activeReadingAnswer = activeReadingQuestion ? taskAnswers.find((answer) => answer.number === activeReadingQuestion) : undefined;
-  const activeReadingEvidence = activeReadingAnswer ? readingSourceEvidence[`${task.id}:${activeReadingAnswer.number}`] : undefined;
-  const activeReadingEvidencePage = Number(activeReadingEvidence?.location.match(/P(\d+)/)?.[1] ?? 0);
-  const activeReadingSearchText = activeReadingEvidence?.excerpt.split("...")[0].trim().split(/\s+/).slice(0, 10).join(" ") ?? "";
+  const activeReadingHighlight = activeReadingQuestion ? readingSourceHighlights[`${task.id}:${activeReadingQuestion}`] : undefined;
+  const activeReadingEvidencePage = activeReadingHighlight?.page ?? 0;
   const openResponseKey = `${taskKey}:open-response`;
   const openResponse = officialResponses[openResponseKey] ?? "";
   const openResponseWordCount = openResponse.trim() ? openResponse.trim().split(/\s+/).length : 0;
@@ -1671,11 +1712,13 @@ function OfficialTestRunner({
     setActiveReadingQuestion(questionNumber);
     const evidence = readingSourceEvidence[`${task.id}:${questionNumber}`];
     const page = Number(evidence?.location.match(/P(\d+)/)?.[1] ?? 0);
-    window.setTimeout(() => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      const targetLine = document.getElementById(`official-reading-highlight-${questionNumber}-0`);
       const targetPage = document.getElementById(`official-reading-passage-page-${page}`);
-      if (targetPage) targetPage.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (targetLine) targetLine.scrollIntoView({ behavior: "smooth", block: "center" });
+      else if (targetPage) targetPage.scrollIntoView({ behavior: "smooth", block: "center" });
       else readingBookletRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    }, 0);
+    }));
   };
   const continueEditingCurrentTask = () => {
     setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
@@ -1832,7 +1875,7 @@ function OfficialTestRunner({
               </header>
               <section className="official-reading-pair" key={task.id}>
                 <header><b>{task.label} · 阅读文章</b><small>仅显示当前 Passage</small></header>
-                <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingSearchText); const sourceHash = `page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit${isEvidencePage ? `&search=${encodeURIComponent(activeReadingSearchText)}` : ""}`; return <div id={`official-reading-passage-page-${page}`} className={`official-pdf-page-lock${isEvidencePage ? " is-evidence-page" : ""}`} key={`passage-${page}-${isEvidencePage ? activeReadingQuestion : "plain"}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#${sourceHash}`} /></div>; })}</div>
+                <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingHighlight); return <div id={`official-reading-passage-page-${page}`} className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />{isEvidencePage && <span className="official-reading-highlight-layer" aria-hidden="true">{activeReadingHighlight.rects.map(([x, y, width, height], index) => <i id={`official-reading-highlight-${activeReadingQuestion}-${index}`} key={`${activeReadingQuestion}-${index}`} style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }} />)}</span>}</div>; })}</div>
                 <div className="official-reading-continue"><span>接着完成</span><b>{task.questionLabel}</b></div>
                 <header><b>{task.label} · 对应题目</b><small>只包含本 Passage 的题目页</small></header>
                 <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
