@@ -3920,7 +3920,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               const answerRevealed = revealedNotebookAnswerIds.includes(entry.id);
               return <article className="notebook-entry" key={entry.id}>
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
-                <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div><h2>{entry.title}</h2>{readingReview ? <section className="notebook-reading-review">
+                <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div>{!readingReview && !listeningReview && <h2>{entry.title}</h2>}{readingReview ? <section className="notebook-reading-review">
                   <article className="is-source"><span>原文对应句</span>{readingReview.excerpt ? <blockquote>{readingReview.excerpt}</blockquote> : <p>当前笔记没有保存对应原句，请展开题目原页复盘。</p>}<small>{readingReview.location}</small></article>
                   <article><span>题目</span><p>{readingReview.question}</p></article>
                   {readingReview.options.length > 0 && <article className="is-options"><span>选项</span><ol>{readingReview.options.map((option) => { const selected = notebookOptionMatchesAnswer(option, readingReview.userAnswer); return <li className={selected ? "is-user-answer" : ""} key={option}><p>{option}</p>{selected && <small>我的选择</small>}</li>; })}</ol></article>}

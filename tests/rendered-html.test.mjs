@@ -252,6 +252,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /officialAnswerAudioMedia/);
   assert.match(app, /答案对应音频/);
   assert.match(app, /只回听这道题答案出现前后的片段/);
+  assert.match(app, /!readingReview && !listeningReview && <h2>/);
   assert.match(app, /segmentDuration/);
   assert.match(app, /readingQuestionOptions/);
   assert.match(app, /notebookOptionMatchesAnswer/);
