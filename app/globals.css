@@ -1240,6 +1240,14 @@ button { cursor: pointer; }
 .profile-water-card { min-height:300px; padding:27px 31px; display:flex; align-items:center; justify-content:center; gap:32px; overflow:hidden; border:1px solid rgba(76,62,151,.12); border-radius:27px; background:radial-gradient(circle at 95% 8%,rgba(210,193,250,.5),transparent 32%),linear-gradient(145deg,#faf9ff,#f0eefb); box-shadow:0 14px 34px rgba(52,42,107,.08); }
 .profile-water-gauge { width:188px; height:188px; position:relative; flex:0 0 auto; overflow:hidden; border:8px solid rgba(255,255,255,.88); border-radius:50%; background:#e8e6ef; box-shadow:inset 0 0 0 1px rgba(69,58,120,.08),0 16px 34px rgba(63,48,140,.15); }
 .profile-water-gauge::after { content:""; position:absolute; inset:0; z-index:3; border-radius:50%; box-shadow:inset 0 0 24px rgba(255,255,255,.45); pointer-events:none; }
+.profile-water-gauge.is-empty { overflow:visible; border:1px solid rgba(111,99,205,.13); border-radius:46% 54% 51% 49% / 57% 44% 56% 43%; background:radial-gradient(circle at 34% 24%,rgba(255,255,255,.98) 0 9%,transparent 10%),radial-gradient(circle at 50% 42%,rgba(255,255,255,.74),transparent 46%),linear-gradient(155deg,#f2f0ff,#dcd8f8 58%,#c7c1ef); box-shadow:inset 0 0 0 7px rgba(255,255,255,.34),0 19px 42px rgba(74,62,151,.17); }
+.profile-water-gauge.is-empty::before { content:""; position:absolute; inset:13px; z-index:1; border:1px solid rgba(97,83,190,.12); border-radius:inherit; background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(119,103,213,.04)); }
+.profile-water-gauge.is-empty::after { inset:6px; border-radius:inherit; box-shadow:inset 0 0 25px rgba(255,255,255,.52); }
+.profile-water-gauge.is-empty .profile-water-fill { display:none; }
+.profile-water-empty { position:absolute; inset:0; z-index:4; padding:35px 27px 25px; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#4f46a4; text-align:center; }
+.profile-water-empty>span { width:38px; height:38px; display:grid; place-items:center; border-radius:14px 14px 14px 5px; color:white; background:linear-gradient(145deg,#8c82eb,#5f55c7); box-shadow:0 8px 18px rgba(83,70,178,.22); font-size:20px; line-height:1; }
+.profile-water-empty>strong { margin-top:12px; font-size:12px; }
+.profile-water-empty>small { max-width:112px; margin-top:6px; color:#756d94; font-size:8px; line-height:1.45; }
 .profile-water-fill { position:absolute; left:0; right:0; bottom:0; min-height:0; background:linear-gradient(180deg,#8f83ef,#6157d8 70%,#4842af); transition:height .75s cubic-bezier(.2,.8,.2,1); }
 .profile-water-fill::before,.profile-water-fill::after { content:""; width:220px; height:220px; position:absolute; left:50%; top:-210px; border-radius:42%; transform:translateX(-50%); transform-origin:center; }
 .profile-water-fill::before { background:rgba(255,255,255,.83); animation:profile-wave 7s linear infinite; }

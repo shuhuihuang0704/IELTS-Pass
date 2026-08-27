@@ -408,6 +408,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.ai-voice-input\.is-listening/);
   assert.doesNotMatch(app, /ai-tutor-progress|<span>今日进度<\/span>/);
   assert.match(app, /profile-water-gauge/);
+  assert.match(app, /planProgress\.percent === 0 \? " is-empty"/);
+  assert.match(app, /从今天开始/);
+  assert.match(styles, /\.profile-water-gauge\.is-empty/);
+  assert.match(styles, /\.profile-water-empty/);
   assert.match(app, /profile-water-fill/);
   assert.match(app, /整体备考计划完成度/);
   assert.match(app, /OVERALL PLAN LEVEL/);

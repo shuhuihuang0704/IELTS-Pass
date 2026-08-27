@@ -4760,7 +4760,10 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
       </form>}
       <section className="profile-progress-dashboard">
         <div className="profile-water-card">
-          <div className="profile-water-gauge" role="img" aria-label={`整体备考计划完成度 ${planProgress.percent}%`}><div className="profile-water-fill" style={{ height: `${planProgress.percent}%` }} /></div>
+          <div className={`profile-water-gauge${planProgress.percent === 0 ? " is-empty" : ""}`} role="img" aria-label={`整体备考计划完成度 ${planProgress.percent}%`}>
+            <div className="profile-water-fill" style={{ height: `${planProgress.percent}%` }} />
+            {planProgress.percent === 0 && <div className="profile-water-empty"><span>⌁</span><strong>从今天开始</strong><small>完成训练后，水位会慢慢上升</small></div>}
+          </div>
           <div className="profile-water-copy"><span>OVERALL PLAN LEVEL</span><div className="profile-water-score-row"><strong>{planProgress.percent}<small>%</small></strong><div className="profile-points-chip" aria-label={`当前共有 ${progress.points} 积分`}><span>★</span><b>{progress.points}</b><small>积分</small></div></div><p>第 {planDay} / {progress.studyPlanDays} 天 · 当前节奏 {planProgress.expectedPercent}%<br />{paceMessage}</p><div className="profile-water-breakdown"><span>词汇 {planProgress.vocabularyPercent}%</span><span>每日任务 {planProgress.dailyTaskPercent}%</span><span>套题 {planProgress.officialPracticePercent}%</span><span>坚持度 {planProgress.consistencyPercent}%</span></div></div>
         </div>
         <div className="profile-overview-column">
