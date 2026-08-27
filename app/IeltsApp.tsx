@@ -911,6 +911,7 @@ function TodayView({
   onNavigate: (view: View) => void;
 }) {
   const [showStudyHistory, setShowStudyHistory] = useState(false);
+  const [showExtraStudy, setShowExtraStudy] = useState(false);
   const carryoverSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]);
   const nextSkill = skills.find((skill) => skill.id === carryoverSkill)
     ?? skills.find((skill) => !progress.completed[skill.id])
@@ -955,7 +956,12 @@ function TodayView({
               </button>
             ))}
           </div>
-          <button className="primary-action" onClick={onStart}>{completedCount === 4 ? "再练一次场景" : `继续${nextSkill.label}`}<span>→</span></button>
+          <button
+            className="primary-action"
+            aria-expanded={completedCount === 4 ? showExtraStudy : undefined}
+            aria-controls={completedCount === 4 ? "extra-study-menu" : undefined}
+            onClick={completedCount === 4 ? () => setShowExtraStudy((current) => !current) : onStart}
+          >{completedCount === 4 ? showExtraStudy ? "收起加练选择" : "继续增加学习" : `继续${nextSkill.label}`}<span>{completedCount === 4 && showExtraStudy ? "↑" : "→"}</span></button>
         </section>
         <aside className="progress-panel" aria-label="学习进度">
           <div className="progress-intro">
@@ -974,6 +980,31 @@ function TodayView({
           </button>
         </aside>
       </div>
+      {completedCount === 4 && showExtraStudy && (
+        <section className="extra-study-panel" id="extra-study-menu" aria-label="今日加练选择">
+          <header>
+            <div><span>KEEP GOING</span><h2>今天还想多练一点？</h2><p>任选一项继续学习。今日基础完成度保持 100%，实际学习时间会继续累计。</p></div>
+            <strong>已完成今日计划 ✓</strong>
+          </header>
+          <div className="extra-study-options">
+            <button onClick={() => onNavigate("review")}>
+              <span>08 MIN</span><b>复习错词与笔记</b><small>{dueReviewCount > 0 ? `${dueReviewCount} 个词今日到期` : `${progress.notebook.length} 条个人笔记可复盘`}</small><em>开始复习 →</em>
+            </button>
+            <button onClick={() => onOpenSkill("listening")}>
+              <span>12 MIN</span><b>再练一组听力</b><small>填空、多选、匹配与单选</small><em>开始听力 →</em>
+            </button>
+            <button onClick={() => onOpenSkill("speaking")}>
+              <span>05 MIN</span><b>继续 AI 口语</b><small>考官式提问与互动追问</small><em>开始口语 →</em>
+            </button>
+            <button onClick={() => onOpenSkill("reading")}>
+              <span>18 MIN</span><b>再练一篇阅读</b><small>匹配、判断与摘要填空</small><em>开始阅读 →</em>
+            </button>
+            <button className="is-official" onClick={() => onNavigate("practice")}>
+              <span>FULL TEST</span><b>进入套题训练</b><small>{nextOfficialSession.setCode} · {nextOfficialSession.title}</small><em>选择套题 →</em>
+            </button>
+          </div>
+        </section>
+      )}
       <section className="official-plan-strip">
         <div><span>WEEKLY OFFICIAL PRACTICE</span><strong>本周官方套题训练</strong><p>下一项：{nextOfficialSession.dayLabel} {nextOfficialSession.time} · {nextOfficialSession.title}</p></div>
         <div className="official-plan-progress"><strong>{completedOfficialSessions.length}<small>/4</small></strong><span>本周已完成</span></div>

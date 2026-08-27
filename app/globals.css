@@ -101,6 +101,21 @@ button { cursor: pointer; }
 .streak-row small,.memory-row small { margin-top:5px; color:var(--muted); font-size:10px; }
 .memory-row { width:100%; justify-content:space-between; border:0; color:inherit; text-align:left; }
 .memory-row b { width:32px; height:32px; display:grid; place-items:center; border-radius:11px; color:white; background:var(--ink); font-size:12px; }
+.extra-study-panel { margin-top:18px; padding:27px; border:1px solid rgba(91,76,184,.14); border-radius:28px; background:linear-gradient(135deg,#fcfbff,#f4f0ff); box-shadow:0 16px 38px rgba(62,47,132,.09); }
+.extra-study-panel>header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
+.extra-study-panel>header span { color:var(--violet); font-size:9px; font-weight:750; letter-spacing:1px; }
+.extra-study-panel>header h2 { margin:6px 0 0; font-size:25px; letter-spacing:-1px; }
+.extra-study-panel>header p { margin:7px 0 0; color:var(--muted); font-size:11px; line-height:1.55; }
+.extra-study-panel>header>strong { padding:9px 12px; flex:0 0 auto; border-radius:12px; color:#316b50; background:#ddf0e5; font-size:9px; }
+.extra-study-options { margin-top:20px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; }
+.extra-study-options button { min-height:146px; padding:16px; display:flex; flex-direction:column; align-items:flex-start; border:1px solid #e8e3f1; border-radius:18px; color:inherit; background:white; text-align:left; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+.extra-study-options button:hover { transform:translateY(-2px); border-color:#c6bceb; box-shadow:0 10px 24px rgba(61,46,130,.1); }
+.extra-study-options button>span { color:var(--violet); font-size:8px; font-weight:750; letter-spacing:.7px; }
+.extra-study-options button>b { margin-top:11px; font-size:13px; line-height:1.25; }
+.extra-study-options button>small { margin-top:7px; color:var(--muted); font-size:9px; line-height:1.45; }
+.extra-study-options button>em { margin-top:auto; padding-top:16px; color:#5145b7; font-size:9px; font-style:normal; font-weight:700; }
+.extra-study-options button.is-official { color:white; border-color:transparent; background:linear-gradient(145deg,#5f50ca,#3f3b97); }
+.extra-study-options button.is-official>span,.extra-study-options button.is-official>small,.extra-study-options button.is-official>em { color:rgba(255,255,255,.78); }
 .study-history-backdrop { position:fixed; z-index:80; inset:0; display:grid; place-items:center; padding:24px; background:rgba(24,20,32,.38); backdrop-filter:blur(12px); }
 .study-history-dialog { width:min(720px,100%); max-height:min(820px,calc(100vh - 48px)); overflow:auto; padding:26px; border:1px solid rgba(46,39,58,.08); border-radius:28px; background:#fbfaf8; box-shadow:0 30px 80px rgba(27,21,39,.24); }
 .study-history-dialog>header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
@@ -178,6 +193,8 @@ button { cursor: pointer; }
   .progress-panel { min-height:0; display:grid; grid-template-columns:1.1fr 1fr; }
   .progress-intro { grid-row:span 2; }
   .scene-stage { min-height:535px; }
+  .extra-study-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .extra-study-options button.is-official { grid-column:1 / -1; }
   .mobile-nav { position:fixed; z-index:20; left:0; right:0; bottom:0; height:70px; padding:8px 10px 12px; display:grid; grid-template-columns:repeat(5,1fr); align-items:center; background:rgba(249,247,244,.94); border-top:1px solid rgba(30,26,34,.08); backdrop-filter:blur(22px); }
   .mobile-nav button { border:0; color:#89838b; background:transparent; text-align:center; font-size:10px; }
   .mobile-nav button.is-active { color:var(--violet); font-weight:700; }
@@ -203,6 +220,10 @@ button { cursor: pointer; }
   .progress-intro { min-height:235px; }
   .progress-intro>strong { font-size:58px; }
   .streak-row,.memory-row { min-height:88px; }
+  .extra-study-panel { padding:21px 17px; border-radius:23px; }
+  .extra-study-panel>header { flex-direction:column; gap:13px; }
+  .extra-study-options { grid-template-columns:1fr; }
+  .extra-study-options button,.extra-study-options button.is-official { min-height:124px; grid-column:auto; }
   .study-history-backdrop { padding:12px; align-items:end; }
   .study-history-dialog { max-height:86vh; padding:21px 16px; border-radius:25px 25px 18px 18px; }
   .study-history-summary { grid-template-columns:1fr 1fr; }
