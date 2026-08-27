@@ -1030,6 +1030,14 @@ button { cursor: pointer; }
 .dictionary-search-dialog>form button { min-width:84px; border:0; border-radius:13px; color:white; background:var(--violet); font-size:10px; font-weight:700; }
 .dictionary-search-dialog>form button:disabled { opacity:.6; }
 .dictionary-search-source { margin:8px 2px 0; color:#8d8690; font-size:8px; }
+.dictionary-local-results { margin-top:15px; }
+.dictionary-local-results>header { padding:0 2px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.dictionary-local-results>header strong { font-size:11px; }
+.dictionary-local-results>header span { color:#7168ca; font-size:7px; font-weight:750; letter-spacing:.7px; }
+.dictionary-result.is-local { border-color:#dcd7f2; background:linear-gradient(135deg,#fff,#faf9ff); }
+.dictionary-local-meaning { margin:0; color:#211d28; font-size:15px!important; font-weight:650; }
+.dictionary-result.is-local blockquote { margin-top:7px; }
+.dictionary-result.is-local section small { display:block; margin-top:7px; color:#8a8490; font-size:8px; }
 .dictionary-search-empty { margin-top:16px; padding:20px; border-radius:16px; background:#f1edf2; text-align:center; }
 .dictionary-search-empty strong { font-size:12px; }
 .dictionary-search-empty p { margin:5px 0 0; color:var(--muted); font-size:9px; }

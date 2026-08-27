@@ -141,9 +141,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /inferPartOfSpeech/);
   assert.match(app, /wordbookEntries/);
   assert.match(app, /搜索全部英语词典/);
-  assert.match(app, /api\.dictionaryapi\.dev/);
   assert.match(app, /DictionarySearchDialog/);
   assert.match(app, /开放英语词典/);
+  assert.match(app, /findLocalDictionaryEntries/);
+  assert.match(app, /查单词与中文释义/);
+  assert.match(app, /本地 3,600 词无需联网并显示中文/);
   assert.match(app, /单词本 ·/);
   assert.match(app, /每日学习记录/);
   assert.match(app, /继续增加学习/);
@@ -183,6 +185,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.wordbook-entry-actions/);
   assert.match(styles, /\.topbar-dictionary-search/);
   assert.match(styles, /\.dictionary-search-dialog/);
+  assert.match(styles, /\.dictionary-local-results/);
+  const dictionaryRoute = await readFile(new URL("../app/api/dictionary/route.ts", import.meta.url), "utf8");
+  assert.match(dictionaryRoute, /api\.dictionaryapi\.dev/);
+  assert.match(dictionaryRoute, /AbortSignal\.timeout\(6000\)/);
   assert.match(app, /readingSourceEvidence/);
   assert.match(app, /原文荧光定位/);
   assert.match(app, /荧光笔定位原文/);

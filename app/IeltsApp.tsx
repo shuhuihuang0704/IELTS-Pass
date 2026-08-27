@@ -2835,7 +2835,9 @@ type DictionaryResult = {
 async function lookupDictionaryWord(word: string): Promise<DictionaryResult[]> {
   const normalized = word.trim().toLowerCase();
   if (!normalized) return [];
-  const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(normalized)}`);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 8000);
+  const response = await fetch(`/api/dictionary?word=${encodeURIComponent(normalized)}`, { signal: controller.signal }).finally(() => window.clearTimeout(timeout));
   if (response.status === 404) return [];
   if (!response.ok) throw new Error("dictionary unavailable");
   const entries = await response.json() as DictionaryResult[];
@@ -2886,6 +2888,14 @@ const wordbookEntries: WordbookEntry[] = Array.from(new Map([
     collection: "listening" as const,
   })),
 ].map((entry) => [entry.word.toLowerCase(), entry])).values()).sort((a, b) => a.word.localeCompare(b.word));
+
+function findLocalDictionaryEntries(query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+  const exact = wordbookEntries.find((entry) => entry.word.toLowerCase() === normalized);
+  if (exact) return [exact];
+  return wordbookEntries.filter((entry) => entry.word.toLowerCase().startsWith(normalized) || entry.meaning.includes(query.trim())).slice(0, 8);
+}
 
 function WordbookView({ progress, onBack, updateProgress, onDictionarySearch }: { progress: LearningProgress; onBack: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onDictionarySearch: (query?: string) => void }) {
   const [query, setQuery] = useState("");
@@ -2951,12 +2961,14 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
   const [requestedQuery, setRequestedQuery] = useState(initialQuery);
   const [requestId, setRequestId] = useState(0);
   const [results, setResults] = useState<DictionaryResult[]>([]);
-  const [loading, setLoading] = useState(Boolean(initialQuery.trim()));
+  const [loading, setLoading] = useState(Boolean(initialQuery.trim()) && findLocalDictionaryEntries(initialQuery).length === 0);
   const [error, setError] = useState("");
+  const localResults = useMemo(() => findLocalDictionaryEntries(requestedQuery), [requestedQuery]);
 
   useEffect(() => {
     const term = requestedQuery.trim();
     if (!term) return;
+    if (findLocalDictionaryEntries(term).length > 0) return;
     let active = true;
     lookupDictionaryWord(term).then((entries) => {
       if (!active) return;
@@ -2965,7 +2977,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
     }).catch(() => {
       if (!active) return;
       setResults([]);
-      setError("在线词典暂时无法连接，请检查网络后重试。");
+      setError("词库外查询暂时超时。你仍然可以搜索本地 3,600 词的中文释义，稍后再试这个词。");
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [requestedQuery, requestId]);
@@ -2978,9 +2990,20 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
 
   return <div className="dictionary-search-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <section className="dictionary-search-dialog" role="dialog" aria-modal="true" aria-label="全英语词典搜索">
-      <header><div><span>GLOBAL ENGLISH DICTIONARY</span><h2>搜索全部英语词典</h2><p>本单词本之外的词，也可以查词性、音标、英文释义和例句。</p></div><button onClick={onClose} aria-label="关闭词典">×</button></header>
-      <form onSubmit={(event) => { event.preventDefault(); const term = query.trim(); if (!term) return; setLoading(true); setError(""); setResults([]); setRequestedQuery(term); setRequestId((current) => current + 1); }}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入一个英语单词，例如 serendipity" aria-label="输入英语单词" /><button type="submit" disabled={loading}>{loading ? "查询中…" : "查词"}</button></form>
-      <p className="dictionary-search-source">3,600 词核心库之外的结果由开放英语词典实时提供，需要联网。</p>
+      <header><div><span>GLOBAL ENGLISH DICTIONARY</span><h2>查单词与中文释义</h2><p>核心词库优先显示中文意思；词库外单词继续查询词性、音标和英文释义。</p></div><button onClick={onClose} aria-label="关闭词典">×</button></header>
+      <form onSubmit={(event) => { event.preventDefault(); const term = query.trim(); if (!term) return; const hasLocalResult = findLocalDictionaryEntries(term).length > 0; setLoading(!hasLocalResult); setError(""); setResults([]); setRequestedQuery(term); setRequestId((current) => current + 1); }}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入英语单词或中文意思" aria-label="输入英语单词" /><button type="submit" disabled={loading}>{loading ? "查询中…" : "查词"}</button></form>
+      <p className="dictionary-search-source">本地 3,600 词无需联网并显示中文；词库外结果由开放英语词典实时提供。</p>
+      {localResults.length > 0 && <section className="dictionary-local-results" aria-label="本地词库释义">
+        <header><strong>{localResults.length === 1 ? "中文释义" : `找到 ${localResults.length} 个本地词条`}</strong><span>IELTS PASS CORE LIBRARY</span></header>
+        {localResults.map((entry) => {
+          const noteId = `word:${entry.word.toLowerCase()}`;
+          const isSaved = progress.notebook.some((item) => item.id === noteId);
+          return <article className="dictionary-result is-local" key={entry.word}>
+            <header><div><h3>{entry.word}</h3><span>{entry.partOfSpeech}</span></div><div><button onClick={() => speak(entry.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `核心词库 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+            <div><section><b>中文意思</b><div><p className="dictionary-local-meaning">{entry.meaning}</p><blockquote>{entry.example}</blockquote><small>{entry.category}</small></div></section></div>
+          </article>;
+        })}
+      </section>}
       {error && <div className="dictionary-search-empty"><strong>没有查到结果</strong><p>{error}</p></div>}
       {results.map((result, resultIndex) => {
         const firstMeaning = result.meanings[0];
