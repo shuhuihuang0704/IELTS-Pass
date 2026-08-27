@@ -746,6 +746,8 @@ button { cursor: pointer; }
 .dictation-item-result>p { grid-column:1 / 3; margin:0; color:#625c65; font-size:9px; }
 .dictation-item-result>button { grid-column:3; grid-row:1 / 3; min-height:30px; padding:0 8px; border:0; border-radius:8px; color:#5149b4; background:#ece9fa; font-size:7px; }
 .dictation-item-result>button.is-saved { color:white; background:#5b54d6; }
+.phrase-batch-result>small { grid-column:1 / 3; color:#746d76; font-size:8px; line-height:1.45; }
+.phrase-batch-result>button { grid-row:1 / 4; }
 .dictation-batch-footer { margin-top:12px; padding:13px; display:flex; align-items:center; justify-content:space-between; gap:14px; border:1px solid var(--line); border-radius:13px; background:white; }
 .dictation-batch-footer>div:first-child strong,.dictation-batch-footer>div:first-child span { display:block; }
 .dictation-batch-footer>div:first-child strong { font-size:11px; }
@@ -756,8 +758,6 @@ button { cursor: pointer; }
 .dictation-batch-footer>div:last-child button.is-secondary { color:#4e47ad; background:#eeecfb; }
 .inline-note-button { margin-top:13px; padding:8px 11px; border:0; border-radius:10px; color:#5143b6; background:#ebe7fa; font-size:10px; }
 .inline-note-button.is-saved { color:white; background:#5b4ec3; }
-.phrase-audio-actions { display:flex; gap:8px; margin:30px 0 14px; }
-.phrase-audio-actions .audio-control { margin:0; }
 .exercise-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:18px; }
 .text-action { border:0; padding:8px 0; color:#6f6870; background:transparent; font-size:11px; }
 .text-action:disabled { color:#aaa4ab; cursor:not-allowed; }
@@ -1256,7 +1256,6 @@ button { cursor: pointer; }
   .speaking-audio-controls { flex-direction:column; }
   .vocabulary-mode-switch { width:100%; }
   .vocabulary-mode-switch button { flex:1; padding:0 6px; font-size:9px; }
-  .phrase-audio-actions { flex-direction:column; }
   .daily-vocabulary-main { min-height:540px; }
   .daily-word-card { min-height:285px; padding:22px; }
   .daily-word-card>div:first-child { align-items:flex-start; gap:10px; }

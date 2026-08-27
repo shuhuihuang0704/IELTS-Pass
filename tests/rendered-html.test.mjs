@@ -150,6 +150,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /toggleDictationSequence/);
   assert.match(app, /seekDictationSequence/);
   assert.match(app, /拖动场景听写进度/);
+  assert.match(app, /一段音频，连续听写 \{groupPhrases\.length\} 个词组/);
+  assert.match(app, /间隔约 4 秒/);
+  assert.match(app, /拖动吞音词组听写进度/);
+  assert.match(app, /一次提交本组 \{groupPhrases\.length\} 个词组/);
   assert.match(app, /每个词后预留约 4 秒书写时间/);
   assert.doesNotMatch(app, /playDictationWord|播放当前词|自动播放下一词/);
   assert.match(app, /一次提交本组 \{dictationWords\.length\} 词/);

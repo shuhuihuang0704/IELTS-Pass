@@ -41,7 +41,6 @@ import {
 } from "./learning-state";
 
 type View = "today" | "practice" | "official-test" | "scene" | "skill" | "review" | "profile";
-type Feedback = { tone: "success" | "error" | "neutral"; text: string } | null;
 type NotebookDraft = Omit<NotebookEntry, "createdAt" | "note">;
 
 const storageKey = "ielts-ai-learning-progress-v1";
@@ -2450,33 +2449,131 @@ function ConnectedSpeechPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const completedCount = phrases.filter((item) => progress.connectedSpeechSeen.includes(item.phrase)).length;
-  const [index, setIndex] = useState(() => Math.min(completedCount, phrases.length - 1));
-  const [value, setValue] = useState("");
-  const [feedback, setFeedback] = useState<Feedback>(null);
-  const phrase = phrases[index];
+  const groupSize = 5;
+  const groupCount = Math.max(1, Math.ceil(phrases.length / groupSize));
+  const [group, setGroup] = useState(() => Math.min(groupCount - 1, Math.floor(completedCount / groupSize)));
+  const groupPhrases = useMemo(() => phrases.slice(group * groupSize, group * groupSize + groupSize), [group, phrases]);
+  const [answers, setAnswers] = useState<string[]>(() => Array(groupSize).fill(""));
+  const [submitted, setSubmitted] = useState(false);
+  const [activeItem, setActiveItem] = useState(0);
+  const [playback, setPlayback] = useState<"idle" | "playing" | "paused" | "ended">("idle");
+  const [audioTime, setAudioTime] = useState(0);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const audioTimeRef = useRef(0);
+  const anchorTimeRef = useRef(0);
+  const anchorStartedRef = useRef(0);
+  const lastSpokenRef = useRef(-1);
+  const slotSeconds = 8;
+  const speechWindowSeconds = 3.5;
+  const audioDuration = groupPhrases.length * slotSeconds;
+  const filledCount = answers.slice(0, groupPhrases.length).filter((answer) => answer.trim()).length;
   const finished = completedCount >= phrases.length;
   const normalize = (text: string) => text.trim().toLowerCase().replace(/[.,?!]/g, "").replace(/\s+/g, " ");
+  const correctCount = groupPhrases.filter((item, itemIndex) => normalize(answers[itemIndex] ?? "") === normalize(item.phrase)).length;
 
-  const check = (event?: FormEvent) => {
-    event?.preventDefault();
-    const correct = normalize(value) === normalize(phrase.phrase);
-    setFeedback({ tone: correct ? "success" : "error", text: correct ? "词组听写正确。" : "词组拼写有误，已加入复习。" });
+  useEffect(() => {
+    if (playback !== "playing") return;
+    const updatePlayback = () => {
+      const elapsed = (performance.now() - anchorStartedRef.current) / 1000;
+      const nextTime = Math.min(audioDuration, anchorTimeRef.current + elapsed);
+      audioTimeRef.current = nextTime;
+      setAudioTime(nextTime);
+      if (nextTime >= audioDuration) {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        setPlayback("ended");
+        return;
+      }
+      const itemIndex = Math.min(groupPhrases.length - 1, Math.floor(nextTime / slotSeconds));
+      const slotOffset = nextTime % slotSeconds;
+      setActiveItem(itemIndex);
+      if (lastSpokenRef.current !== itemIndex) {
+        inputRefs.current[itemIndex]?.focus();
+        if (slotOffset <= speechWindowSeconds) speak(groupPhrases[itemIndex].phrase, .86);
+        lastSpokenRef.current = itemIndex;
+      }
+    };
+    updatePlayback();
+    const timer = window.setInterval(updatePlayback, 100);
+    return () => window.clearInterval(timer);
+  }, [audioDuration, groupPhrases, playback]);
+
+  useEffect(() => () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, []);
+
+  const resetPlayer = (time = 0) => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    audioTimeRef.current = time;
+    anchorTimeRef.current = time;
+    anchorStartedRef.current = 0;
+    lastSpokenRef.current = -1;
+    setAudioTime(time);
+    setPlayback("idle");
+  };
+
+  const openGroup = (groupIndex: number) => {
+    resetPlayer();
+    setGroup(groupIndex);
+    setAnswers(Array(groupSize).fill(""));
+    setSubmitted(false);
+    setActiveItem(0);
+  };
+
+  const toggleSequence = () => {
+    if (playback === "playing") {
+      const elapsed = (performance.now() - anchorStartedRef.current) / 1000;
+      const pausedAt = Math.min(audioDuration, anchorTimeRef.current + elapsed);
+      audioTimeRef.current = pausedAt;
+      setAudioTime(pausedAt);
+      if ("speechSynthesis" in window) window.speechSynthesis.pause();
+      setPlayback("paused");
+      return;
+    }
+    const startTime = playback === "ended" ? 0 : audioTimeRef.current;
+    if (playback === "paused" && "speechSynthesis" in window) window.speechSynthesis.resume();
+    audioTimeRef.current = startTime;
+    anchorTimeRef.current = startTime;
+    anchorStartedRef.current = performance.now();
+    const itemIndex = Math.min(groupPhrases.length - 1, Math.floor(startTime / slotSeconds));
+    lastSpokenRef.current = startTime % slotSeconds <= speechWindowSeconds ? -1 : itemIndex;
+    setAudioTime(startTime);
+    setPlayback("playing");
+  };
+
+  const seekSequence = (nextTime: number) => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    const safeTime = Math.max(0, Math.min(audioDuration, nextTime));
+    const itemIndex = Math.min(groupPhrases.length - 1, Math.floor(Math.min(safeTime, audioDuration - .01) / slotSeconds));
+    audioTimeRef.current = safeTime;
+    anchorTimeRef.current = safeTime;
+    anchorStartedRef.current = performance.now();
+    lastSpokenRef.current = safeTime % slotSeconds <= speechWindowSeconds ? -1 : itemIndex;
+    setAudioTime(safeTime);
+    setActiveItem(itemIndex);
+    inputRefs.current[itemIndex]?.focus();
+    if (safeTime >= audioDuration) setPlayback("ended");
+  };
+
+  const submitGroup = (event: FormEvent) => {
+    event.preventDefault();
+    if (filledCount < groupPhrases.length) return;
+    setSubmitted(true);
     updateProgress((current) => {
-      const next = {
+      const correctPhrases = groupPhrases.filter((item, itemIndex) => normalize(answers[itemIndex] ?? "") === normalize(item.phrase)).map((item) => item.phrase);
+      const wrongPhrases = groupPhrases.filter((item, itemIndex) => normalize(answers[itemIndex] ?? "") !== normalize(item.phrase));
+      let next: LearningProgress = {
         ...current,
-        masteredWords: correct ? Array.from(new Set([...current.masteredWords, phrase.phrase])) : current.masteredWords,
-        reviewWords: current.reviewWords,
+        masteredWords: Array.from(new Set([...current.masteredWords, ...correctPhrases])),
       };
-      return correct ? next : scheduleWordForReview(next, phrase.phrase, "unfamiliar", 0);
+      wrongPhrases.forEach((item) => { next = scheduleWordForReview(next, item.phrase, "unfamiliar", 0); });
+      return next;
     });
   };
 
-  const next = () => {
-    if (!feedback) return;
-    updateProgress((current) => ({ ...current, connectedSpeechSeen: Array.from(new Set([...current.connectedSpeechSeen, phrase.phrase])) }));
-    if (index < phrases.length - 1) setIndex((current) => current + 1);
-    setValue("");
-    setFeedback(null);
+  const advanceGroup = () => {
+    if (!submitted) return;
+    updateProgress((current) => ({ ...current, connectedSpeechSeen: Array.from(new Set([...current.connectedSpeechSeen, ...groupPhrases.map((item) => item.phrase)])) }));
+    if (group < groupCount - 1) openGroup(group + 1);
   };
 
   if (finished) {
@@ -2485,14 +2582,34 @@ function ConnectedSpeechPractice({
 
   return (
     <div className="exercise-layout is-single-column connected-speech-layout">
-      <div className="exercise-main typing-practice">
-        <div className="exercise-kicker"><span>连读 / 弱读 / 失爆 · 已导入语料库</span><span>{completedCount + (feedback ? 1 : 0)} / {phrases.length}</span></div>
-        <h2>听自然语流，写出完整词组</h2><p>先听自然语速；需要时再听慢速，不显示文字提示。</p>
-        <div className="phrase-audio-actions"><button className="audio-control" onClick={() => speak(phrase.phrase, .98)}><span>▶</span>自然语速</button><button className="audio-control" onClick={() => speak(phrase.phrase, .62)}>慢速拆听</button></div>
-        <form className="typing-form" onSubmit={check}><input value={value} onChange={(event) => setValue(event.target.value)} spellCheck={false} placeholder="输入听到的完整词组…" aria-label="输入听到的完整词组" /><button type="submit">检查</button></form>
-        <div className={`answer-feedback ${feedback?.tone ?? ""}`} aria-live="polite">{feedback?.text ?? "检查后显示完整词组、中文和语流现象。"}</div>
-        {feedback && <div className="dictation-reveal phrase-reveal"><span>{phrase.feature}</span><strong>{phrase.phrase}</strong><p>{phrase.meaning}</p><small>{phrase.note}</small><button className={progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "inline-note-button is-saved" : "inline-note-button"} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${phrase.phrase.toLowerCase()}`, kind: "word", title: phrase.phrase, detail: `${phrase.meaning}\n${phrase.note}`, source: `吞音词组 · ${phrase.feature}` }))}>{progress.notebook.some((entry) => entry.id === `word:${phrase.phrase.toLowerCase()}`) ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div>}
-        <div className="exercise-actions"><button className="secondary-action" disabled={!feedback} onClick={next}>{index === phrases.length - 1 ? "完成加练" : "下一个"} →</button></div>
+      <div className="exercise-main dictation-batch-practice connected-speech-batch">
+        <div className="exercise-kicker"><span>连续词组听写 · 第 {group + 1} / {groupCount} 组</span><span>{completedCount} / {phrases.length}</span></div>
+        <h2>一段音频，连续听写 {groupPhrases.length} 个词组</h2><p>每个词组后预留约 4 秒书写；可以暂停、继续或拖动进度，整组提交前不显示原词组和中文。</p>
+        <section className="dictation-sequence-player" aria-label={`第 ${group + 1} 组连续吞音词组播放器`}>
+          <button type="button" className="dictation-sequence-toggle" onClick={toggleSequence} aria-label={playback === "playing" ? "暂停本组词组听写" : "播放本组词组听写"}>{playback === "playing" ? "Ⅱ" : "▶"}</button>
+          <div className="dictation-sequence-copy"><strong>{playback === "playing" ? `正在播放第 ${activeItem + 1} 个词组` : playback === "paused" ? `已暂停在第 ${activeItem + 1} 个词组` : playback === "ended" ? "本组音频播放完毕" : `播放本组 ${groupPhrases.length} 个词组`}</strong><small>{groupPhrases.length} 个词组 · 自然语速 · 间隔约 4 秒</small></div>
+          <input type="range" min="0" max={audioDuration} step="0.1" value={audioTime} onChange={(event) => seekSequence(Number(event.target.value))} aria-label="拖动吞音词组听写进度" />
+          <span className="dictation-sequence-time">{Math.floor(audioTime / 60)}:{String(Math.floor(audioTime % 60)).padStart(2, "0")} / {Math.floor(audioDuration / 60)}:{String(audioDuration % 60).padStart(2, "0")}</span>
+          <div className="dictation-sequence-markers" style={{ gridTemplateColumns: `repeat(${groupPhrases.length},1fr)` }} aria-hidden="true">{groupPhrases.map((item, itemIndex) => <i className={activeItem === itemIndex ? "is-active" : ""} key={item.phrase}><span>{itemIndex + 1}</span></i>)}</div>
+        </section>
+        <form className="dictation-batch-form" onSubmit={submitGroup}>
+          <div className="dictation-batch-list">
+            {groupPhrases.map((item, itemIndex) => {
+              const answer = answers[itemIndex] ?? "";
+              const correct = normalize(answer) === normalize(item.phrase);
+              const saved = progress.notebook.some((entry) => entry.id === `word:${item.phrase.toLowerCase()}`);
+              return <article className={`${activeItem === itemIndex ? "is-active " : ""}${submitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={item.phrase}>
+                <span className="dictation-item-number">{group * groupSize + itemIndex + 1}</span>
+                <label><span>第 {itemIndex + 1} 个词组</span><input ref={(node) => { inputRefs.current[itemIndex] = node; }} value={answer} disabled={submitted} onFocus={() => setActiveItem(itemIndex)} onChange={(event) => setAnswers((current) => current.map((currentAnswer, answerIndex) => answerIndex === itemIndex ? event.target.value : currentAnswer))} onKeyDown={(event) => { if (event.key === "Enter" && itemIndex < groupPhrases.length - 1) { event.preventDefault(); setActiveItem(itemIndex + 1); inputRefs.current[itemIndex + 1]?.focus(); } }} spellCheck={false} autoComplete="off" placeholder="输入听到的完整词组" aria-label={`第 ${itemIndex + 1} 个词组听写答案`} /></label>
+                {submitted && <div className="dictation-item-result phrase-batch-result"><span>{correct ? "正确" : "需要复习"} · {item.feature}</span><strong>{item.phrase}</strong><p>{item.meaning}</p><small>{item.note}</small><button type="button" className={saved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${item.phrase.toLowerCase()}`, kind: "word", title: item.phrase, detail: `${item.meaning}\n${item.note}`, source: `吞音词组 · ${item.feature}` }))}>{saved ? "★ 已在笔记" : "☆ 加入笔记"}</button></div>}
+              </article>;
+            })}
+          </div>
+          <footer className="dictation-batch-footer">
+            <div><strong>{submitted ? `${correctCount} / ${groupPhrases.length} 正确` : `${filledCount} / ${groupPhrases.length} 已填写`}</strong><span>{submitted ? "拼错词组已自动加入复习" : "按 Enter 连续填写，最后统一检查"}</span></div>
+            {!submitted ? <button type="submit" disabled={filledCount < groupPhrases.length}>一次提交本组 {groupPhrases.length} 个词组</button> : <div><button type="button" className="is-secondary" onClick={() => { resetPlayer(); setAnswers(Array(groupSize).fill("")); setSubmitted(false); setActiveItem(0); }}>重做本组</button><button type="button" onClick={advanceGroup}>{group < groupCount - 1 ? "下一组 →" : "完成加练"}</button></div>}
+          </footer>
+        </form>
       </div>
     </div>
   );
