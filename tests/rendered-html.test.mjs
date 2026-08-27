@@ -333,9 +333,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.study-plan-presets/);
   assert.doesNotMatch(app, /study-plan-focus|听力重点|口语重点|阅读重点|写作重点/);
   assert.doesNotMatch(styles, /\.study-plan-focus/);
-  assert.match(app, /className="profile-notebook-card" onClick=\{onOpenNotebook\}/);
-  assert.match(app, /进入我的笔记 →/);
-  assert.match(app, /onOpenNotebook=\{\(\) => setView\("review"\)\}/);
+  assert.doesNotMatch(app, /className="profile-notebook-card"|className="profile-grid"|进入我的笔记 →|onOpenNotebook/);
+  assert.doesNotMatch(styles, /\.profile-grid|\.profile-notebook-card/);
   assert.match(app, /完成今日全部训练/);
   assert.match(app, /points: 20/);
   assert.match(app, /完成套题/);

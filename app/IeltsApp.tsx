@@ -994,7 +994,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView progress={progress} onReset={resetProgress} onOpenNotebook={() => setView("review")} updateProgress={updateProgress} />}
+        {view === "profile" && <ProfileView progress={progress} onReset={resetProgress} updateProgress={updateProgress} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
       {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
@@ -4281,7 +4281,7 @@ function RewardCenterView({ progress, onBack }: { progress: LearningProgress; on
   );
 }
 
-function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { progress: LearningProgress; onReset: () => void; onOpenNotebook: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
+function ProfileView({ progress, onReset, updateProgress }: { progress: LearningProgress; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
@@ -4351,7 +4351,6 @@ function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { pr
             <b>进入单词本 →</b>
           </button>
           <button className="profile-streak-card" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
-          <div className="profile-grid"><div><span>累计学习</span><strong>{progress.minutes} 分钟</strong></div><button className="profile-notebook-card" onClick={onOpenNotebook}><span>我的笔记</span><strong>{progress.notebook.length}</strong><b>进入我的笔记 →</b></button></div>
         </div>
       </section>
       <section className="study-plan-card">
