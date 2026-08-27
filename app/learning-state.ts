@@ -25,6 +25,11 @@ export type NotebookEntry = {
     startSeconds?: number;
     endSeconds?: number;
   };
+  reference?: {
+    label: string;
+    url: string;
+    page: number;
+  };
 };
 
 export type PersonalWordbookEntry = {

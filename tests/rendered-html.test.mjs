@@ -166,6 +166,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /function grantPoints/);
   assert.match(state, /progress\.pointRewards\.some\(\(item\) => item\.id === reward\.id\)/);
   assert.match(state, /kind: "audio" \| "speech"/);
+  assert.match(state, /reference\?: \{/);
   assert.match(state, /reviewIntervals = \[1, 3, 7, 14, 30, 60\]/);
   assert.match(state, /scheduleWordForReview/);
   assert.match(state, /rateReviewWord/);
@@ -244,6 +245,14 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /加入错题本/);
   assert.match(app, /加入笔记/);
   assert.match(app, /toggleNotebookEntry/);
+  assert.match(app, /buildOfficialQuestionNote/);
+  assert.match(app, /enrichLegacyOfficialNotebookEntry/);
+  assert.match(app, /题目位置：题册 P/);
+  assert.match(app, /原文依据：/);
+  assert.match(app, /officialQuestionMedia/);
+  assert.match(app, /officialQuestionReference/);
+  assert.match(app, /notebook-entry-reference/);
+  assert.match(styles, /\.notebook-entry-reference iframe/);
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
   assert.match(app, /我的单词本/);
   assert.match(app, /IELTS LEARNING LIBRARY/);

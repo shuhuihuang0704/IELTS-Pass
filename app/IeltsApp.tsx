@@ -427,6 +427,40 @@ const officialTestSchedule: OfficialTestSession[] = [
   { id: "speaking-review", isoDay: 7, dayLabel: "周日", time: "19:30", title: "Official Speaking Sample Tasks 2023", duration: "25 分钟", durationMinutes: 25, source: "IELTS.org 官方公开材料", setCode: "IELTS-OFFICIAL-S-2023-01", description: "25 分钟完成 Speaking Part 1–3 的连续问答、录音提交与整组反馈。", materials: [speakingMaterial] },
 ];
 
+function enrichLegacyOfficialNotebookEntry(entry: NotebookEntry): NotebookEntry {
+  if (entry.detail.includes("题目位置：题册 P")) return entry;
+  const match = entry.id.match(/^question:([^:]+):([^:]+):([^:]+)$/);
+  if (!match) return entry;
+  const [, setCode, taskId, questionNumber] = match;
+  const session = officialTestSchedule.find((item) => item.setCode === setCode);
+  const material = session?.materials.find((item) => item.tasks.some((task) => task.id === taskId));
+  const task = material?.tasks.find((item) => item.id === taskId);
+  const answer = task?.answers?.find((item) => item.number === questionNumber);
+  if (!session || !material || !task || !answer) return entry;
+  const response = entry.detail.match(/我的答案：([^\n]+)/)?.[1] ?? "未作答";
+  const wasSubmitted = entry.detail.includes("正确答案：");
+  const sourceEvidence = readingSourceEvidence[`${task.id}:${answer.number}`];
+  const reviewTip = answer.explanation
+    ?? (answer.choices
+      ? "复盘选项与原文或录音中的同义替换，注意转折后出现的最终信息。"
+      : "核对拼写、单复数、数字格式和题目要求的字数限制，再回到原文或录音定位答案。");
+  const detail = [
+    `题目：${task.questionLabel} · Q${answer.number}`,
+    `题型：${task.label}`,
+    `题目位置：题册 P${task.questionPage}`,
+    `我的答案：${response}`,
+    ...(wasSubmitted ? [`正确答案：${answer.displayAnswer}`, `解析：${reviewTip}`] : ["提交本 Task 后，这条笔记会自动补充正确答案、解析和原文定位。"]),
+    ...(wasSubmitted && sourceEvidence ? [`原文定位：${sourceEvidence.location}`, `原文依据：${sourceEvidence.excerpt}`] : []),
+  ].join("\n");
+  const audioTrack = typeof task.audioTrackIndex === "number" ? material.audioTracks?.[task.audioTrackIndex] : undefined;
+  return {
+    ...entry,
+    detail,
+    media: entry.media ?? (audioTrack ? { kind: "audio", label: `播放 ${task.label} 对应音频`, url: audioTrack.url } : undefined),
+    reference: entry.reference ?? { label: `${task.questionLabel} · 查看题目原页`, url: material.pdfUrl, page: task.questionPage },
+  };
+}
+
 function officialPracticeRecordId(session: OfficialTestSession, weekKey = localWeekKey()) {
   return `${weekKey}:${session.id}:${session.setCode}`;
 }
@@ -1424,6 +1458,28 @@ function OfficialTestRunner({
     setRemainingSeconds(session.durationMinutes * 60);
     setTimerState("idle");
   };
+  const buildOfficialQuestionNote = (answer: OfficialAnswer, response: string, submitted: boolean) => {
+    const sourceEvidence = readingSourceEvidence[`${task.id}:${answer.number}`];
+    const reviewTip = answer.explanation
+      ?? (answer.choices
+        ? "复盘选项与原文或录音中的同义替换，注意转折后出现的最终信息。"
+        : "核对拼写、单复数、数字格式和题目要求的字数限制，再回到原文或录音定位答案。");
+    const lines = [
+      `题目：${task.questionLabel} · Q${answer.number}`,
+      `题型：${task.label}`,
+      `题目位置：题册 P${task.questionPage}`,
+      `我的答案：${response || "未作答"}`,
+    ];
+    if (!submitted) return [...lines, "提交本 Task 后，这条笔记会自动补充正确答案、解析和原文定位。"].join("\n");
+    lines.push(`正确答案：${answer.displayAnswer}`, `解析：${reviewTip}`);
+    if (sourceEvidence) lines.push(`原文定位：${sourceEvidence.location}`, `原文依据：${sourceEvidence.excerpt}`);
+    if (audioTrack) lines.push("听力复盘：使用右侧音频按钮回听当前独立 Task，重点核对答案出现前后的同义替换和拼写。");
+    return lines.join("\n");
+  };
+  const officialQuestionMedia = audioTrack
+    ? { kind: "audio" as const, label: `播放 ${task.label} 对应音频`, url: audioTrack.url }
+    : undefined;
+  const officialQuestionReference = { label: `${task.questionLabel} · 查看题目原页`, url: material.pdfUrl, page: task.questionPage };
   const submitCurrentTask = (responseOverride?: Record<string, string>) => {
     const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
     const taskResponses = taskAnswers.length > 0
@@ -1439,7 +1495,12 @@ function OfficialTestRunner({
         const answer = taskAnswers.find((item) => entry.id === `question:${session.setCode}:${task.id}:${item.number}`);
         if (!answer) return entry;
         const response = officialResponses[`${taskKey}:${answer.number}`] || "未作答";
-        return { ...entry, detail: `我的答案：${response}\n正确答案：${answer.displayAnswer}` };
+        return {
+          ...entry,
+          detail: buildOfficialQuestionNote(answer, response, true),
+          media: officialQuestionMedia,
+          reference: officialQuestionReference,
+        };
       });
       const currentTaskComplete = taskAnswers.length > 0
         ? allAnswersFilled
@@ -1580,8 +1641,10 @@ function OfficialTestRunner({
                           id: noteId,
                           kind: "question",
                           title: `Q${answer.number} · ${task.label}`,
-                          detail: taskSubmitted ? `我的答案：${officialResponses[responseKey] || "未作答"}\n正确答案：${answer.displayAnswer}` : "已标记，提交后会自动补充你的答案和正确答案。",
+                          detail: buildOfficialQuestionNote(answer, officialResponses[responseKey] || "", taskSubmitted),
                           source: `${session.title} · ${session.setCode}`,
+                          media: officialQuestionMedia,
+                          reference: officialQuestionReference,
                         }))}
                       >{savedToNotebook ? "★ 已加入" : taskSubmitted && !correct ? "☆ 加入错题本" : "☆ 标记"}</button>
                       {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <div className="official-reading-analysis"><div><strong>原文定位</strong><span>{sourceEvidence?.location ?? "当前题暂无精确定位"}</span></div><p><strong>判断依据</strong><span>{answer.explanation}</span></p><p><strong>解题方法</strong><span>{readingAnalysisMethod(answer)}</span></p>{sourceEvidence && <button type="button" onClick={() => showReadingEvidence(answer.number)}>荧光笔定位原文 →</button>}</div>}</small>}
@@ -3756,16 +3819,18 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
           <div className="notebook-list">
             {progress.notebook.length === 0 ? (
               <div className="empty-state"><strong>笔记本还是空的</strong><p>在单词卡点击“加入笔记”，或在真题答题卡点击“标记”，内容就会保存在这里。</p></div>
-            ) : progress.notebook.map((entry) => (
-              <article className="notebook-entry" key={entry.id}>
+            ) : progress.notebook.map((storedEntry) => {
+              const entry = enrichLegacyOfficialNotebookEntry(storedEntry);
+              return <article className="notebook-entry" key={entry.id}>
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
                 <div className="notebook-entry-body"><div><h2>{entry.title}</h2><p>{entry.detail}</p></div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
+                {entry.reference && <details className="notebook-entry-reference"><summary>{entry.reference.label}</summary><iframe title={`${entry.title} · 题目原页`} src={`${entry.reference.url}#page=${entry.reference.page}&toolbar=0&navpanes=0&view=FitH`} /></details>}
                 <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
                   const note = event.target.value;
                   updateProgress((current) => ({ ...current, notebook: current.notebook.map((item) => item.id === entry.id ? { ...item, note } : item) }));
                 }} /></label>
-              </article>
-            ))}
+              </article>;
+            })}
           </div>
         </section>
       ) : (
