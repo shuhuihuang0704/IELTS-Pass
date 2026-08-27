@@ -821,7 +821,7 @@ export default function IeltsApp() {
   return (
     <main className="app-shell" data-ready={hydrated}>
       <Sidebar view={view} progress={progress} onNavigate={setView} />
-      <section className="workspace">
+      <section className={view === "official-test" ? "workspace is-official-test" : "workspace"}>
         {view === "today" && (
           <TodayView
             percent={percent}

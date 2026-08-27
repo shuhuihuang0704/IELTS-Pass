@@ -33,6 +33,7 @@ button { cursor: pointer; }
 .weekly-rail-progress div { height:4px; margin-top:12px; overflow:hidden; border-radius:4px; background:#e9e6eb; }
 .weekly-rail-progress i { display:block; width:62%; height:100%; border-radius:inherit; background:var(--violet); }
 .workspace { min-width:0; max-width:1220px; width:100%; margin:0 auto; padding:44px 48px; }
+.workspace.is-official-test { max-width:1600px; padding-right:28px; padding-left:28px; }
 .topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
 .topbar p { margin:0 0 8px; color:var(--muted); font-size:11px; letter-spacing:.75px; }
 .topbar h1 { max-width:720px; margin:0; font-size:clamp(31px,4vw,50px); line-height:1.02; letter-spacing:-2.1px; font-weight:680; }
@@ -311,14 +312,14 @@ button { cursor: pointer; }
 .official-runner-bar>div strong { margin-top:4px; font-size:13px; }
 .official-runner-bar>div small { margin-top:3px; color:var(--muted); font-size:9px; }
 .official-set-badge { padding:8px 10px; border-radius:10px; color:#4b409e; background:#f0edf9; font-size:9px; font-weight:650; }
-.official-runner-layout { margin-top:14px; display:grid; grid-template-columns:228px minmax(0,1fr); gap:14px; align-items:start; }
+.official-runner-layout { margin-top:14px; display:grid; grid-template-columns:minmax(0,1fr); gap:10px; align-items:start; }
 .official-runner-sidebar,.official-paper-panel { border-radius:24px; background:white; }
-.official-runner-sidebar { position:sticky; top:20px; padding:21px; }
+.official-runner-sidebar { position:sticky; z-index:8; top:10px; padding:11px 13px; display:grid; grid-template-columns:auto auto minmax(110px,1fr) auto auto; align-items:center; gap:10px; }
 .official-runner-sidebar>span { color:var(--muted); font-size:9px; letter-spacing:.6px; }
-.official-runner-sidebar>strong { display:block; margin-top:10px; color:var(--ink); font-size:42px; line-height:1; letter-spacing:-2px; font-variant-numeric:tabular-nums; }
+.official-runner-sidebar>strong { display:block; margin:0; color:var(--ink); font-size:28px; line-height:1; letter-spacing:-1.5px; font-variant-numeric:tabular-nums; }
 .official-runner-sidebar>strong.is-paused { color:#c06443; }
-.official-runner-sidebar>small { display:block; min-height:14px; margin-top:7px; color:var(--muted); font-size:9px; }
-.runner-timer-primary,.runner-timer-reset { width:100%; min-height:39px; margin-top:13px; border:0; border-radius:11px; font-size:10px; }
+.official-runner-sidebar>small { display:block; min-height:0; margin:0; color:var(--muted); font-size:9px; }
+.runner-timer-primary,.runner-timer-reset { width:auto; min-height:36px; margin:0; padding:0 13px; border:0; border-radius:11px; font-size:9px; white-space:nowrap; }
 .runner-timer-primary { color:white; background:var(--violet); }
 .runner-timer-primary:disabled { opacity:.4; cursor:not-allowed; }
 .runner-timer-reset { margin-top:7px; color:#605963; background:#f1eeea; }
@@ -338,7 +339,7 @@ button { cursor: pointer; }
 .official-paper-switch button:disabled { color:#9b949c; background:#e8e4e8; cursor:not-allowed; }
 .official-full-reading-body,.official-standard-paper-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:12px; align-items:start; }
 .official-full-reading-body>.official-answer-sheet,.official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { grid-column:2; grid-row:1 / span 20; max-height:760px; overflow:auto; position:sticky; top:12px; }
-.official-full-reading-body { grid-template-columns:minmax(0,1fr) minmax(360px,430px); }
+.official-full-reading-body { grid-template-columns:minmax(620px,1fr) minmax(380px,460px); }
 .official-full-reading-body>.official-answer-sheet { max-height:calc(100vh - 24px); overflow-y:auto; position:sticky; top:12px; scrollbar-gutter:stable; }
 .official-full-reading-body>.official-answer-sheet>header { padding:12px 0 10px; position:sticky; top:-15px; z-index:3; background:#faf9fb; }
 .official-full-reading-body>.official-answer-sheet>footer { padding:10px 0 15px; position:sticky; bottom:-15px; z-index:3; background:#faf9fb; box-shadow:0 -8px 16px rgba(49,42,53,.06); }
@@ -1191,7 +1192,12 @@ button { cursor: pointer; }
   .official-session-actions { grid-column:2; flex-direction:row; }
   .official-session-actions a,.official-session-actions button { flex:1; }
   .official-runner-layout { grid-template-columns:1fr; }
-  .official-runner-sidebar { position:static; }
+  .workspace.is-official-test { max-width:none; padding:20px 16px 96px; }
+  .official-runner-sidebar { position:sticky; }
+  .official-full-reading-body,.official-standard-paper-body { display:flex; flex-direction:column; }
+  .official-full-reading-body>.official-answer-sheet,.official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { width:100%; max-height:none; overflow:visible; order:10; position:static; }
+  .official-full-reading-body>.official-answer-sheet>header,.official-full-reading-body>.official-answer-sheet>footer { padding:0; position:static; box-shadow:none; }
+  .official-reading-booklet { max-height:none; padding-right:0; overflow:visible; position:static; }
 }
 @media (max-width:560px) {
   .official-plan-strip { grid-template-columns:1fr auto; gap:15px; padding:19px; }
@@ -1207,6 +1213,11 @@ button { cursor: pointer; }
   .official-runner-bar>button { grid-column:1 / -1; grid-row:2; }
   .official-set-badge { align-self:start; }
   .official-paper-panel { padding:12px; border-radius:19px; }
+  .official-runner-sidebar { grid-template-columns:1fr auto; gap:8px 10px; position:static; }
+  .official-runner-sidebar>span { align-self:end; }
+  .official-runner-sidebar>strong { grid-column:2; grid-row:1; font-size:25px; }
+  .official-runner-sidebar>small { grid-column:1 / -1; }
+  .runner-timer-primary,.runner-timer-reset { width:100%; }
   .official-paper-panel>header { align-items:flex-start; flex-direction:column; }
   .official-task-controls { grid-template-columns:1fr; }
   .official-paper-switch { display:grid; grid-template-columns:1fr 1fr; }

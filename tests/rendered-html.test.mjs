@@ -433,6 +433,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.official-speaking-material-lock/);
   assert.match(styles, /\.speaking-transcript-highlight mark\.is-good/);
   assert.match(app, /official-paper-frame/);
+  assert.match(app, /workspace is-official-test/);
+  assert.match(styles, /\.workspace\.is-official-test/);
+  assert.match(styles, /grid-template-columns:minmax\(620px,1fr\) minmax\(380px,460px\)/);
   assert.match(app, /#page=\$\{displayPage\}/);
   assert.match(app, /questionPage/);
   assert.match(app, /answerPage/);
