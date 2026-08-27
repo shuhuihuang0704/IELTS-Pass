@@ -6,6 +6,7 @@ from __future__ import annotations
 import subprocess
 import tempfile
 import wave
+import re
 from pathlib import Path
 
 
@@ -38,6 +39,56 @@ TURNS = [
 ]
 
 
+def spelled_name_chunks(text: str) -> list[str]:
+    match = re.fullmatch(r"(.+?\.) ([A-Z](?:, [A-Z])+)[.]", text)
+    if not match:
+        return [text]
+    return [match.group(1), *match.group(2).split(", ")]
+
+
+def synthesize_turn(
+    temporary_path: Path,
+    index: int,
+    voice: str,
+    rate: int,
+    text: str,
+) -> Path:
+    chunks = spelled_name_chunks(text) if voice == MALE_VOICE else [text]
+    chunk_paths: list[Path] = []
+    for chunk_index, chunk in enumerate(chunks):
+        chunk_path = temporary_path / f"{index:02d}-{chunk_index:02d}.wav"
+        chunk_rate = 158 if len(chunks) > 1 and chunk_index > 0 else rate
+        subprocess.run(
+            [
+                "say",
+                "-v",
+                voice,
+                "-r",
+                str(chunk_rate),
+                "--file-format=WAVE",
+                f"--data-format=LEI16@{SAMPLE_RATE}",
+                "-o",
+                str(chunk_path),
+                chunk,
+            ],
+            check=True,
+        )
+        chunk_paths.append(chunk_path)
+
+    segment_path = temporary_path / f"{index:02d}.wav"
+    with wave.open(str(chunk_paths[0]), "rb") as reference:
+        parameters = reference.getparams()
+    with wave.open(str(segment_path), "wb") as destination:
+        destination.setparams(parameters)
+        for chunk_index, chunk_path in enumerate(chunk_paths):
+            with wave.open(str(chunk_path), "rb") as source:
+                destination.writeframes(source.readframes(source.getnframes()))
+            if chunk_index < len(chunk_paths) - 1:
+                pause_ms = 240 if chunk_index == 0 else 130
+                destination.writeframes(b"\x00\x00" * round(SAMPLE_RATE * pause_ms / 1000))
+    return segment_path
+
+
 def format_timestamp(seconds: float) -> str:
     minutes, remainder = divmod(seconds, 60)
     return f"{int(minutes):02d}:{remainder:06.3f}"
@@ -49,22 +100,7 @@ def main() -> None:
         temporary_path = Path(temporary_directory)
         segments: list[tuple[str, Path, int]] = []
         for index, (speaker, voice, rate, text, pause_ms) in enumerate(TURNS):
-            segment_path = temporary_path / f"{index:02d}.wav"
-            subprocess.run(
-                [
-                    "say",
-                    "-v",
-                    voice,
-                    "-r",
-                    str(rate),
-                    "--file-format=WAVE",
-                    f"--data-format=LEI16@{SAMPLE_RATE}",
-                    "-o",
-                    str(segment_path),
-                    text,
-                ],
-                check=True,
-            )
+            segment_path = synthesize_turn(temporary_path, index, voice, rate, text)
             segments.append((speaker, segment_path, pause_ms))
 
         elapsed_frames = 0

@@ -195,10 +195,13 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(data, /为什么|怎么改进|修正信息干扰|多选题要同时核对限定词/);
   assert.match(data, /export const connectedSpeechPhrases = listeningCorpusPhrases\.map/);
   assert.match(dailyPractice, /listening-section-1-v2\.wav/);
+  assert.match(dailyPractice, /v5-spelling/);
+  assert.match(await readFile(new URL("../scripts/generate-daily-listening-audio.mjs", import.meta.url), "utf8"), /spelledNameChunks/);
+  assert.match(await readFile(new URL("../scripts/generate-listening-v2.py", import.meta.url), "utf8"), /spelled_name_chunks/);
   assert.match(dailyPractice, /listening-arts-centre\.wav/);
   assert.match(dailyPractice, /listening-wildlife-volunteer\.wav/);
   assert.match(dailyPractice, /澳大利亚女接待员 × 英国男学生/);
-  assert.match(dailyPractice, /au-female-uk-male-v4/);
+  assert.match(dailyPractice, /au-female-uk-male-v5-spelling/);
   assert.match(dailyPractice, /dailyRotationIndex/);
   assert.match(dailyPractice, /getDailyListeningExercise/);
   assert.match(dailyPractice, /getDailyReadingExercise/);

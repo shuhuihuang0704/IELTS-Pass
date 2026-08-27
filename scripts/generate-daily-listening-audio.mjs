@@ -120,17 +120,41 @@ function writeWave(path, parts) {
   return captions;
 }
 
+function spelledNameChunks(text) {
+  const match = text.match(/^(.+?\.) ([A-Z](?:, [A-Z])+)[.]$/);
+  if (!match) return [text];
+  return [match[1], ...match[2].split(", ")];
+}
+
+function synthesizeTurn({ role, text, index, directory }) {
+  const chunks = role === "male" ? spelledNameChunks(text) : [text];
+  const waves = chunks.map((chunk, chunkIndex) => {
+    const fileStem = `${index}-${chunkIndex}`;
+    const aiffPath = join(directory, `${fileStem}.aiff`);
+    const wavPath = join(directory, `${fileStem}.wav`);
+    const voice = role === "female" ? "Karen" : "Daniel";
+    const rate = role === "female" ? "160" : chunks.length > 1 && chunkIndex > 0 ? "158" : "170";
+    execFileSync("/usr/bin/say", ["-v", voice, "-r", rate, "-o", aiffPath, chunk]);
+    execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@44100", aiffPath, wavPath]);
+    return readWave(wavPath);
+  });
+  const format = waves[0].format;
+  const sampleRate = format.readUInt32LE(4);
+  const blockAlign = format.readUInt16LE(12);
+  const data = Buffer.concat(waves.flatMap((wave, chunkIndex) => {
+    if (chunkIndex === waves.length - 1) return [wave.data];
+    const pauseSeconds = chunkIndex === 0 ? .24 : .13;
+    return [wave.data, Buffer.alloc(Math.round(sampleRate * blockAlign * pauseSeconds))];
+  }));
+  return { format, data };
+}
+
 const temporaryDirectory = mkdtempSync(join(tmpdir(), "ielts-listening-"));
 try {
   for (const conversation of conversations) {
     const parts = conversation.lines.map(([role, text], index) => {
-      const aiffPath = join(temporaryDirectory, `${index}.aiff`);
-      const wavPath = join(temporaryDirectory, `${index}.wav`);
-      const voice = role === "female" ? "Karen" : "Daniel";
-      const rate = role === "female" ? "160" : "172";
-      execFileSync("/usr/bin/say", ["-v", voice, "-r", rate, "-o", aiffPath, text]);
-      execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@44100", aiffPath, wavPath]);
-      return { ...readWave(wavPath), speaker: conversation.speakers[role], text, pauseSeconds: pauseAfter(text, index) };
+      const audio = synthesizeTurn({ role, text, index, directory: temporaryDirectory });
+      return { ...audio, speaker: conversation.speakers[role], text, pauseSeconds: pauseAfter(text, index) };
     });
     const captions = writeWave(resolve(conversation.output), parts);
     writeFileSync(resolve(conversation.captions), `WEBVTT\n\n${captions.map((caption) => `${formatTimestamp(caption.start)} --> ${formatTimestamp(caption.end)}\n${caption.speaker}: ${caption.text}`).join("\n\n")}\n`);
