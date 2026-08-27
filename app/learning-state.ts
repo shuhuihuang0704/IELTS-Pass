@@ -339,6 +339,7 @@ export function recordAppStudyTime(
   date = localDayKey(),
   category?: StudyTimeCategory,
 ): LearningProgress {
+  if (!category) return progress;
   const secondsToAdd = Math.max(0, Math.floor(elapsedSeconds));
   if (secondsToAdd === 0) return progress;
   const currentRecord = progress.dailyStudyHistory[date] ?? { date, minutes: 0, activeSeconds: 0, activities: [] };

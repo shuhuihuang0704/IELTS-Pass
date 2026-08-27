@@ -108,6 +108,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /study-time:\$\{category\}/);
   assert.match(state, /existingCategorySeconds/);
   assert.match(app, /activeStudyCategory/);
+  assert.match(app, /studyIdleTimeoutMs = 90_000/);
+  assert.match(app, /hasPlayingStudyMedia/);
+  assert.match(app, /recentlyInteracted \|\| hasPlayingStudyMedia\(\)/);
+  assert.match(app, /"pointerdown", "keydown", "input", "change", "scroll", "touchstart"/);
+  assert.match(app, /if \(!hydrated \|\| !activeStudyCategory\) return/);
+  assert.match(state, /if \(!category\) return progress/);
   assert.match(app, /recordAppStudyTime\(progressRef\.current, seconds, localDayKey\(\), activeStudyCategory\)/);
   assert.match(app, /study-time:vocabulary/);
   assert.match(app, /study-time:listening/);
@@ -327,7 +333,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /今日基础完成度保持 100%/);
   assert.match(app, /复习错词与笔记/);
   assert.match(app, /进入套题训练/);
-  assert.match(app, /停留时间与已完成任务/);
+  assert.match(app, /有效学习时间与已完成任务/);
+  assert.doesNotMatch(app, /有效停留时间|专项停留时间/);
   assert.doesNotMatch(app, /旧版累计|无法可靠拆分到具体日期/);
   assert.match(app, /showStudyHistory/);
   assert.match(app, /最近 7 天学习时间/);

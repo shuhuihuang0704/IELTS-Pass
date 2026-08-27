@@ -50,6 +50,12 @@ type View = "today" | "practice" | "official-test" | "scene" | "skill" | "review
 type NotebookDraft = Omit<NotebookEntry, "createdAt" | "note">;
 
 const storageKey = "ielts-ai-learning-progress-v1";
+const studyIdleTimeoutMs = 90_000;
+
+function hasPlayingStudyMedia() {
+  return Array.from(document.querySelectorAll<HTMLMediaElement>("audio, video"))
+    .some((media) => !media.paused && !media.ended && media.readyState >= 2);
+}
 
 function toggleNotebookEntry(progress: LearningProgress, draft: NotebookDraft): LearningProgress {
   const existing = progress.notebook.find((entry) => entry.id === draft.id);
@@ -799,9 +805,10 @@ export default function IeltsApp() {
   }, [progress]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !activeStudyCategory) return;
     let unsavedSeconds = 0;
     let lastTick = Date.now();
+    let lastInteractionAt = 0;
     const persistTime = () => {
       const seconds = Math.floor(unsavedSeconds);
       if (seconds <= 0) return;
@@ -811,9 +818,16 @@ export default function IeltsApp() {
       setProgress(next);
       window.localStorage.setItem(storageKey, JSON.stringify(next));
     };
+    const noteStudyInteraction = () => {
+      const now = Date.now();
+      if (lastInteractionAt === 0 || now - lastInteractionAt > studyIdleTimeoutMs) lastTick = now;
+      lastInteractionAt = now;
+    };
     const captureVisibleTime = () => {
       const now = Date.now();
-      if (document.visibilityState === "visible") unsavedSeconds += Math.min(5, Math.max(0, (now - lastTick) / 1000));
+      const recentlyInteracted = lastInteractionAt > 0 && now - lastInteractionAt <= studyIdleTimeoutMs;
+      const activelyStudying = document.visibilityState === "visible" && (recentlyInteracted || hasPlayingStudyMedia());
+      if (activelyStudying) unsavedSeconds += Math.min(5, Math.max(0, (now - lastTick) / 1000));
       lastTick = now;
       if (unsavedSeconds >= 10) persistTime();
     };
@@ -827,10 +841,13 @@ export default function IeltsApp() {
       captureVisibleTime();
       persistTime();
     };
+    const activityEvents: Array<keyof DocumentEventMap> = ["pointerdown", "keydown", "input", "change", "scroll", "touchstart"];
+    activityEvents.forEach((eventName) => document.addEventListener(eventName, noteStudyInteraction, true));
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pagehide", handlePageHide);
     return () => {
       window.clearInterval(timer);
+      activityEvents.forEach((eventName) => document.removeEventListener(eventName, noteStudyInteraction, true));
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
       captureVisibleTime();
@@ -1201,7 +1218,7 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
           <header><div><span>MONTHLY TOTAL</span><strong>每月累计学习时间</strong></div><small>最近 6 个月</small></header>
           <div>{months.map((month) => <article key={month.key}><span>{month.label}</span><i><b style={{ width: `${(month.minutes / maxMonthlyMinutes) * 100}%` }} /></i><strong>{month.minutes}<small> 分钟</small></strong></article>)}</div>
         </section>
-        <div className="study-history-list-heading"><strong>每日学习内容</strong><span>专项停留时间与已完成任务</span></div>
+        <div className="study-history-list-heading"><strong>每日学习内容</strong><span>有效学习时间与已完成任务</span></div>
         <div className="study-history-list">
           {[...days].reverse().map(({ key, date, record }) => {
             const dateLabel = date.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
@@ -1223,7 +1240,7 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
                     {additionalTimedActivities.map((activity) => <span className="is-time" key={activity.id}><b>{activity.label}</b><small>{formatStudyDuration(activity.seconds ?? activity.minutes * 60)}</small></span>)}
                     {uncategorisedSeconds > 0 && <span className="is-time is-other"><b>其他 / 未分类</b><small>{formatStudyDuration(uncategorisedSeconds)}</small></span>}
                     {completedActivities.map((activity) => <span className="is-complete" key={activity.id}><b>{activity.label}</b><small>已完成</small></span>)}
-                  </> : <p>{key === today ? "今天还没有产生有效停留时间" : "暂无可用的每日明细"}</p>}
+                  </> : <p>{key === today ? "今天还没有产生有效学习时间" : "暂无可用的每日明细"}</p>}
                 </div>
               </article>
             );
