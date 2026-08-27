@@ -273,6 +273,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /中文翻译暂时不可用/);
   assert.match(styles, /\.dictionary-chinese-meaning/);
   assert.match(app, /readingSourceEvidence/);
+  assert.match(data, /readingReviewEvidence/);
+  assert.match(app, /荧光笔标注原文/);
+  assert.match(app, /reading-answer-analysis/);
+  assert.match(styles, /\.reading-paragraphs mark/);
   assert.match(app, /原文荧光定位/);
   assert.match(app, /荧光笔定位原文/);
   assert.match(app, /NOT GIVEN 核验范围/);

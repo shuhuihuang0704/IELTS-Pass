@@ -906,8 +906,11 @@ button { cursor: pointer; }
 .reading-subtitle { display:block; margin-top:8px; color:#777179; font-size:10px; }
 .reading-paragraphs { margin-top:28px; }
 .reading-paragraphs section { position:relative; padding:20px 0 20px 36px; border-top:1px solid #e9e5ea; }
+.reading-paragraphs section.is-evidence-active { margin:0 -12px; padding-right:12px; padding-left:48px; border-radius:14px; background:#fffdf2; }
 .reading-paragraphs section>strong { position:absolute; left:0; top:22px; width:23px; height:23px; display:grid; place-items:center; border-radius:8px; color:white; background:var(--violet); font-size:10px; }
+.reading-paragraphs section.is-evidence-active>strong { left:12px; }
 .reading-paragraphs p { margin:0; color:#464047; font-family:Georgia,"Times New Roman",serif; font-size:15px; line-height:1.78; }
+.reading-paragraphs mark { padding:2px 1px; color:inherit; background:linear-gradient(transparent 14%,rgba(255,220,76,.68) 14%,rgba(255,220,76,.68) 90%,transparent 90%); border-radius:3px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
 .reading-progress-line { height:6px; position:relative; margin:18px 0 22px; overflow:visible; border-radius:6px; background:#ebe8ed; }
 .reading-progress-line i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#6557db,#a47be8); }
 .reading-progress-line span { position:absolute; right:0; top:10px; color:#817a83; font-size:9px; }
@@ -929,6 +932,18 @@ button { cursor: pointer; }
 .reading-question { margin-top:16px; padding:0; border:0; }
 .reading-question-group .reading-question label { display:flex; min-height:39px; margin:6px 0 0; padding:7px 10px; line-height:1.35; }
 .reading-question label b { color:#7166d8; }
+.reading-answer-item+.reading-answer-item { margin-top:8px; }
+.reading-answer-analysis { margin:8px 0 14px; padding:14px; border:1px solid #ded9e0; border-radius:14px; background:white; }
+.reading-answer-analysis.is-correct { border-color:#9ccfbb; background:#f5fbf8; }
+.reading-answer-analysis.is-incorrect { border-color:#e7aba5; background:#fff8f7; }
+.reading-answer-analysis>header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding-bottom:10px; border-bottom:1px solid rgba(90,80,92,.1); }
+.reading-answer-analysis>header strong { color:#413b43; font-size:11px; }
+.reading-answer-analysis>header span { max-width:65%; color:#777078; font-size:9px; line-height:1.45; text-align:right; }
+.reading-answer-analysis>div { display:grid; grid-template-columns:67px 1fr; gap:8px; margin-top:10px; }
+.reading-answer-analysis b { color:#5b4fc3; font-size:9px; }
+.reading-answer-analysis p { margin:0; color:#554f57; font-size:10px; line-height:1.6; }
+.reading-answer-analysis>button { width:100%; min-height:34px; margin-top:12px; border:0; border-radius:10px; color:#6b570d; background:#fff0a8; font-size:9px; font-weight:700; }
+.reading-answer-analysis>button.is-active { color:#21654e; background:#dff2e9; }
 .summary-word-bank { margin-top:14px; display:flex; flex-wrap:wrap; gap:6px; }
 .summary-word-bank span { padding:6px 8px; border-radius:8px; color:#574e59; background:white; font-size:9px; }
 .summary-question { margin:14px 0 0; color:#4f4850; font-family:Georgia,"Times New Roman",serif; font-size:13px; line-height:2.7; }

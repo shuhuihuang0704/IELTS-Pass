@@ -631,3 +631,86 @@ export const readingExercise = {
     ],
   },
 };
+
+export const readingReviewEvidence = {
+  hA: {
+    location: "A 段第 6 句",
+    quotes: [{ paragraph: "A", text: "A practice once associated with local building traditions has therefore become part of mainstream urban policy." }],
+    explanation: "A 段先说明草皮屋顶和屋顶花园是古老做法，结尾再指出它如今进入城市政策，因此标题 iii 概括了“旧观念获得现代政策支持”。",
+    method: "匹配标题要抓段落的时间变化主线，而不是只凭 ancient cities 等局部词汇作答。",
+  },
+  hB: {
+    location: "B 段第 1、6 句",
+    quotes: [
+      { paragraph: "B", text: "A well-designed green roof can perform several functions at the same time." },
+      { paragraph: "B", text: "The exact gains depend on climate, depth and plant choice, but the combined effect is difficult for a conventional roof to reproduce." },
+    ],
+    explanation: "首句提出一个屋顶同时具备多种功能，中间依次列出蓄水、降温、节能和支持鸟虫，末句以 combined effect 收束，因此答案是 ii。",
+    method: "首句提出中心、末句总结中心时，两端通常就是 Matching Headings 的主旨证据。",
+  },
+  hC: {
+    location: "C 段第 1–2、6 句",
+    quotes: [
+      { paragraph: "C", text: "However, success is not achieved simply by placing soil on top of a building." },
+      { paragraph: "C", text: "Engineers must first check whether the structure can carry the additional weight, particularly when the soil is wet." },
+      { paragraph: "C", text: "Installation costs are usually higher than for a standard roof, and the financial return may take years to become visible." },
+    ],
+    explanation: "However 后整段转向承重、防水、维护与成本等实施障碍，所以标题 iv“成功屋顶面临的实际障碍”最准确。",
+    method: "先识别 however 的转折功能，再把多个细节归纳成共同上位概念 practical barriers。",
+  },
+  hD: {
+    location: "D 段第 1、5 句",
+    quotes: [
+      { paragraph: "D", text: "Supporters increasingly argue that the next question is not only how many green roofs a city has, but who benefits from them." },
+      { paragraph: "D", text: "These measures attempt to turn a useful building technology into a resource whose benefits are distributed more fairly." },
+    ],
+    explanation: "段首提出“谁能受益”，段末强调 benefits are distributed more fairly，核心是把绿色屋顶的价值扩展给更广泛的人群，因此选 vi。",
+    method: "注意 who benefits 和 more fairly 的同义链，它们共同指向 wider population。",
+  },
+  m1: {
+    location: "B 段第 2 句",
+    quotes: [{ paragraph: "B", text: "Its soil and plants retain a proportion of rainfall, releasing water slowly instead of sending it immediately into crowded drainage systems." }],
+    explanation: "题干 reducing pressure on city drainage 对应原文 releasing water slowly，而 crowded drainage systems 是直接定位词，因此答案为 B。",
+    method: "匹配信息题先用 drainage 定位，再核对 reduce pressure 与 releasing slowly 的意义是否一致。",
+  },
+  m2: {
+    location: "C 段第 2 句",
+    quotes: [{ paragraph: "C", text: "Engineers must first check whether the structure can carry the additional weight, particularly when the soil is wet." }],
+    explanation: "must first check 直接对应题干 a check that must happen before construction begins，因此答案为 C。",
+    method: "first 与 before 是顺序同义替换；看到强对应后仍要确认检查对象是建筑结构。",
+  },
+  mc1: {
+    location: "全文结构：B 段利益、C 段限制、D 段社会价值",
+    quotes: [
+      { paragraph: "B", text: "A well-designed green roof can perform several functions at the same time." },
+      { paragraph: "C", text: "However, success is not achieved simply by placing soil on top of a building." },
+      { paragraph: "D", text: "Supporters increasingly argue that the next question is not only how many green roofs a city has, but who benefits from them." },
+    ],
+    explanation: "文章并非只赞美绿色屋顶：B 段解释 benefits，C 段说明 limits，D 段讨论 social role，正好对应选项 B 的三个组成部分。",
+    method: "主旨题要覆盖全文各段，不能选择只对应某一处细节、措辞过度绝对或与原文相反的选项。",
+  },
+  tf1: {
+    location: "D 段第 2 句",
+    quotes: [{ paragraph: "D", text: "Many roofs improve air quality or drainage without being open to residents, and highly visible projects are often concentrated in wealthy districts." }],
+    explanation: "题干说所有绿色屋顶都能作为公共空间使用，但原文明示 many roofs 并不向居民开放，二者直接矛盾，所以是 False。",
+    method: "判断题中的 All 是绝对词；原文一个明确反例就足以判定 False，而不是 Not Given。",
+  },
+  tf2: {
+    location: "C 段第 6 句",
+    quotes: [{ paragraph: "C", text: "Installation costs are usually higher than for a standard roof, and the financial return may take years to become visible." }],
+    explanation: "题干 cheaper 与原文 higher than 意义相反，因此答案是 False。",
+    method: "比较关系是判断题高频考点：先找比较对象，再核对 higher/lower、more/less 的方向。",
+  },
+  s1: {
+    location: "B 段第 2 句",
+    quotes: [{ paragraph: "B", text: "Its soil and plants retain a proportion of rainfall, releasing water slowly instead of sending it immediately into crowded drainage systems." }],
+    explanation: "题干 hold back 对应原文 retain，空格需要名词作宾语；原文一词 rainfall 符合语法和 ONE WORD 限制。",
+    method: "摘要填空先预测词性，再用 hold back ↔ retain 的同义替换定位，最后检查字数限制。",
+  },
+  s2: {
+    location: "C 段第 5 句",
+    quotes: [{ paragraph: "C", text: "Although some systems need little attention, none is entirely maintenance-free: drains must be cleared and unwanted plants removed." }],
+    explanation: "题干 every system still requires 对应 none is entirely ...-free，空格应填名词 maintenance。",
+    method: "requires maintenance 与 not maintenance-free 是肯定、双重否定之间的同义改写。",
+  },
+} as const;

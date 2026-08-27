@@ -10,6 +10,7 @@ import {
   listeningCorpusMeta,
   listeningExercise,
   readingExercise,
+  readingReviewEvidence,
   skills,
   speakingScenario,
   vocabulary,
@@ -2890,6 +2891,7 @@ function SpeakingPractice({
 function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
+  const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
   const answerKey = useMemo(() => Object.fromEntries([
     ...readingExercise.matchingHeadings,
     ...readingExercise.matchingInformation,
@@ -2903,14 +2905,46 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
   const setAnswer = (id: string, answer: string) => {
     setAnswers((current) => ({ ...current, [id]: answer }));
     setScore(null);
+    setActiveReviewId(null);
   };
 
   const submit = () => {
     if (answeredCount < totalQuestions) return;
     const nextScore = Object.entries(answerKey).filter(([id, answer]) => answers[id] === answer).length;
-    setScore(nextScore); onComplete(nextScore);
+    const firstIncorrectId = Object.keys(answerKey).find((id) => answers[id] !== answerKey[id]);
+    setScore(nextScore);
+    setActiveReviewId(firstIncorrectId ?? Object.keys(answerKey)[0]);
+    onComplete(nextScore);
   };
   const answerClass = (id: string) => score === null ? "" : answers[id] === answerKey[id] ? "is-correct" : "is-incorrect";
+  const activeEvidence = activeReviewId ? readingReviewEvidence[activeReviewId as keyof typeof readingReviewEvidence] : null;
+  const evidencePhrasesForParagraph = (paragraph: string) => activeEvidence?.quotes.filter((quote) => quote.paragraph === paragraph).map((quote) => quote.text) ?? [];
+  const renderPassageText = (paragraph: string, text: string) => {
+    const phrases = evidencePhrasesForParagraph(paragraph);
+    if (!phrases.length) return text;
+    const escaped = phrases.map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const pattern = new RegExp(`(${escaped.join("|")})`, "g");
+    return text.split(pattern).map((part, index) => phrases.includes(part)
+      ? <mark key={`${paragraph}-mark-${index}`}>{part}</mark>
+      : part);
+  };
+  const showEvidence = (id: string) => {
+    setActiveReviewId(id);
+    const evidence = readingReviewEvidence[id as keyof typeof readingReviewEvidence];
+    window.requestAnimationFrame(() => document.getElementById(`reading-paragraph-${evidence.quotes[0].paragraph}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  };
+  const renderAnalysis = (id: string, number: number) => {
+    if (score === null) return null;
+    const evidence = readingReviewEvidence[id as keyof typeof readingReviewEvidence];
+    const correct = answers[id] === answerKey[id];
+    return <aside className={`reading-answer-analysis ${correct ? "is-correct" : "is-incorrect"}`}>
+      <header><strong>Q{number} · {correct ? "回答正确" : "需要复盘"}</strong><span>你的答案：{answers[id]} · 正确答案：{answerKey[id]}</span></header>
+      <div><b>原文定位</b><p>{evidence.location}</p></div>
+      <div><b>答案解析</b><p>{evidence.explanation}</p></div>
+      <div><b>解题方法</b><p>{evidence.method}</p></div>
+      <button type="button" className={activeReviewId === id ? "is-active" : ""} onClick={() => showEvidence(id)}>{activeReviewId === id ? "✓ 原文已标注" : "荧光笔标注原文 →"}</button>
+    </aside>;
+  };
 
   return (
     <div className="reading-layout">
@@ -2918,7 +2952,7 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
         <div className="exercise-kicker"><span>Academic Reading passage</span><span>约 500 词</span></div>
         <h2>{readingExercise.title}</h2><span className="reading-subtitle">{readingExercise.subtitle}</span>
         <div className="reading-paragraphs">
-          {readingExercise.paragraphs.map((paragraph) => <section key={paragraph.label}><strong>{paragraph.label}</strong><p>{paragraph.text}</p></section>)}
+          {readingExercise.paragraphs.map((paragraph) => <section id={`reading-paragraph-${paragraph.label}`} className={evidencePhrasesForParagraph(paragraph.label).length ? "is-evidence-active" : ""} key={paragraph.label}><strong>{paragraph.label}</strong><p>{renderPassageText(paragraph.label, paragraph.text)}</p></section>)}
         </div>
       </article>
       <section className="reading-questions">
@@ -2929,37 +2963,43 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
           <div className="question-type"><span>Questions 1–4</span><strong>Matching Headings</strong><p>Choose the correct heading for paragraphs A–D. There are more headings than you need.</p></div>
           <ol className="heading-bank">{readingExercise.headings.map((heading) => <li key={heading.id}><b>{heading.id}</b>{heading.text}</li>)}</ol>
           {readingExercise.matchingHeadings.map((question, index) => (
-            <label className={`matching-row ${answerClass(question.id)}`} key={question.id}>
-              <span>{index + 1}. Paragraph {question.paragraph}</span>
-              <select value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} aria-label={`Question ${index + 1}, paragraph ${question.paragraph}`}>
-                <option value="">Select</option>
-                {readingExercise.headings.map((heading) => <option value={heading.id} key={heading.id}>{heading.id}</option>)}
-              </select>
-            </label>
+            <div className="reading-answer-item" key={question.id}>
+              <label className={`matching-row ${answerClass(question.id)}`}>
+                <span>{index + 1}. Paragraph {question.paragraph}</span>
+                <select value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} aria-label={`Question ${index + 1}, paragraph ${question.paragraph}`}>
+                  <option value="">Select</option>
+                  {readingExercise.headings.map((heading) => <option value={heading.id} key={heading.id}>{heading.id}</option>)}
+                </select>
+              </label>
+              {renderAnalysis(question.id, index + 1)}
+            </div>
           ))}
         </section>
 
         <section className="reading-question-group">
           <div className="question-type"><span>Questions 5–6</span><strong>Matching Information</strong><p>Which paragraph contains the following information? You may use any letter more than once.</p></div>
           {readingExercise.matchingInformation.map((question, index) => (
-            <label className={`matching-row information-row ${answerClass(question.id)}`} key={question.id}>
-              <span>{index + 5}. {question.prompt}</span>
-              <select value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} aria-label={`Question ${index + 5}`}>
-                <option value="">Select</option>
-                {readingExercise.paragraphs.map((paragraph) => <option value={paragraph.label} key={paragraph.label}>{paragraph.label}</option>)}
-              </select>
-            </label>
+            <div className="reading-answer-item" key={question.id}>
+              <label className={`matching-row information-row ${answerClass(question.id)}`}>
+                <span>{index + 5}. {question.prompt}</span>
+                <select value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} aria-label={`Question ${index + 5}`}>
+                  <option value="">Select</option>
+                  {readingExercise.paragraphs.map((paragraph) => <option value={paragraph.label} key={paragraph.label}>{paragraph.label}</option>)}
+                </select>
+              </label>
+              {renderAnalysis(question.id, index + 5)}
+            </div>
           ))}
         </section>
 
         <section className="reading-question-group">
           <div className="question-type"><span>Question 7</span><strong>Multiple Choice</strong><p>Choose the correct letter, A, B, C or D.</p></div>
-          {readingExercise.multipleChoice.map((question) => <fieldset className={`reading-question ${answerClass(question.id)}`} key={question.id}><legend>7. {question.prompt}</legend>{question.options.map((option, index) => <label className={answers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => setAnswer(question.id, option)} /><b>{String.fromCharCode(65 + index)}</b>{option}</label>)}</fieldset>)}
+          {readingExercise.multipleChoice.map((question) => <div className="reading-answer-item" key={question.id}><fieldset className={`reading-question ${answerClass(question.id)}`}><legend>7. {question.prompt}</legend>{question.options.map((option, index) => <label className={answers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => setAnswer(question.id, option)} /><b>{String.fromCharCode(65 + index)}</b>{option}</label>)}</fieldset>{renderAnalysis(question.id, 7)}</div>)}
         </section>
 
         <section className="reading-question-group">
           <div className="question-type"><span>Questions 8–9</span><strong>True / False / Not Given</strong><p>Do the statements agree with the information in the passage?</p></div>
-          {readingExercise.trueFalseNotGiven.map((question, index) => <fieldset className={`reading-question ${answerClass(question.id)}`} key={question.id}><legend>{index + 8}. {question.prompt}</legend>{question.options.map((option) => <label className={answers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => setAnswer(question.id, option)} />{option}</label>)}</fieldset>)}
+          {readingExercise.trueFalseNotGiven.map((question, index) => <div className="reading-answer-item" key={question.id}><fieldset className={`reading-question ${answerClass(question.id)}`}><legend>{index + 8}. {question.prompt}</legend>{question.options.map((option) => <label className={answers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => setAnswer(question.id, option)} />{option}</label>)}</fieldset>{renderAnalysis(question.id, index + 8)}</div>)}
         </section>
 
         <section className="reading-question-group">
@@ -2975,6 +3015,8 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
             </select>
             {readingExercise.summary.textAfterSecondGap}
           </p>
+          {renderAnalysis("s1", 10)}
+          {renderAnalysis("s2", 11)}
         </section>
 
         {score !== null && <div className={`answer-feedback ${score >= 9 ? "success" : "neutral"}`}>得分 {score} / {totalQuestions}。{score < 9 ? "检查段落主旨与细节定位；红色项目可以重新选择后再提交。" : "主旨和细节定位都很准确。"}</div>}
