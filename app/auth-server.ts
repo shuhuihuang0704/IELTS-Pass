@@ -16,6 +16,7 @@ export type AuthUser = {
   avatarUrl: string | null;
   targetBandScore: number | null;
   studyPlanDays: number | null;
+  examDate: string | null;
 };
 
 type AuthUserRow = AuthUser & { progressJson: string | null };
@@ -51,6 +52,7 @@ export async function ensureAuthSchema() {
       avatar_url TEXT,
       target_band_score REAL,
       study_plan_days INTEGER,
+      exam_date TEXT,
       progress_json TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
@@ -71,6 +73,15 @@ export async function ensureAuthSchema() {
       PRIMARY KEY(provider, provider_user_id)
     )`),
   ]);
+  const userColumns = await db.prepare("PRAGMA table_info(users)").all<{ name: string }>();
+  if (!userColumns.results.some((column) => column.name === "exam_date")) {
+    try {
+      await db.prepare("ALTER TABLE users ADD COLUMN exam_date TEXT").run();
+    } catch (error) {
+      const refreshedColumns = await db.prepare("PRAGMA table_info(users)").all<{ name: string }>();
+      if (!refreshedColumns.results.some((column) => column.name === "exam_date")) throw error;
+    }
+  }
 }
 
 function parseCookies(request: Request) {
@@ -158,7 +169,8 @@ export async function currentUser(request: Request) {
   const row = await database().prepare(`SELECT
       users.id, users.provider, users.identifier, users.display_name AS displayName,
       users.avatar_url AS avatarUrl, users.target_band_score AS targetBandScore,
-      users.study_plan_days AS studyPlanDays, users.progress_json AS progressJson
+      users.study_plan_days AS studyPlanDays, users.exam_date AS examDate,
+      users.progress_json AS progressJson
     FROM auth_sessions JOIN users ON users.id = auth_sessions.user_id
     WHERE auth_sessions.token_hash = ? AND auth_sessions.expires_at > ?`)
     .bind(await sha256(token), Date.now()).first<AuthUserRow>();
@@ -174,6 +186,7 @@ export function publicAuthPayload(row: AuthUserRow | AuthUser) {
     avatarUrl: row.avatarUrl,
     targetBandScore: row.targetBandScore,
     studyPlanDays: row.studyPlanDays,
+    examDate: row.examDate,
   };
   let progress: unknown = null;
   if ("progressJson" in row && row.progressJson) {

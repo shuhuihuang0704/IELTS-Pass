@@ -332,6 +332,28 @@ button { cursor: pointer; }
 .onboarding-band-grid button small { color:#97919b; font-size:8px; }
 .onboarding-band-grid button.is-selected { color:white; border-color:#5d53c7; background:linear-gradient(145deg,#655bd1,#4b44aa); box-shadow:0 12px 25px rgba(76,66,174,.18); }
 .onboarding-band-grid button.is-selected small { color:rgba(255,255,255,.72); }
+.onboarding-study-period { margin-top:22px; padding:18px; border:1px solid #e5e1e9; border-radius:19px; background:#faf9fc; }
+.onboarding-study-period>header { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.onboarding-study-period>header>div:first-child strong,.onboarding-study-period>header>div:first-child small { display:block; }
+.onboarding-study-period>header>div:first-child strong { font-size:12px; }
+.onboarding-study-period>header>div:first-child small { margin-top:4px; color:#918b96; font-size:8px; }
+.onboarding-period-tabs { padding:3px; display:flex; border-radius:11px; background:#ebe8ef; }
+.onboarding-period-tabs button { min-height:34px; padding:0 12px; border:0; border-radius:8px; color:#817b86; background:transparent; font-size:8px; }
+.onboarding-period-tabs button.is-active { color:#4d45af; background:white; box-shadow:0 4px 12px rgba(49,40,79,.08); font-weight:750; }
+.onboarding-days-selector { margin-top:16px; display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; }
+.onboarding-days-selector>div { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.onboarding-days-selector button { min-height:42px; border:1px solid #e0dce5; border-radius:11px; color:#5f5965; background:white; font-size:12px; font-weight:760; }
+.onboarding-days-selector button small { margin-left:2px; color:#99939d; font-size:7px; font-weight:500; }
+.onboarding-days-selector button.is-selected { color:white; border-color:#5d53c7; background:#5d53c7; }
+.onboarding-days-selector button.is-selected small { color:rgba(255,255,255,.72); }
+.onboarding-days-selector>label { min-height:42px; padding:0 9px; display:flex; align-items:center; gap:5px; border:1px solid #ded9e4; border-radius:11px; color:#8d8792; background:white; font-size:8px; }
+.onboarding-days-selector>label input { width:52px; border:0; outline:0; color:#302c35; background:transparent; font:inherit; font-size:11px; font-weight:750; }
+.onboarding-exam-date { margin-top:16px; display:grid; grid-template-columns:minmax(220px,.75fr) 1fr; align-items:end; gap:16px; }
+.onboarding-exam-date label>span { display:block; margin-bottom:6px; color:#716b77; font-size:8px; font-weight:750; }
+.onboarding-exam-date input { width:100%; min-height:42px; padding:0 11px; border:1px solid #ddd9e2; border-radius:11px; color:#29262d; background:white; font:inherit; font-size:10px; }
+.onboarding-exam-date>div { min-height:42px; padding:0 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; border-radius:11px; color:#4f47b3; background:#eeecfb; }
+.onboarding-exam-date>div span { font-size:10px; font-weight:750; }
+.onboarding-exam-date>div small { color:#8d86ad; font-size:7px; }
 .onboarding-card>.auth-message { margin-top:14px; }
 .onboarding-submit { margin-top:19px; }
 .onboarding-footnote { margin-top:11px; display:block; color:#9b959f; font-size:8px; text-align:center; }
@@ -350,6 +372,12 @@ button { cursor: pointer; }
   .onboarding-profile-editor { grid-template-columns:1fr; }
   .account-avatar-picker { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .onboarding-band-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .onboarding-study-period>header { align-items:flex-start; flex-direction:column; }
+  .onboarding-period-tabs { width:100%; }
+  .onboarding-period-tabs button { flex:1; }
+  .onboarding-days-selector { grid-template-columns:1fr; }
+  .onboarding-days-selector>div { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .onboarding-exam-date { grid-template-columns:1fr; }
 }
 @media (prefers-reduced-motion:no-preference) {
   .primary-action,.memory-row,.streak-row,.desktop-nav button { transition:transform .18s ease,opacity .18s ease; }

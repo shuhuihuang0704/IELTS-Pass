@@ -775,7 +775,7 @@ test("ships all four learning modes and persistent progress", async () => {
 });
 
 test("ships account registration, profile avatars, secure sessions, WeChat adapter and score onboarding", async () => {
-  const [flow, avatars, route, authServer, hosting, schema, migration] = await Promise.all([
+  const [flow, avatars, route, authServer, hosting, schema, migration, planMigration] = await Promise.all([
     readFile(new URL("../app/AuthFlow.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/AccountAvatar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/auth/route.ts", import.meta.url), "utf8"),
@@ -783,6 +783,7 @@ test("ships account registration, profile avatars, secure sessions, WeChat adapt
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0000_heavy_wolfpack.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0001_safe_the_enforcers.sql", import.meta.url), "utf8"),
   ]);
   assert.match(flow, /手机号/);
   assert.match(flow, /Email/);
@@ -790,6 +791,10 @@ test("ships account registration, profile avatars, secure sessions, WeChat adapt
   assert.match(flow, /选择目标分数/);
   assert.match(flow, /5\.5, 6, 6\.5, 7, 7\.5, 8, 8\.5/);
   assert.match(flow, /设置你的头像、名字与目标/);
+  assert.match(flow, /选择学习天数/);
+  assert.match(flow, /输入考试日期/);
+  assert.match(flow, /type="date"/);
+  assert.match(flow, /daysUntilDate/);
   assert.match(avatars, /accountAvatarPresets/);
   assert.equal((avatars.match(/id: "preset:/g) ?? []).length, 6);
   assert.match(route, /action === "register"/);
@@ -801,7 +806,9 @@ test("ships account registration, profile avatars, secure sessions, WeChat adapt
   assert.match(authServer, /HttpOnly; Path=\/; SameSite=Lax/);
   assert.equal(JSON.parse(hosting).d1, "DB");
   assert.match(schema, /authSessions/);
+  assert.match(schema, /examDate: text\("exam_date"\)/);
   assert.match(migration, /CREATE TABLE `users`/);
+  assert.match(planMigration, /ADD `exam_date` text/);
 });
 
 test("includes the finished social preview and removes starter preview files", async () => {

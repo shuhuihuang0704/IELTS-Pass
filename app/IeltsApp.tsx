@@ -1139,19 +1139,20 @@ export default function IeltsApp() {
     }
   };
 
-  const completeAccountOnboarding = async (score: number, displayName: string, avatarUrl: string) => {
+  const completeAccountOnboarding = async (score: number, displayName: string, avatarUrl: string, selectedPlanDays: number, examDate: string | null) => {
     const targetBandScore = normalizeTargetBandScore(score);
-    const studyPlanDays = 90;
+    const studyPlanDays = normalizeStudyPlanDays(selectedPlanDays);
     const nextProgress = {
       ...progressRef.current,
       targetBandScore,
       studyPlanDays,
       studyPlanStartedAt: localDayKey(),
+      examDate,
     };
     const response = await fetch("/api/auth", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "onboarding", displayName, avatarUrl, targetBandScore, studyPlanDays, progress: nextProgress }),
+      body: JSON.stringify({ action: "onboarding", displayName, avatarUrl, targetBandScore, studyPlanDays, examDate, progress: nextProgress }),
     });
     const result = await response.json() as { user?: AuthUser; message?: string };
     if (!response.ok || !result.user) throw new Error(result.message || "计划创建失败，请重试");
@@ -4725,7 +4726,7 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
     const nextDays = normalizeStudyPlanDays(days);
     setCustomPlanDays(String(nextDays));
     updateProgress((current) => {
-      if (current.studyPlanDays === nextDays) return current;
+      if (current.studyPlanDays === nextDays && !current.examDate) return current;
       const targetWords = getDailyVocabulary(current.dailyVocabularyDate, dailyVocabularyTarget(nextDays, current.targetBandScore));
       const targetDictationWords = getDailyListeningVocabulary(current.dailyVocabularyDate, dailyDictationTarget(nextDays, current.targetBandScore));
       const dailyVocabularyCompleted = targetWords.every((item) => current.dailyVocabularyKnown.includes(item.word));
@@ -4733,6 +4734,7 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
       return {
         ...current,
         studyPlanDays: nextDays,
+        examDate: null,
         dailyVocabularyCompleted,
         dailyDictationCompleted,
         completed: { ...current.completed, vocabulary: dailyVocabularyCompleted && dailyDictationCompleted },
@@ -4818,11 +4820,11 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
           <article><span>复习容量</span><strong>{planReviewTarget}<small> 词 / 日</small></strong></article>
           <article><span>套题频率</span><strong>{planSessions}<small> 次 / 周</small></strong></article>
           <article><span>每日预计</span><strong>{targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore)}<small> 分钟</small></strong></article>
-          <article><span>预计结束</span><strong>{planEndDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}</strong></article>
+          <article><span>{progress.examDate ? "考试日期" : "预计结束"}</span><strong>{progress.examDate ? new Date(`${progress.examDate}T12:00:00`).toLocaleDateString("zh-CN", { month: "short", day: "numeric" }) : planEndDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}</strong></article>
         </div>
         <div className="target-band-selector"><div><strong>目标分数 · {planFocus.label}</strong><small>5.5–6.0 使用 Band 6 路线；6.5–7.0 使用 Band 7 路线；7.5–8.5 使用 Band 8 路线。切换后听、读、说题目与每日要求一起改变。</small></div><div>{[5.5, 6, 6.5, 7, 7.5, 8, 8.5].map((score) => <button className={progress.targetBandScore === score ? "is-active" : ""} onClick={() => selectTargetBand(score)} key={score}>{score.toFixed(1)}</button>)}</div></div>
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
-        <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
+        <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 7–365 天；重新设置天数会清除原考试日期</small></label><div><input id="custom-plan-days" type="number" min="7" max="365" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
       <section className="profile-settings"><div><strong>账号与学习数据</strong><p>学习目标、笔记与进度已同步到当前账号。</p></div><div className="profile-account-actions"><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}

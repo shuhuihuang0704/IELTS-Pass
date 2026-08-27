@@ -9,6 +9,7 @@ export const users = sqliteTable("users", {
   avatarUrl: text("avatar_url"),
   targetBandScore: real("target_band_score"),
   studyPlanDays: integer("study_plan_days"),
+  examDate: text("exam_date"),
   progressJson: text("progress_json"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),

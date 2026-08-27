@@ -34,6 +34,14 @@ function profileFields(body: Record<string, unknown>, currentAvatar: string | nu
   return { displayName, avatarUrl };
 }
 
+function examDateField(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  const examDate = String(value);
+  const parsed = new Date(`${examDate}T12:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(examDate) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== examDate) throw new Error("请输入有效的考试日期");
+  return examDate;
+}
+
 export async function GET(request: Request) {
   const action = new URL(request.url).searchParams.get("action") ?? "session";
   try {
@@ -78,7 +86,7 @@ export async function GET(request: Request) {
       const profile = await profileResponse.json() as { nickname?: string; headimgurl?: string; unionid?: string };
       const identifier = profile.unionid ?? token.unionid ?? token.openid;
       const now = Date.now();
-      let user = await authDb().prepare("SELECT id, provider, identifier, display_name AS displayName, avatar_url AS avatarUrl, target_band_score AS targetBandScore, study_plan_days AS studyPlanDays, progress_json AS progressJson FROM users WHERE provider = 'wechat' AND identifier = ?")
+      let user = await authDb().prepare("SELECT id, provider, identifier, display_name AS displayName, avatar_url AS avatarUrl, target_band_score AS targetBandScore, study_plan_days AS studyPlanDays, exam_date AS examDate, progress_json AS progressJson FROM users WHERE provider = 'wechat' AND identifier = ?")
         .bind(identifier).first<Record<string, unknown>>();
       if (!user) {
         const id = crypto.randomUUID();
@@ -117,13 +125,13 @@ export async function POST(request: Request) {
       await authDb().prepare("INSERT INTO users (id, provider, identifier, password_hash, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(id, provider, identifier, passwordHash, displayName, now, now).run();
       const cookie = await createSession(request, id);
-      return json({ user: { id, provider, identifier, displayName, avatarUrl: null, targetBandScore: null, studyPlanDays: null }, progress: null, isNew: true, wechatEnabled: wechatIsConfigured() }, 201, { "set-cookie": cookie });
+      return json({ user: { id, provider, identifier, displayName, avatarUrl: null, targetBandScore: null, studyPlanDays: null, examDate: null }, progress: null, isNew: true, wechatEnabled: wechatIsConfigured() }, 201, { "set-cookie": cookie });
     }
     if (action === "login") {
       const provider = String(body.provider ?? "") as AuthProvider;
       if (provider !== "email" && provider !== "phone") throw new Error("请选择手机号或 Email 登录");
       const identifier = normalizeIdentifier(provider, body.identifier);
-      const row = await authDb().prepare("SELECT id, provider, identifier, password_hash AS passwordHash, display_name AS displayName, avatar_url AS avatarUrl, target_band_score AS targetBandScore, study_plan_days AS studyPlanDays, progress_json AS progressJson FROM users WHERE provider = ? AND identifier = ?")
+      const row = await authDb().prepare("SELECT id, provider, identifier, password_hash AS passwordHash, display_name AS displayName, avatar_url AS avatarUrl, target_band_score AS targetBandScore, study_plan_days AS studyPlanDays, exam_date AS examDate, progress_json AS progressJson FROM users WHERE provider = ? AND identifier = ?")
         .bind(provider, identifier).first<Record<string, unknown>>();
       if (!row || !await verifyPassword(body.password, typeof row.passwordHash === "string" ? row.passwordHash : null)) return errorResponse(new Error("账号或密码不正确"), 401);
       const cookie = await createSession(request, String(row.id));
@@ -137,13 +145,14 @@ export async function POST(request: Request) {
     if (!row) return errorResponse(new Error("请先登录"), 401);
     if (action === "onboarding") {
       const targetBandScore = Math.max(5.5, Math.min(8.5, Math.round(Number(body.targetBandScore) * 2) / 2));
-      const studyPlanDays = Math.max(30, Math.min(180, Math.round(Number(body.studyPlanDays) || 90)));
+      const studyPlanDays = Math.max(7, Math.min(365, Math.round(Number(body.studyPlanDays) || 90)));
+      const examDate = examDateField(body.examDate);
       if (!Number.isFinite(targetBandScore)) throw new Error("请选择目标分数");
       const { displayName, avatarUrl } = profileFields(body, row.avatarUrl);
       const progressJson = body.progress && typeof body.progress === "object" ? JSON.stringify(body.progress) : null;
-      await authDb().prepare("UPDATE users SET display_name = ?, avatar_url = ?, target_band_score = ?, study_plan_days = ?, progress_json = COALESCE(?, progress_json), updated_at = ? WHERE id = ?")
-        .bind(displayName, avatarUrl, targetBandScore, studyPlanDays, progressJson, Date.now(), row.id).run();
-      return json({ user: { ...publicAuthPayload(row).user, displayName, avatarUrl, targetBandScore, studyPlanDays }, progress: body.progress ?? publicAuthPayload(row).progress });
+      await authDb().prepare("UPDATE users SET display_name = ?, avatar_url = ?, target_band_score = ?, study_plan_days = ?, exam_date = ?, progress_json = COALESCE(?, progress_json), updated_at = ? WHERE id = ?")
+        .bind(displayName, avatarUrl, targetBandScore, studyPlanDays, examDate, progressJson, Date.now(), row.id).run();
+      return json({ user: { ...publicAuthPayload(row).user, displayName, avatarUrl, targetBandScore, studyPlanDays, examDate }, progress: body.progress ?? publicAuthPayload(row).progress });
     }
     if (action === "profile") {
       const { displayName, avatarUrl } = profileFields(body, row.avatarUrl);
@@ -157,9 +166,10 @@ export async function POST(request: Request) {
       const nextTarget = Number(progress.targetBandScore);
       const nextPlanDays = Number(progress.studyPlanDays);
       const targetBandScore = Number.isFinite(nextTarget) ? Math.max(5.5, Math.min(8.5, Math.round(nextTarget * 2) / 2)) : null;
-      const studyPlanDays = Number.isFinite(nextPlanDays) ? Math.max(30, Math.min(180, Math.round(nextPlanDays))) : null;
-      await authDb().prepare("UPDATE users SET progress_json = ?, target_band_score = COALESCE(?, target_band_score), study_plan_days = COALESCE(?, study_plan_days), updated_at = ? WHERE id = ?")
-        .bind(JSON.stringify(progress), targetBandScore, studyPlanDays, Date.now(), row.id).run();
+      const studyPlanDays = Number.isFinite(nextPlanDays) ? Math.max(7, Math.min(365, Math.round(nextPlanDays))) : null;
+      const examDate = examDateField(progress.examDate);
+      await authDb().prepare("UPDATE users SET progress_json = ?, target_band_score = COALESCE(?, target_band_score), study_plan_days = COALESCE(?, study_plan_days), exam_date = ?, updated_at = ? WHERE id = ?")
+        .bind(JSON.stringify(progress), targetBandScore, studyPlanDays, examDate, Date.now(), row.id).run();
       return json({ ok: true });
     }
     return errorResponse(new Error("不支持的账号操作"), 404);

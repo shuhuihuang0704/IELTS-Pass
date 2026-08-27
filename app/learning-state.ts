@@ -88,6 +88,7 @@ export type LearningProgress = {
   targetBandScore: number;
   studyPlanDays: number;
   studyPlanStartedAt: string;
+  examDate: string | null;
   completed: Record<Skill, boolean>;
   masteredWords: string[];
   reviewWords: string[];
@@ -127,7 +128,7 @@ export const vocabularyPlanSize = 3600;
 
 export function normalizeStudyPlanDays(value: unknown) {
   return typeof value === "number" && Number.isFinite(value)
-    ? Math.max(30, Math.min(180, Math.round(value)))
+    ? Math.max(7, Math.min(365, Math.round(value)))
     : 36;
 }
 
@@ -406,6 +407,7 @@ export const defaultProgress: LearningProgress = {
   targetBandScore: 7,
   studyPlanDays: 36,
   studyPlanStartedAt: localDayKey(),
+  examDate: null,
   completed: { vocabulary: false, listening: false, speaking: false, reading: false },
   masteredWords: [],
   reviewWords: [],
@@ -595,6 +597,9 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   const studyPlanStartedAt = typeof stored.studyPlanStartedAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(stored.studyPlanStartedAt)
     ? stored.studyPlanStartedAt
     : today;
+  const examDate = typeof stored.examDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(stored.examDate)
+    ? stored.examDate
+    : null;
   const isCurrentVocabularyDay = isCurrentDay && isCurrentVocabularyLibrary;
   const completed = isCurrentDay
     ? { ...defaultProgress.completed, ...(stored.completed ?? {}) }
@@ -667,6 +672,7 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     targetBandScore,
     studyPlanDays,
     studyPlanStartedAt,
+    examDate,
     completed,
     masteredWords: Array.isArray(stored.masteredWords) ? stored.masteredWords : [],
     reviewWords,

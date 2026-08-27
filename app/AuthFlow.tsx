@@ -5,6 +5,7 @@ import type { AuthUser } from "./auth-server";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 
 type AuthMethod = "phone" | "email";
+type StudyPeriodMode = "days" | "exam-date";
 type AuthResponse = {
   user?: AuthUser;
   progress?: unknown;
@@ -12,6 +13,25 @@ type AuthResponse = {
   wechatEnabled?: boolean;
   message?: string;
 };
+
+function localDateKeyAfter(days: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function daysUntilDate(dateKey: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return 0;
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const targetUtc = Date.UTC(year, month - 1, day);
+  return Math.round((targetUtc - todayUtc) / 86_400_000);
+}
 
 export default function AuthFlow({
   user,
@@ -22,7 +42,7 @@ export default function AuthFlow({
   user: AuthUser | null;
   wechatEnabled: boolean;
   onAuthenticated: (response: AuthResponse) => void;
-  onCompleteOnboarding: (targetBandScore: number, displayName: string, avatarUrl: string) => Promise<void>;
+  onCompleteOnboarding: (targetBandScore: number, displayName: string, avatarUrl: string, studyPlanDays: number, examDate: string | null) => Promise<void>;
 }) {
   const [mode, setMode] = useState<"login" | "register">("register");
   const [method, setMethod] = useState<AuthMethod>("phone");
@@ -32,6 +52,9 @@ export default function AuthFlow({
   const [targetBandScore, setTargetBandScore] = useState<number | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [avatarChoice, setAvatarChoice] = useState<string | null>(null);
+  const [studyPeriodMode, setStudyPeriodMode] = useState<StudyPeriodMode>("days");
+  const [studyPlanDays, setStudyPlanDays] = useState("90");
+  const [examDate, setExamDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("auth_error") ? "微信登录没有完成，请重新尝试。" : "");
   const targetOptions = useMemo(() => [5.5, 6, 6.5, 7, 7.5, 8, 8.5], []);
@@ -64,10 +87,24 @@ export default function AuthFlow({
       setMessage("请输入你的名字或昵称");
       return;
     }
+    let resolvedPlanDays = Math.round(Number(studyPlanDays));
+    let resolvedExamDate: string | null = null;
+    if (studyPeriodMode === "exam-date") {
+      resolvedPlanDays = daysUntilDate(examDate);
+      resolvedExamDate = examDate;
+      if (!examDate) {
+        setMessage("请选择考试日期");
+        return;
+      }
+    }
+    if (!Number.isFinite(resolvedPlanDays) || resolvedPlanDays < 7 || resolvedPlanDays > 365) {
+      setMessage(studyPeriodMode === "exam-date" ? "考试日期需要在 7–365 天以内" : "学习周期需要在 7–365 天之间");
+      return;
+    }
     setSubmitting(true);
     setMessage("");
     try {
-      await onCompleteOnboarding(targetBandScore, nextDisplayName, nextAvatar);
+      await onCompleteOnboarding(targetBandScore, nextDisplayName, nextAvatar, resolvedPlanDays, resolvedExamDate);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "计划创建失败，请重试");
     } finally {
@@ -91,9 +128,13 @@ export default function AuthFlow({
         <div className="onboarding-band-grid" role="radiogroup" aria-label="选择 IELTS 目标分数">
           {targetOptions.map((score) => <button type="button" role="radio" aria-checked={targetBandScore === score} className={targetBandScore === score ? "is-selected" : ""} onClick={() => setTargetBandScore(score)} key={score}><strong>{score.toFixed(1)}</strong><small>{score <= 6 ? "基础巩固" : score <= 7 ? "均衡提分" : score <= 7.5 ? "高阶强化" : "高分精炼"}</small></button>)}
         </div>
+        <section className="onboarding-study-period">
+          <header><div><strong>设置备考周期</strong><small>每日任务会根据剩余时间自动调整</small></div><div className="onboarding-period-tabs" role="tablist" aria-label="选择备考周期设置方式"><button type="button" role="tab" aria-selected={studyPeriodMode === "days"} className={studyPeriodMode === "days" ? "is-active" : ""} onClick={() => { setStudyPeriodMode("days"); setMessage(""); }}>选择学习天数</button><button type="button" role="tab" aria-selected={studyPeriodMode === "exam-date"} className={studyPeriodMode === "exam-date" ? "is-active" : ""} onClick={() => { setStudyPeriodMode("exam-date"); setMessage(""); }}>输入考试日期</button></div></header>
+          {studyPeriodMode === "days" ? <div className="onboarding-days-selector"><div>{[30, 60, 90, 120, 180].map((days) => <button type="button" className={Number(studyPlanDays) === days ? "is-selected" : ""} onClick={() => setStudyPlanDays(String(days))} key={days}>{days}<small>天</small></button>)}</div><label><span>自定义</span><input type="number" min="7" max="365" value={studyPlanDays} onChange={(event) => setStudyPlanDays(event.target.value)} aria-label="自定义学习天数" /><small>天</small></label></div> : <div className="onboarding-exam-date"><label><span>IELTS 考试日期</span><input type="date" min={localDateKeyAfter(7)} max={localDateKeyAfter(365)} value={examDate} onChange={(event) => setExamDate(event.target.value)} /></label><div><span>{examDate && daysUntilDate(examDate) > 0 ? `还有 ${daysUntilDate(examDate)} 天` : "选择日期后自动计算"}</span><small>计划持续到考试前一天</small></div></div>}
+        </section>
         {message && <p className="auth-message" role="alert">{message}</p>}
         <button className="onboarding-submit" disabled={targetBandScore === null || submitting} onClick={completeOnboarding}>{submitting ? "正在创建计划…" : "创建我的学习计划 →"}</button>
-        <small className="onboarding-footnote">默认先生成 90 天计划，备考周期可以随时调整。</small>
+        <small className="onboarding-footnote">备考周期和考试日期之后仍可在“我的”页面调整。</small>
       </section>
     </main>
   );
