@@ -179,6 +179,58 @@ export function normalizeTargetBandScore(value: unknown) {
   return Math.max(5.5, Math.min(8.5, Math.round(value * 2) / 2));
 }
 
+export type DailyDifficultyBand = 6 | 7 | 8;
+
+export type DailyDifficultyProfile = {
+  band: DailyDifficultyBand;
+  label: string;
+  summary: string;
+  listening: { rate: number; passScore: number; focus: string };
+  reading: { minutes: number; passScore: number; focus: string };
+  speaking: { minimumWords: number; requireDevelopment: boolean; requireCounterpoint: boolean; focus: string };
+};
+
+export const dailyDifficultyProfiles: Record<DailyDifficultyBand, DailyDifficultyProfile> = {
+  6: {
+    band: 6,
+    label: "基础准确",
+    summary: "先建立稳定正确率，再逐步增加同义替换和时间压力。",
+    listening: { rate: .92, passScore: 7, focus: "数字、拼写与明确转折" },
+    reading: { minutes: 22, passScore: 7, focus: "关键词定位与事实判断" },
+    speaking: { minimumWords: 14, requireDevelopment: false, requireCounterpoint: false, focus: "直接回答并说明一个原因" },
+  },
+  7: {
+    band: 7,
+    label: "考试节奏",
+    summary: "使用自然语速、标准限时和更密集的同义替换完成训练。",
+    listening: { rate: 1, passScore: 8, focus: "同义替换、连读与干扰项" },
+    reading: { minutes: 18, passScore: 9, focus: "段落匹配、判断与快速定位" },
+    speaking: { minimumWords: 25, requireDevelopment: true, requireCounterpoint: false, focus: "观点、原因和例子完整展开" },
+  },
+  8: {
+    band: 8,
+    label: "高分压力",
+    summary: "在更快语流和更短限时下处理隐含信息，并完成有让步的抽象论证。",
+    listening: { rate: 1.08, passScore: 9, focus: "弱读、快速修正与多重干扰" },
+    reading: { minutes: 15, passScore: 10, focus: "隐含观点、复杂匹配与高压定位" },
+    speaking: { minimumWords: 40, requireDevelopment: true, requireCounterpoint: true, focus: "抽象论证、例证、让步与进一步追问" },
+  },
+};
+
+export function dailyDifficultyBandForDate(planStartedAt: string, contentDate: string, planDays: number, targetBandScore: number): DailyDifficultyBand {
+  const normalizedDays = normalizeStudyPlanDays(planDays);
+  const startedAt = /^\d{4}-\d{2}-\d{2}$/.test(planStartedAt) ? planStartedAt : contentDate;
+  const trainingDate = /^\d{4}-\d{2}-\d{2}$/.test(contentDate) ? contentDate : startedAt;
+  const elapsedDays = Math.max(0, Math.floor((new Date(`${trainingDate}T12:00:00`).getTime() - new Date(`${startedAt}T12:00:00`).getTime()) / 86_400_000));
+  const progressRatio = Math.min(1, elapsedDays / Math.max(1, normalizedDays - 1));
+  const target = normalizeTargetBandScore(targetBandScore);
+  if (target < 6.5) return 6;
+  if (target < 7.5) return progressRatio < .35 ? 6 : 7;
+  if (progressRatio < .2) return 6;
+  if (progressRatio < .55) return 7;
+  return 8;
+}
+
 export function targetOfficialSessionsPerWeek(planDays: number, targetBandScore: number) {
   const score = normalizeTargetBandScore(targetBandScore);
   const scoreBonus = score >= 8 ? 2 : score >= 7.5 ? 1 : 0;

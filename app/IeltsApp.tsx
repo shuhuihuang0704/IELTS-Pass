@@ -21,6 +21,8 @@ import {
 import {
   completionPercent,
   dailyConnectedSpeechTarget,
+  dailyDifficultyBandForDate,
+  dailyDifficultyProfiles,
   dailyDictationTarget,
   dailyReviewTarget,
   dailyVocabularyTarget,
@@ -42,6 +44,7 @@ import {
   targetOfficialSessionsPerWeek,
   targetPlanFocus,
   type LearningProgress,
+  type DailyDifficultyProfile,
   type NotebookEntry,
   type StudyTimeCategory,
   type WordRating,
@@ -1180,9 +1183,9 @@ function TodayView({
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
   const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
-  const planFocus = targetPlanFocus(progress.targetBandScore);
   const dailyMinutes = targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore);
   const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
+  const todayDifficultyBand = dailyDifficultyBandForDate(progress.studyPlanStartedAt, localDayKey(), progress.studyPlanDays, progress.targetBandScore);
   const nextSkill = skills.find((skill) => !progress.completed[skill.id])
     ?? skills[0];
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
@@ -1205,8 +1208,8 @@ function TodayView({
       <div className="dashboard-grid">
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
-          <div className="scene-heading"><span>PLAN DAY {planDay} / {progress.studyPlanDays}</span><span>约 {dailyMinutes} 分钟</span></div>
-          <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · {dictationTarget} 听写 · {phraseTarget} 连读 · {planFocus.label}</p>
+          <div className="scene-heading"><span>PLAN DAY {planDay} / {progress.studyPlanDays} · BAND {todayDifficultyBand}.0</span><span>约 {dailyMinutes} 分钟</span></div>
+          <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · {dictationTarget} 听写 · {phraseTarget} 连读 · 今日难度 {todayDifficultyBand}.0</p>
           <button className="voice-orb" aria-label="打开 IELTS AI 助教" onClick={() => onNavigate("scene")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
             {skills.map((skill, index) => (
@@ -2544,6 +2547,9 @@ function SceneView({
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
   const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
+  const difficultyBand = dailyDifficultyBandForDate(progress.studyPlanStartedAt, contentDate, progress.studyPlanDays, progress.targetBandScore);
+  const difficultyProfile = dailyDifficultyProfiles[difficultyBand];
+  const difficultyPath = progress.targetBandScore < 6.5 ? "6.0 巩固" : progress.targetBandScore < 7.5 ? "6.0 → 7.0" : "6.0 → 7.0 → 8.0";
   const isCarryoverContent = contentDate !== localDayKey() && progress.carryoverTasks.includes(activeSkill);
   const [vocabularyMode, setVocabularyMode] = useState<"daily" | "typing" | "phrases">("daily");
   const vocabularyHeader = vocabularyMode === "typing"
@@ -2553,9 +2559,9 @@ function SceneView({
       : { eyebrow: "DAILY VOCABULARY", title: `每天 ${vocabularyTarget} 词，`, accent: "先眼熟再记牢。" };
   const headers: Record<Skill, { eyebrow: string; title: string; accent: string }> = {
     vocabulary: vocabularyHeader,
-    listening: { eyebrow: "LISTENING · SECTION 1", title: "听清细节，", accent: "再做选择。" },
-    speaking: { eyebrow: "SPEAKING PRACTICE", title: "像面对考官一样，", accent: "展开观点。" },
-    reading: { eyebrow: "ACADEMIC READING", title: "按真实题型，", accent: "完成定位。" },
+    listening: { eyebrow: `LISTENING · BAND ${difficultyBand}.0`, title: "听清细节，", accent: "再做选择。" },
+    speaking: { eyebrow: `SPEAKING · BAND ${difficultyBand}.0`, title: "像面对考官一样，", accent: "展开观点。" },
+    reading: { eyebrow: `READING · BAND ${difficultyBand}.0`, title: "按真实题型，", accent: "完成定位。" },
   };
   const header = headers[activeSkill];
   const completeVocabularySection = (section: "daily" | "dictation") => {
@@ -2587,6 +2593,10 @@ function SceneView({
       </nav>
       <PageHeader eyebrow={header.eyebrow} title={header.title} accent={header.accent} />
       {isCarryoverContent && <section className="carryover-context-banner"><div><span>YESTERDAY&apos;S TASK</span><strong>正在补做 {contentDate} 的{activeSkill === "vocabulary" ? "词汇与听写" : skills.find((skill) => skill.id === activeSkill)?.label}</strong></div><small>本页题目按原任务日期加载；完成后才会从昨日未完成列表移除。</small></section>}
+      {activeSkill !== "vocabulary" && <section className="daily-difficulty-panel" aria-label={`今日训练难度 Band ${difficultyBand}.0`}>
+        <div><span>DAILY DIFFICULTY</span><strong>今日 Band {difficultyBand}.0 · {difficultyProfile.label}</strong><p>{difficultyProfile.summary} 本计划路线：{difficultyPath}。</p></div>
+        <div className="daily-difficulty-ladder">{([6, 7, 8] as const).map((band) => <span className={band === difficultyBand ? "is-active" : band < difficultyBand ? "is-passed" : ""} key={band}><b>{band}.0</b><small>{dailyDifficultyProfiles[band].label}</small></span>)}</div>
+      </section>}
       <div className="scene-tabs" role="tablist" aria-label="场景训练步骤">
         {skills.map((skill, index) => (
           <button
@@ -2600,12 +2610,12 @@ function SceneView({
       </div>
       <section className="exercise-surface">
         {activeSkill === "vocabulary" && <VocabularyPractice key={`vocabulary:${contentDate}`} contentDate={contentDate} mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
-        {activeSkill === "listening" && <ListeningPractice key={`listening:${contentDate}`} exerciseDate={contentDate} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
+        {activeSkill === "listening" && <ListeningPractice key={`listening:${contentDate}:${difficultyBand}`} exerciseDate={contentDate} difficulty={difficultyProfile} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
           if (fullyAnswered) onComplete("listening", 12);
         }} />}
-        {activeSkill === "speaking" && <SpeakingPractice key={`speaking:${contentDate}`} exerciseDate={contentDate} progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
-        {activeSkill === "reading" && <ReadingPractice key={`reading:${contentDate}`} exerciseDate={contentDate} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
+        {activeSkill === "speaking" && <SpeakingPractice key={`speaking:${contentDate}:${difficultyBand}`} exerciseDate={contentDate} difficulty={difficultyProfile} progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
+        {activeSkill === "reading" && <ReadingPractice key={`reading:${contentDate}:${difficultyBand}`} exerciseDate={contentDate} difficulty={difficultyProfile} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, readingScore: score }));
           if (fullyAnswered) onComplete("reading", 18);
         }} />}
@@ -3117,11 +3127,13 @@ function DailyVocabularySprint({
 
 function ListeningPractice({
   exerciseDate,
+  difficulty,
   progress,
   updateProgress,
   onComplete,
 }: {
   exerciseDate: string;
+  difficulty: DailyDifficultyProfile;
   progress: LearningProgress;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: (score: number, fullyAnswered: boolean) => void;
@@ -3287,7 +3299,7 @@ function ListeningPractice({
       kind: "question",
       title: `Q${number} · ${prompt}`,
       detail: `题目：${prompt}\n我的答案：${userAnswer || "未作答"}\n正确答案：${correctAnswer}\n原文：${evidence.quote}`,
-      source: `听力精听 · ${exerciseDate} · ${listeningSet.code}`,
+      source: `听力精听 · Band ${difficulty.band}.0 · ${exerciseDate} · ${listeningSet.code}`,
       media: { kind: "audio", label: `播放 Q${number} 对应音频`, url: listeningSet.audioSrc, ...cue },
     }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含本题音频）"}</button>;
   };
@@ -3335,13 +3347,13 @@ function ListeningPractice({
     <div className="exercise-layout listening-exam-layout">
       <div className="exercise-main listening-exam-main">
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>{exerciseDate} · Questions 1–10</span></div>
-        <h2>{listeningExercise.title}</h2><p>正式考试录音只播放一次；Demo 可以重播以便精听复盘。</p>
+        <h2>{listeningExercise.title}</h2><p>Band {difficulty.band}.0 · {difficulty.listening.focus} · 达标 {difficulty.listening.passScore}/10</p>
         <div className="listening-controls">
-          <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
+          <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${playerState}`}>
             <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
-            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : "播放双人英式完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · 男女声线清晰区分 · IELTS 自然语速</small></span>
+            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : "播放双人英式完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · Band {difficulty.band}.0 训练语速 {difficulty.listening.rate.toFixed(2)}×</small></span>
           </div>
           <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
         </div>
@@ -3396,7 +3408,7 @@ function ListeningPractice({
           })}
         </section>
 
-        {score !== null && <div className={`answer-feedback ${score >= 8 && answeredCount === 10 ? "success" : "neutral"}`}>得分 {score} / 10。{answeredCount < 10 ? `${10 - answeredCount} 题未答并按错误处理；答案与原文已经解锁，但本项尚未计为完成。` : score < 8 ? "建议打开原文，重点检查拼写、同义替换和转折后的信息。" : "细节定位和拼写表现良好。"} 可以复盘原文，也可以选择“再写一遍”。</div>}
+        {score !== null && <div className={`answer-feedback ${score >= difficulty.listening.passScore && answeredCount === 10 ? "success" : "neutral"}`}>Band {difficulty.band}.0 得分 {score} / 10。{answeredCount < 10 ? `${10 - answeredCount} 题未答并按错误处理；答案与原文已经解锁，但本项尚未计为完成。` : score < difficulty.listening.passScore ? `本层达标线为 ${difficulty.listening.passScore}/10，建议打开原文重点检查${difficulty.listening.focus}。` : `达到本层 ${difficulty.listening.passScore}/10 标准，${difficulty.listening.focus}表现稳定。`} 可以复盘原文，也可以选择“再写一遍”。</div>}
         <div className="exercise-actions"><button className="text-action" disabled={score === null} onClick={() => setShowTranscript((current) => !current)}>{score === null ? "提交后解锁原文" : showTranscript ? "隐藏原文" : "查看原文复盘"}</button>{score === null ? <button className="secondary-action" onClick={submit}>{answeredCount < 10 ? `提交当前答案（${answeredCount}/10）` : "提交 10 道答案"} →</button> : <button className="secondary-action" onClick={redoListening}>↺ 再写一遍</button>}</div>
       </div>
       <aside className={`exercise-context transcript-panel listening-transcript ${score === null ? "is-locked" : "is-unlocked"}`}><span>{score === null ? "听力原文 · 未解锁" : "听力原文 · 已解锁"}</span><p>{score === null ? "提交当前答案后即可解锁原文；不要求先答完全部 10 题。" : showTranscript ? listeningExercise.script : "已经完成本次提交。点击“查看原文复盘”，标记没有听到的拼写、连读和同义替换。"}</p></aside>
@@ -3406,11 +3418,13 @@ function ListeningPractice({
 
 function SpeakingPractice({
   exerciseDate,
+  difficulty,
   progress,
   updateProgress,
   onComplete,
 }: {
   exerciseDate: string;
+  difficulty: DailyDifficultyProfile;
   progress: LearningProgress;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: () => void;
@@ -3447,7 +3461,12 @@ function SpeakingPractice({
   const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
   const examinerUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const practiceRecognition = useRef<PracticeRecognition | null>(null);
-  const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => speakingScenario.questions[questionIndex]);
+  const questionForDifficulty = (question: string) => difficulty.band === 8
+    ? `${question} Please consider both sides and the wider long-term consequences.`
+    : difficulty.band === 7
+      ? `${question} Please explain your reason and give an example.`
+      : question;
+  const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => questionForDifficulty(speakingScenario.questions[questionIndex]));
 
   useEffect(() => () => {
     if (examinerUtterance.current) {
@@ -3513,9 +3532,32 @@ function SpeakingPractice({
     if (practiceRecognition.current) practiceRecognition.current.stop();
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     const hasDevelopment = /because|since|for example|for instance|however|although|whereas|therefore|so that/i.test(text);
-    if (wordCount < 10) {
+    const hasCounterpoint = /however|although|whereas|on the other hand|that said|nevertheless/i.test(text);
+    if (wordCount < difficulty.speaking.minimumWords) {
       const reply = "Could you explain that in a little more detail?";
-      const feedback = "回答已经提交，但内容偏短：请补充观点、原因和一个例子，尽量再展开 2–3 句。";
+      const feedback = `Band ${difficulty.band}.0 本题至少需要约 ${difficulty.speaking.minimumWords} 词；当前 ${wordCount} 词。请按“观点—原因—例子”继续展开。`;
+      setDraft("");
+      setAnswerFeedback(feedback);
+      setLastSubmittedAnswer({ turn: completedTurns, question: activeExaminerPrompt, answer: text, feedback });
+      setActiveExaminerPrompt(reply);
+      setShowExaminerSubtitles(false);
+      playExaminerPrompt(reply);
+      return;
+    }
+    if (difficulty.speaking.requireDevelopment && !hasDevelopment) {
+      const reply = "Why do you think that, and can you give me an example?";
+      const feedback = `Band ${difficulty.band}.0 需要明确展开理由或例子。请使用 because、for example 或 therefore 连接观点。`;
+      setDraft("");
+      setAnswerFeedback(feedback);
+      setLastSubmittedAnswer({ turn: completedTurns, question: activeExaminerPrompt, answer: text, feedback });
+      setActiveExaminerPrompt(reply);
+      setShowExaminerSubtitles(false);
+      playExaminerPrompt(reply);
+      return;
+    }
+    if (difficulty.speaking.requireCounterpoint && !hasCounterpoint) {
+      const reply = "Is there another side to this argument?";
+      const feedback = "Band 8.0 需要处理另一面或限制条件。可以用 however、although 或 on the other hand 加入让步。";
       setDraft("");
       setAnswerFeedback(feedback);
       setLastSubmittedAnswer({ turn: completedTurns, question: activeExaminerPrompt, answer: text, feedback });
@@ -3528,10 +3570,8 @@ function SpeakingPractice({
     const finished = nextTurns >= speakingScenario.questions.length;
     const reply = finished
       ? "Thank you. That is the end of the speaking test."
-      : speakingScenario.questions[nextTurns];
-    const feedback = hasDevelopment
-      ? `本轮完成：${wordCount} 词，并使用了展开信号。继续保持观点—原因—例子的结构。`
-      : `本轮完成：${wordCount} 词。下一题可加入 because、for example 或 however，让论证更清楚。`;
+      : questionForDifficulty(speakingScenario.questions[nextTurns]);
+    const feedback = `Band ${difficulty.band}.0 本轮达标：${wordCount} 词。${difficulty.speaking.requireCounterpoint ? "已完成观点、例证和让步论证。" : hasDevelopment ? "已使用展开信号。" : "回答清楚直接。"}`;
     setDraft("");
     setAnswerFeedback(feedback);
     setLastSubmittedAnswer({ turn: completedTurns, question: activeExaminerPrompt, answer: text, feedback });
@@ -3609,7 +3649,8 @@ function SpeakingPractice({
   return (
     <div className="exercise-layout speaking-layout is-single-column">
       <div className="exercise-main conversation-panel">
-        <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{exerciseDate} · {Math.min(completedTurns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
+        <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>Band {difficulty.band}.0 · {Math.min(completedTurns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
+        <div className="speaking-difficulty-brief"><strong>本层要求</strong><span>每题约 {difficulty.speaking.minimumWords}+ 词 · {difficulty.speaking.focus}</span></div>
         <div className="speaking-audio-controls">
           <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => playExaminerPrompt(activeExaminerPrompt) : startSpeaking}>{speakingStarted ? "↺ 重听当前问题" : "▶ 开始口语模拟"}</button>
           <button disabled={examinerAudioState === "idle"} onClick={toggleExaminerPause}>{examinerAudioState === "paused" ? "▶ 继续播放" : "Ⅱ 暂停"}</button>
@@ -3626,7 +3667,7 @@ function SpeakingPractice({
           kind: "question",
           title: `口语问题 ${lastSubmittedAnswer.turn + 1}`,
           detail: `考官问题：${lastSubmittedAnswer.question}\n我的回答：${lastSubmittedAnswer.answer}\n反馈：${lastSubmittedAnswer.feedback}`,
-          source: `口语练习 · ${exerciseDate} · ${speakingScenario.part}`,
+          source: `口语练习 · Band ${difficulty.band}.0 · ${exerciseDate} · ${speakingScenario.part}`,
           media: { kind: "speech", label: "播放考官问题", text: lastSubmittedAnswer.question },
         }))}>{speakingNoteSaved ? "★ 已加入笔记" : "☆ 加入笔记（含考官语音）"}</button>}
       </div>
@@ -3636,11 +3677,13 @@ function SpeakingPractice({
 
 function ReadingPractice({
   exerciseDate,
+  difficulty,
   progress,
   updateProgress,
   onComplete,
 }: {
   exerciseDate: string;
+  difficulty: DailyDifficultyProfile;
   progress: LearningProgress;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: (score: number, fullyAnswered: boolean) => void;
@@ -3651,6 +3694,8 @@ function ReadingPractice({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
+  const [readingSeconds, setReadingSeconds] = useState(difficulty.reading.minutes * 60);
+  const [readingTimerState, setReadingTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
   const answerKey = Object.fromEntries([
     ...readingExercise.matchingHeadings,
     ...readingExercise.matchingInformation,
@@ -3660,6 +3705,22 @@ function ReadingPractice({
   ].map((question) => [question.id, question.answer]));
   const totalQuestions = Object.keys(answerKey).length;
   const answeredCount = Object.keys(answers).filter((id) => answers[id]).length;
+
+  useEffect(() => {
+    if (readingTimerState !== "running") return;
+    const timer = window.setInterval(() => setReadingSeconds((current) => {
+      if (current <= 1) {
+        window.clearInterval(timer);
+        setReadingTimerState("finished");
+        return 0;
+      }
+      return current - 1;
+    }), 1000);
+    return () => window.clearInterval(timer);
+  }, [readingTimerState]);
+
+  const readingClock = `${String(Math.floor(readingSeconds / 60)).padStart(2, "0")}:${String(readingSeconds % 60).padStart(2, "0")}`;
+  const toggleReadingTimer = () => setReadingTimerState((current) => current === "running" ? "paused" : current === "finished" ? "finished" : "running");
 
   const setAnswer = (id: string, answer: string) => {
     setAnswers((current) => ({ ...current, [id]: answer }));
@@ -3672,12 +3733,15 @@ function ReadingPractice({
     const firstIncorrectId = Object.keys(answerKey).find((id) => answers[id] !== answerKey[id]);
     setScore(nextScore);
     setActiveReviewId(firstIncorrectId ?? Object.keys(answerKey)[0]);
+    setReadingTimerState((current) => current === "running" ? "paused" : current);
     onComplete(nextScore, answeredCount === totalQuestions);
   };
   const redoReading = () => {
     setAnswers({});
     setScore(null);
     setActiveReviewId(null);
+    setReadingSeconds(difficulty.reading.minutes * 60);
+    setReadingTimerState("idle");
   };
   const answerClass = (id: string) => score === null ? "" : answers[id] === answerKey[id] ? "is-correct" : "is-incorrect";
   const activeEvidence = activeReviewId ? readingReviewEvidence[activeReviewId as keyof typeof readingReviewEvidence] : null;
@@ -3736,7 +3800,7 @@ function ReadingPractice({
         kind: "question",
         title: `Q${number} · ${readingExercise.title}`,
         detail: `题目：${prompt}\n选项：${options.join("｜")}\n我的答案：${answers[id] || "未作答"}\n正确答案：${answerKey[id]}\n原文定位：${evidence.location}\n原文：${evidence.quotes.map((quote) => quote.text).join(" ")}\n解析：${evidence.explanation}`,
-        source: `专项训练 · 阅读 · ${exerciseDate} · ${readingSet.code}`,
+        source: `每日训练 · 阅读 · Band ${difficulty.band}.0 · ${exerciseDate} · ${readingSet.code}`,
       }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含原文定位）"}</button>
     </aside>;
   };
@@ -3744,14 +3808,16 @@ function ReadingPractice({
   return (
     <div className="reading-layout">
       <article className="reading-passage">
-        <div className="exercise-kicker"><span>Academic Reading passage</span><span>{exerciseDate} · 约 500 词</span></div>
+        <div className="exercise-kicker"><span>Academic Reading · Band {difficulty.band}.0</span><span>{exerciseDate} · 约 500 词</span></div>
         <h2>{readingExercise.title}</h2><span className="reading-subtitle">{readingExercise.subtitle}</span>
         <div className="reading-paragraphs">
           {readingExercise.paragraphs.map((paragraph) => <section id={`reading-paragraph-${paragraph.label}`} className={evidencePhrasesForParagraph(paragraph.label).length ? "is-evidence-active" : ""} key={paragraph.label}><strong>{paragraph.label}</strong><p>{renderPassageText(paragraph.label, paragraph.text)}</p></section>)}
         </div>
       </article>
       <section className="reading-questions">
-        <div className="exercise-kicker"><span>Questions 1–{totalQuestions}</span><span>建议 18 分钟</span></div>
+        <div className="exercise-kicker"><span>Questions 1–{totalQuestions} · 达标 {difficulty.reading.passScore}/{totalQuestions}</span><span>建议 {difficulty.reading.minutes} 分钟</span></div>
+        <div className={`daily-reading-timer is-${readingTimerState}`}><div><span>BAND {difficulty.band}.0 TIMER</span><strong>{readingClock}</strong></div><button type="button" disabled={readingTimerState === "finished"} onClick={toggleReadingTimer}>{readingTimerState === "running" ? "Ⅱ 暂停" : readingTimerState === "paused" ? "▶ 继续" : readingTimerState === "finished" ? "时间到" : "▶ 开始计时"}</button><button type="button" onClick={() => { setReadingSeconds(difficulty.reading.minutes * 60); setReadingTimerState("idle"); }}>重置</button></div>
+        <div className="reading-difficulty-brief"><strong>Band {difficulty.band}.0 重点</strong><span>{difficulty.reading.focus}</span></div>
         <div className="reading-progress-line"><i style={{ width: `${Math.round(answeredCount / totalQuestions * 100)}%` }} /><span>{answeredCount}/{totalQuestions}</span></div>
 
         <section className="reading-question-group">
@@ -3814,7 +3880,7 @@ function ReadingPractice({
           {renderAnalysis("s2", 11)}
         </section>
 
-        {score !== null && <div className={`answer-feedback ${score >= 9 && answeredCount === totalQuestions ? "success" : "neutral"}`}>得分 {score} / {totalQuestions}。{answeredCount < totalQuestions ? `${totalQuestions - answeredCount} 题未答并按错误处理；全部答案和解析已经显示，但本项尚未计为完成。` : score < 9 ? "检查段落主旨与细节定位；红色项目可以重新选择后再提交。" : "主旨和细节定位都很准确。"} 可以先查看解析，也可以选择“再写一遍”。</div>}
+        {score !== null && <div className={`answer-feedback ${score >= difficulty.reading.passScore && answeredCount === totalQuestions ? "success" : "neutral"}`}>Band {difficulty.band}.0 得分 {score} / {totalQuestions}。{answeredCount < totalQuestions ? `${totalQuestions - answeredCount} 题未答并按错误处理；全部答案和解析已经显示，但本项尚未计为完成。` : score < difficulty.reading.passScore ? `本层达标线为 ${difficulty.reading.passScore}/${totalQuestions}，请重点复盘${difficulty.reading.focus}。` : `达到本层标准，${difficulty.reading.focus}表现稳定。`} 可以先查看解析，也可以选择“再写一遍”。</div>}
         {score === null ? <button className="secondary-action reading-submit" onClick={submit}>{answeredCount < totalQuestions ? `提交当前答案（${answeredCount}/${totalQuestions}）` : `提交 ${totalQuestions} 道答案`} →</button> : <button className="secondary-action reading-submit" onClick={redoReading}>↺ 再写一遍</button>}
       </section>
     </div>

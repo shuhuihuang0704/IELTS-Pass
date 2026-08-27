@@ -710,12 +710,32 @@ button { cursor: pointer; }
 .daily-training-nav { margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .daily-training-nav button { min-height:38px; padding:0 13px; border:0; border-radius:11px; color:white; background:var(--ink); font-size:9px; font-weight:700; }
 .daily-training-nav span { color:var(--muted); font-size:8px; font-weight:750; letter-spacing:.7px; }
+.daily-difficulty-panel { margin-top:24px; padding:17px 19px; display:flex; align-items:center; justify-content:space-between; gap:24px; border:1px solid #ddd7ea; border-radius:18px; background:linear-gradient(135deg,#fbfaff,#f2effb); }
+.daily-difficulty-panel>div:first-child { min-width:0; }
+.daily-difficulty-panel>div:first-child>span { color:#776bb2; font-size:8px; font-weight:800; letter-spacing:.8px; }
+.daily-difficulty-panel>div:first-child>strong { display:block; margin-top:5px; color:#3f3851; font-size:14px; }
+.daily-difficulty-panel>div:first-child>p { margin:5px 0 0; color:#817988; font-size:9px; line-height:1.5; }
+.daily-difficulty-ladder { flex:0 0 auto; display:grid; grid-template-columns:repeat(3,88px); gap:6px; }
+.daily-difficulty-ladder>span { min-height:49px; padding:8px 10px; display:flex; flex-direction:column; justify-content:center; border:1px solid #e4dfe9; border-radius:11px; color:#9a949e; background:rgba(255,255,255,.65); }
+.daily-difficulty-ladder b { font-size:11px; }
+.daily-difficulty-ladder small { margin-top:3px; font-size:7px; }
+.daily-difficulty-ladder>span.is-passed { color:#33765f; border-color:#cce3da; background:#edf8f4; }
+.daily-difficulty-ladder>span.is-active { color:white; border-color:#5849bd; background:#5849bd; box-shadow:0 7px 16px rgba(83,67,180,.18); }
 .scene-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:30px; padding:7px; border-radius:18px; background:#e5e0da; }
 .scene-tabs button { min-height:48px; border:0; border-radius:13px; color:#777179; background:transparent; font-size:12px; }
 .scene-tabs button span { display:inline-grid; width:23px; height:23px; margin-right:7px; place-items:center; border-radius:50%; color:#827b84; background:rgba(255,255,255,.55); font-size:9px; }
 .scene-tabs button.is-active { color:#473cab; background:white; box-shadow:0 5px 15px rgba(35,30,48,.06); font-weight:650; }
 .scene-tabs button.is-active span { color:white; background:var(--violet); }
 .exercise-surface { margin-top:14px; }
+.speaking-difficulty-brief,.reading-difficulty-brief { margin:10px 0 14px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid #dfd9ed; border-radius:11px; color:#665e73; background:#f6f3fc; font-size:9px; }
+.speaking-difficulty-brief strong,.reading-difficulty-brief strong { color:#5143b6; }
+.daily-reading-timer { margin:10px 0 12px; padding:10px 12px; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:7px; border:1px solid #e1dce6; border-radius:11px; background:#faf9fb; }
+.daily-reading-timer div span,.daily-reading-timer div strong { display:block; }
+.daily-reading-timer div span { color:#8b8490; font-size:7px; font-weight:800; letter-spacing:.7px; }
+.daily-reading-timer div strong { margin-top:2px; color:#433b4a; font-size:18px; font-variant-numeric:tabular-nums; }
+.daily-reading-timer button { min-height:31px; padding:0 10px; border:0; border-radius:8px; color:#5143b6; background:#ece8fa; font-size:8px; font-weight:700; }
+.daily-reading-timer.is-running { border-color:#cfc8ec; background:#f6f4ff; }
+.daily-reading-timer.is-finished { border-color:#e7c9c5; background:#fff4f2; }
 .vocabulary-mode-switch { width:max-content; margin:0 0 12px; padding:5px; display:flex; gap:4px; border-radius:14px; background:#e5e0da; }
 .vocabulary-mode-switch button { min-height:37px; padding:0 16px; border:0; border-radius:10px; color:#756f76; background:transparent; font-size:11px; }
 .vocabulary-mode-switch button.is-active { color:#473cab; background:white; box-shadow:0 4px 12px rgba(35,30,48,.06); font-weight:650; }
@@ -1397,6 +1417,8 @@ button { cursor: pointer; }
   .official-speaking-response>footer { align-items:stretch; flex-direction:column; }
   .official-speaking-response>footer button { width:100%; }
   .official-paper-frame { height:640px; border-radius:11px; }
+  .daily-difficulty-panel { align-items:stretch; flex-direction:column; gap:13px; }
+  .daily-difficulty-ladder { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .scene-tabs { grid-template-columns:repeat(4,1fr); padding:5px; }
   .scene-tabs button { min-height:48px; font-size:0; }
   .scene-tabs button span { margin:0; font-size:10px; }
