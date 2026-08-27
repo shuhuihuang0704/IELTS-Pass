@@ -2179,8 +2179,16 @@ function SceneView({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const dictationTarget = dailyDictationTarget(progress.studyPlanDays);
+  const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays);
+  const [vocabularyMode, setVocabularyMode] = useState<"daily" | "typing" | "phrases">("daily");
+  const vocabularyHeader = vocabularyMode === "typing"
+    ? { eyebrow: "SCENE DICTATION", title: `每天 ${dictationTarget} 个听写词，`, accent: "听清再写准。" }
+    : vocabularyMode === "phrases"
+      ? { eyebrow: "CONNECTED SPEECH", title: `每天 ${phraseTarget} 个词组，`, accent: "听懂自然语流。" }
+      : { eyebrow: "DAILY VOCABULARY", title: `每天 ${vocabularyTarget} 词，`, accent: "先眼熟再记牢。" };
   const headers: Record<Skill, { eyebrow: string; title: string; accent: string }> = {
-    vocabulary: { eyebrow: "DAILY VOCABULARY", title: `每天 ${vocabularyTarget} 词，`, accent: "先眼熟再记牢。" },
+    vocabulary: vocabularyHeader,
     listening: { eyebrow: "LISTENING · SECTION 1", title: "听清细节，", accent: "再做选择。" },
     speaking: { eyebrow: "SPEAKING · PART 3", title: "像面对考官一样，", accent: "展开观点。" },
     reading: { eyebrow: "ACADEMIC READING", title: "按真实题型，", accent: "完成定位。" },
@@ -2218,7 +2226,7 @@ function SceneView({
         ))}
       </div>
       <section className="exercise-surface">
-        {activeSkill === "vocabulary" && <VocabularyPractice progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
+        {activeSkill === "vocabulary" && <VocabularyPractice mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
         {activeSkill === "listening" && <ListeningPractice onComplete={(score) => {
           updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
           onComplete("listening", 12);
@@ -2234,10 +2242,14 @@ function SceneView({
 }
 
 function VocabularyPractice({
+  mode,
+  setMode,
   progress,
   onSectionComplete,
   updateProgress,
 }: {
+  mode: "daily" | "typing" | "phrases";
+  setMode: (mode: "daily" | "typing" | "phrases") => void;
   progress: LearningProgress;
   onSectionComplete: (section: "daily" | "dictation") => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
@@ -2245,7 +2257,6 @@ function VocabularyPractice({
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
   const dictationTarget = dailyDictationTarget(progress.studyPlanDays);
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays);
-  const [mode, setMode] = useState<"daily" | "typing" | "phrases">("daily");
   const dailyDictationWords = useMemo(
     () => getDailyListeningVocabulary(progress.dailyVocabularyDate, dictationTarget),
     [dictationTarget, progress.dailyVocabularyDate],
