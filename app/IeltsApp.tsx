@@ -1438,7 +1438,7 @@ function OfficialTestRunner({
               {task.answerPage && <button className={paperMode === "answers" ? "is-active" : ""} disabled={taskRequiresSubmission && !taskSubmitted} onClick={() => setPaperMode("answers")}>{taskRequiresSubmission && !taskSubmitted ? "提交后查看答案" : task.answerLabel ?? "查看答案"}{task.electronicModel ? "" : ` · P${answerPageLabel}`}</button>}
             </div>
           </div>
-          {material.tasks.length > 1 && (
+          {material.tasks.length > 1 && !speakingTaskMode && (
             <section className="official-task-map" aria-label="官方练习任务导航">
               <header><div><span>{speakingTaskMode ? "3 INDEPENDENT SPEAKING PARTS" : material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {speakingTaskMode ? "Speaking Part" : material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{speakingTaskMode ? "每个 Part 独立完成考官提问、60 秒准备、录音提交与反馈；提交一个不会完成另外两个。" : material.audioTracks ? "可以提前提交查看当前 Task 的答案和原文；空题按未答处理，答完全部题目才计为完成。" : material.passagePdfUrl ? "可以提前提交查看当前 Passage 的答案与解析；答完全部题目才计为完成。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${completedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
               <div>{material.tasks.map((materialTask, index) => {
@@ -1450,7 +1450,7 @@ function OfficialTestRunner({
               })}</div>
             </section>
           )}
-          <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : `official-standard-paper-body${material.audioTracks && !speakingTaskMode ? " is-listening-workspace" : ""}${writingTaskMode ? " is-writing-workspace" : ""}`}>
+          <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : `official-standard-paper-body${material.audioTracks && !speakingTaskMode ? " is-listening-workspace" : ""}${writingTaskMode ? " is-writing-workspace" : ""}${speakingTaskMode ? " is-speaking-workspace" : ""}`}>
           {taskAnswers.length > 0 ? (
             <form key={`${taskKey}:attempt-${taskAttemptVersions[taskKey] ?? 0}`} className={`official-answer-sheet ${taskSubmitted ? "is-submitted" : "is-fresh-attempt"}`} onSubmit={(event) => {
               event.preventDefault();
@@ -1545,7 +1545,7 @@ function OfficialTestRunner({
           ) : (
             <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
           )}
-          <div className="official-material-column">
+          {(!speakingTaskMode || taskSubmitted) && <div className="official-material-column">
           {material.audioTracks && audioTrack && (!speakingTaskMode || taskSubmitted) && (
             <div className="official-audio-dock">
               <label>{speakingTaskMode ? "当前 Part 的官方示范录音" : "当前独立 Task 的官方录音"}<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
@@ -1603,7 +1603,7 @@ function OfficialTestRunner({
               <div className="official-task-page-stack">{(task.transcriptPages ?? [task.transcriptPage]).map((page) => <div className="official-pdf-page-lock" key={`transcript-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 听力原文 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
             </section>
           )}
-          </div>
+          </div>}
           </div>
         </section>
       </div>

@@ -413,6 +413,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(speakingBlock, /What kind of things give status to people in your country\?/);
   assert.equal((speakingBlock.match(/preparationSeconds: 60/g) ?? []).length, 3);
   assert.match(app, /3 INDEPENDENT SPEAKING PARTS/);
+  assert.match(app, /material\.tasks\.length > 1 && !speakingTaskMode/);
+  assert.match(app, /is-speaking-workspace/);
+  assert.match(app, /\(!speakingTaskMode \|\| taskSubmitted\) && <div className="official-material-column">/);
   assert.match(app, /OfficialSpeakingResponse/);
   assert.match(app, /COMPUTER-DELIVERED SPEAKING PRACTICE/);
   assert.match(app, /考官提问 → 准备 → 录音 → 提交；回答后继续追问/);
@@ -443,6 +446,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /不能可靠判断单个音素是否准确/);
   assert.match(app, /正式 Part 2 会给 1 分钟准备/);
   assert.match(styles, /\.official-speaking-response/);
+  assert.match(styles, /\.official-standard-paper-body\.is-speaking-workspace>\.official-speaking-response \{ width:min\(100%,720px\); max-width:720px; max-height:none/);
   assert.match(styles, /\.speaking-prep-panel/);
   assert.match(styles, /\.speaking-improvement-drills/);
   assert.doesNotMatch(styles, /\.speaking-question-progress|\.speaking-adaptive-badge/);

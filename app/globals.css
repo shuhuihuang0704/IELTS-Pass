@@ -341,6 +341,9 @@ button { cursor: pointer; }
 .official-full-reading-body>.official-answer-sheet,.official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { grid-column:2; grid-row:1 / span 20; max-height:760px; overflow:auto; position:sticky; top:12px; }
 .official-full-reading-body { grid-template-columns:minmax(0,1.5fr) minmax(300px,.72fr); }
 .official-standard-paper-body.is-listening-workspace,.official-standard-paper-body.is-writing-workspace { grid-template-columns:minmax(0,1.5fr) minmax(300px,.72fr); }
+.official-standard-paper-body.is-speaking-workspace { display:block; }
+.official-standard-paper-body.is-speaking-workspace>.official-speaking-response { width:min(100%,720px); max-width:720px; max-height:none; margin:16px auto 0; overflow:visible; position:static; }
+.official-standard-paper-body.is-speaking-workspace>.official-material-column { width:min(100%,720px); margin:12px auto 0; display:flex; position:static; }
 .official-full-reading-body>.official-answer-sheet { max-height:calc(100vh - 24px); overflow-y:auto; position:sticky; top:12px; scrollbar-gutter:stable; }
 .official-full-reading-body>.official-answer-sheet>header { padding:12px 0 10px; position:sticky; top:-15px; z-index:3; background:#faf9fb; }
 .official-full-reading-body>.official-answer-sheet>footer { padding:10px 0 15px; position:sticky; bottom:-15px; z-index:3; background:#faf9fb; box-shadow:0 -8px 16px rgba(49,42,53,.06); }
@@ -1205,6 +1208,8 @@ button { cursor: pointer; }
   .official-runner-sidebar { position:sticky; }
   .official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace) { display:flex; flex-direction:column; }
   .official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-answer-sheet,.official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-writing-response,.official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-speaking-response,.official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-open-response-note { width:100%; max-height:none; overflow:visible; order:10; position:static; }
+  .official-standard-paper-body.is-speaking-workspace:not(.is-listening-workspace):not(.is-writing-workspace) { display:block; }
+  .official-standard-paper-body.is-speaking-workspace>.official-speaking-response { width:min(100%,720px); max-width:720px; }
 }
 @media (max-width:680px) {
   .reading-layout { grid-template-columns:1fr; }
