@@ -433,36 +433,37 @@ function plannedOfficialSessionsForWeek(sessionsPerWeek: number, weekKey = local
   return officialTestSchedule.filter((session) => selectedIds.has(session.id));
 }
 
-const preferredIeltsVoiceNames = [
-  "Google UK English Female",
-  "Google UK English Male",
-  "Microsoft Sonia Online (Natural)",
-  "Microsoft Ryan Online (Natural)",
-  "Serena",
-  "Daniel",
-  "Kate",
-  "Oliver",
-];
+type IeltsVoiceRole = "examiner" | "female" | "male";
 
-function preferredIeltsVoice() {
+const preferredIeltsVoiceNames: Record<IeltsVoiceRole, string[]> = {
+  examiner: ["Microsoft Sonia Online (Natural)", "Google UK English Female", "Serena", "Kate", "Shelley", "Flo", "Daniel"],
+  female: ["Microsoft Sonia Online (Natural)", "Google UK English Female", "Serena", "Kate", "Shelley", "Flo", "Sandy", "Karen", "Moira"],
+  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Daniel", "Oliver", "Arthur", "George", "Ryan", "Reed"],
+};
+
+function preferredIeltsVoice(role: IeltsVoiceRole = "examiner") {
   if (!("speechSynthesis" in window)) return null;
   const voices = window.speechSynthesis.getVoices();
   const britishVoices = voices.filter((voice) => /^en-GB$/i.test(voice.lang));
   const nearbyIeltsVoices = voices.filter((voice) => /^en-(AU|IE|NZ)$/i.test(voice.lang));
   const candidates = [...britishVoices, ...nearbyIeltsVoices];
-  const namedVoice = preferredIeltsVoiceNames
+  const namedVoice = preferredIeltsVoiceNames[role]
+    .map((name) => candidates.find((voice) => voice.name.includes(name)))
+    .find((voice) => voice !== undefined);
+  const femaleVoice = preferredIeltsVoiceNames.female
     .map((name) => candidates.find((voice) => voice.name.includes(name)))
     .find((voice) => voice !== undefined);
   return namedVoice
+    ?? (role === "male" ? candidates.find((voice) => voice !== femaleVoice) : undefined)
     ?? candidates.find((voice) => voice.localService)
     ?? candidates[0]
     ?? voices.find((voice) => /^en-/i.test(voice.lang))
     ?? null;
 }
 
-function createIeltsUtterance(text: string, rate = 0.94, pitch = 0.98) {
+function createIeltsUtterance(text: string, rate = 0.94, pitch = 0.98, role: IeltsVoiceRole = "examiner") {
   const utterance = new SpeechSynthesisUtterance(text);
-  const voice = preferredIeltsVoice();
+  const voice = preferredIeltsVoice(role);
   utterance.lang = voice?.lang ?? "en-GB";
   if (voice) utterance.voice = voice;
   utterance.rate = rate;
@@ -2865,11 +2866,11 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAn
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>正式考试录音只播放一次；Demo 可以重播以便精听复盘。</p>
         <div className="listening-controls">
-          <audio ref={listeningAudio} src="/listening-section-1-v2.wav" preload="metadata" onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src="/listening-section-1.vtt" srcLang="en" label="English" /></audio>
+          <audio ref={listeningAudio} src="/listening-section-1-v2.wav?voices=uk-female-male-v3" preload="metadata" onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src="/listening-section-1.vtt?voices=uk-female-male-v3" srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${playerState}`}>
             <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
-            <span className="listening-player-copy"><strong>{playerState === "playing" ? "正在播放 · 双人英式对话" : playerState === "paused" ? "已暂停 · 双人英式对话" : "播放双人英式完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · IELTS 自然语速</small></span>
+            <span className="listening-player-copy"><strong>{playerState === "playing" ? "正在播放 · 英国女接待员 × 英国男学生" : playerState === "paused" ? "已暂停 · 英国女接待员 × 英国男学生" : "播放双人英式完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · 男女声线清晰区分 · IELTS 自然语速</small></span>
           </div>
           <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
         </div>
