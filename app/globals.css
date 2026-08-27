@@ -1833,7 +1833,7 @@ button { -webkit-tap-highlight-color:transparent; }
 .global-account-badge>.account-avatar b { font-size:15px; }
 .global-account-badge>strong { width:100%; overflow:hidden; font-size:9px; line-height:1.2; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
 .global-account-badge:hover,.global-account-badge:focus-visible,.global-account-badge.is-current { border-color:rgba(91,84,214,.28); box-shadow:0 0 0 3px rgba(91,84,214,.08),0 12px 30px rgba(35,30,49,.12); }
-.workspace { padding-top:92px; }
+.app-shell.has-account-badge .workspace { padding-top:92px; }
 
 button { transition:transform .16s ease,box-shadow .16s ease,filter .16s ease; }
 
@@ -1871,5 +1871,5 @@ button { transition:transform .16s ease,box-shadow .16s ease,filter .16s ease; }
   .global-account-badge>.account-avatar { width:34px; height:34px; }
   .global-account-badge>.account-avatar b { font-size:13px; }
   .global-account-badge>strong { font-size:8px; }
-  .workspace,.workspace.is-official-test { padding-top:calc(78px + env(safe-area-inset-top)); }
+  .app-shell.has-account-badge .workspace,.app-shell.has-account-badge .workspace.is-official-test { padding-top:calc(78px + env(safe-area-inset-top)); }
 }

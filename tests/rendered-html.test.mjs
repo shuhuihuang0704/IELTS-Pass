@@ -773,12 +773,14 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /completionPercent/);
 });
 
-test("shows the signed-in avatar and name on every product page", async () => {
+test("shows the signed-in avatar and name outside the Today homepage", async () => {
   const [app, styles] = await Promise.all([
     readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(app, /className={`global-account-badge/);
+  assert.match(app, /view !== "today" && <button/);
+  assert.match(app, /has-account-badge/);
   assert.match(app, /authUser\.displayName/);
   assert.match(app, /authUser\.avatarUrl/);
   assert.match(app, /setView\("profile"\)/);

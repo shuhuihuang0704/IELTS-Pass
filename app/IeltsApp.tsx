@@ -1258,8 +1258,8 @@ export default function IeltsApp() {
   if (!authUser || authUser.targetBandScore === null) return <AuthFlow user={authUser} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
 
   return (
-    <main className="app-shell" data-ready={hydrated}>
-      <button
+    <main className={`app-shell${view !== "today" ? " has-account-badge" : ""}`} data-ready={hydrated}>
+      {view !== "today" && <button
         className={`global-account-badge${view === "profile" ? " is-current" : ""}`}
         type="button"
         onClick={() => { setView("profile"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
@@ -1268,7 +1268,7 @@ export default function IeltsApp() {
       >
         <AccountAvatar avatarUrl={authUser.avatarUrl ?? defaultAccountAvatar} displayName={authUser.displayName} />
         <strong>{authUser.displayName}</strong>
-      </button>
+      </button>}
       <Sidebar view={view} progress={progress} onNavigate={setView} />
       <section className={view === "official-test" ? "workspace is-official-test" : "workspace"}>
         {view === "today" && (
