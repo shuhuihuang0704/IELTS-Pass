@@ -16,17 +16,19 @@ import {
   completionPercent,
   dailyVocabularyTarget,
   defaultProgress,
-  estimatedDailyMinutes,
   localDayKey,
   localWeekKey,
   mergeStoredProgress,
   normalizeStudyPlanDays,
-  officialSessionsPerWeek,
+  normalizeTargetBandScore,
+  overallPlanProgress,
   rateReviewWord,
   recordAppStudyTime,
   recordStudyActivity,
   reviewIntervals,
   scheduleWordForReview,
+  targetEstimatedDailyMinutes,
+  targetOfficialSessionsPerWeek,
   type LearningProgress,
   type NotebookEntry,
   type WordRating,
@@ -830,7 +832,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView progress={progress} percent={percent} onReset={resetProgress} updateProgress={updateProgress} />}
+        {view === "profile" && <ProfileView progress={progress} onReset={resetProgress} updateProgress={updateProgress} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
       {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
@@ -931,7 +933,7 @@ function TodayView({
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [showExtraStudy, setShowExtraStudy] = useState(false);
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
-  const dailyMinutes = estimatedDailyMinutes(progress.studyPlanDays);
+  const dailyMinutes = targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore);
   const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
   const carryoverSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]);
   const nextSkill = skills.find((skill) => skill.id === carryoverSkill)
@@ -939,7 +941,7 @@ function TodayView({
     ?? skills[0];
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
   const weekKey = localWeekKey();
-  const plannedOfficialSessions = officialTestSchedule.slice(0, officialSessionsPerWeek(progress.studyPlanDays));
+  const plannedOfficialSessions = officialTestSchedule.slice(0, targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore));
   const completedOfficialSessions = plannedOfficialSessions.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)));
   const todayIsoDay = ((new Date().getDay() + 6) % 7) + 1;
   const nextOfficialSession = plannedOfficialSessions.find((session) => session.isoDay >= todayIsoDay && !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
@@ -1132,7 +1134,7 @@ function OfficialPracticePlan({
   onOpenOfficialTest: (sessionId: string) => void;
 }) {
   const weekKey = localWeekKey();
-  const sessionsPerWeek = officialSessionsPerWeek(progress.studyPlanDays);
+  const sessionsPerWeek = targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore);
   const plannedSessions = officialTestSchedule.slice(0, sessionsPerWeek);
   const completedCount = plannedSessions.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey))).length;
 
@@ -2086,7 +2088,7 @@ async function buildTutorReply(question: string, progress: LearningProgress, pre
   if (topic === "词汇") return { topic, text: `你目前有 ${progress.reviewWords.length} 个词进入复习队列。针对具体单词，请直接问“academic 是什么意思/怎么用”，我会返回中文、词性、英文释义和例句；针对记忆方法，模糊和不熟悉的词应在本轮重复，并进入 1、3、7、14、30、60 天复习。` };
   if (topic === "学习计划") {
     const done = Object.values(progress.completed).filter(Boolean).length;
-    return { topic, text: `这是根据你当前 App 进度生成的回答：你选择了 ${progress.studyPlanDays} 天计划，每日词汇目标 ${dailyVocabularyTarget(progress.studyPlanDays)} 词；今天完成 ${done}/4 项，完成度 ${completionPercent(progress)}%。${done < 4 ? "下一步先完成尚未打勾的任务，再进入套题训练。" : "今日基础任务已完成，可以复习错词或增加一组套题。"}` };
+    return { topic, text: `这是根据你当前 App 进度生成的回答：你的目标是 IELTS ${progress.targetBandScore.toFixed(1)}，选择了 ${progress.studyPlanDays} 天计划，每日词汇目标 ${dailyVocabularyTarget(progress.studyPlanDays)} 词；今天完成 ${done}/4 项，完成度 ${completionPercent(progress)}%。${done < 4 ? "下一步先完成尚未打勾的任务，再进入套题训练。" : "今日基础任务已完成，可以复习错词或增加一组套题。"}` };
   }
   if (topic === "范围外") return { topic, text: "这个页面目前只回答 IELTS 学习相关问题，我不想在不相关领域给你一个看似确定但可能错误的答案。你可以问词汇、听力、口语、阅读、写作、套题或学习计划。" };
   return { topic: "需要补充", text: "我还不能确定你具体在问哪一部分，所以先不猜。请补充一个关键词（词汇 / 听力 / 口语 / 阅读 / 写作），或直接粘贴题干、原文和你的答案，我会围绕这些内容回答。" };
@@ -3354,15 +3356,22 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
   </div>;
 }
 
-function ProfileView({ progress, percent, onReset, updateProgress }: { progress: LearningProgress; percent: number; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
+function ProfileView({ progress, onReset, updateProgress }: { progress: LearningProgress; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
   const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
-  const planSessions = officialSessionsPerWeek(progress.studyPlanDays);
-  const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
+  const planSessions = targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore);
+  const planProgress = overallPlanProgress(progress);
+  const planDay = planProgress.planDay;
   const planEndDate = new Date(`${progress.studyPlanStartedAt}T12:00:00`);
   planEndDate.setDate(planEndDate.getDate() + progress.studyPlanDays - 1);
+  const paceGap = planProgress.percent - planProgress.expectedPercent;
+  const paceMessage = planProgress.percent >= 100
+    ? "整个备考计划已经完成，水位已满。"
+    : paceGap >= 0
+      ? `当前比计划节奏领先 ${paceGap} 个百分点。`
+      : `距离当前计划节奏还差 ${Math.abs(paceGap)} 个百分点。`;
   const stats = [
     ["累计学习", `${progress.minutes} 分钟`],
     ["我的笔记", `${progress.notebook.length}`],
@@ -3377,20 +3386,20 @@ function ProfileView({ progress, percent, onReset, updateProgress }: { progress:
       return {
         ...current,
         studyPlanDays: nextDays,
-        studyPlanStartedAt: localDayKey(),
         dailyVocabularyCompleted,
         completed: { ...current.completed, vocabulary: dailyVocabularyCompleted && current.dailyDictationCompleted },
       };
     });
   };
+  const selectTargetBand = (score: number) => updateProgress((current) => ({ ...current, targetBandScore: normalizeTargetBandScore(score) }));
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} />;
   return (
     <>
-      <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent="雅思 7.0。" />
+      <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} />
       <section className="profile-progress-dashboard">
         <div className="profile-water-card">
-          <div className="profile-water-gauge" role="img" aria-label={`今日学习完成度 ${percent}%`}><div className="profile-water-fill" style={{ height: `${percent}%` }} /></div>
-          <div className="profile-water-copy"><span>DAILY LEARNING LEVEL</span><strong>{percent}<small>%</small></strong><p>{percent === 100 ? "今天的四项学习已经完成，水位已满。" : "每完成一项今日任务，水位会上升 25%。"}</p></div>
+          <div className="profile-water-gauge" role="img" aria-label={`整体备考计划完成度 ${planProgress.percent}%`}><div className="profile-water-fill" style={{ height: `${planProgress.percent}%` }} /></div>
+          <div className="profile-water-copy"><span>OVERALL PLAN LEVEL</span><strong>{planProgress.percent}<small>%</small></strong><p>第 {planDay} / {progress.studyPlanDays} 天 · 当前节奏 {planProgress.expectedPercent}%<br />{paceMessage}</p><div className="profile-water-breakdown"><span>词汇 {planProgress.vocabularyPercent}%</span><span>每日任务 {planProgress.dailyTaskPercent}%</span><span>套题 {planProgress.officialPracticePercent}%</span><span>坚持度 {planProgress.consistencyPercent}%</span></div></div>
         </div>
         <div className="profile-overview-column">
           <button className="profile-streak-card" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
@@ -3398,14 +3407,16 @@ function ProfileView({ progress, percent, onReset, updateProgress }: { progress:
         </div>
       </section>
       <section className="study-plan-card">
-        <header><div><span>PERSONALISED STUDY PLAN</span><h2>选择你的备考周期</h2><p>计划越长，每日任务越轻；已掌握词汇、复习记录和笔记都会保留。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
+        <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>水位根据目标难度、计划日期、词汇掌握、每日任务、套题和坚持天数共同变化。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
         <div className="study-plan-summary">
+          <article><span>目标分数</span><strong>{progress.targetBandScore.toFixed(1)}</strong></article>
           <article><span>每日词汇</span><strong>{planVocabularyTarget}<small> 词</small></strong></article>
           <article><span>套题频率</span><strong>{planSessions}<small> 次 / 周</small></strong></article>
-          <article><span>每日预计</span><strong>{estimatedDailyMinutes(progress.studyPlanDays)}<small> 分钟</small></strong></article>
+          <article><span>每日预计</span><strong>{targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore)}<small> 分钟</small></strong></article>
           <article><span>预计结束</span><strong>{planEndDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}</strong></article>
         </div>
-        <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days)} 词 · 每周 {officialSessionsPerWeek(days)} 套</small></button>)}</div>
+        <div className="target-band-selector"><div><strong>目标分数</strong><small>分数越高，套题训练在总进度中的权重越高</small></div><div>{[5.5, 6, 6.5, 7, 7.5, 8, 8.5].map((score) => <button className={progress.targetBandScore === score ? "is-active" : ""} onClick={() => selectTargetBand(score)} key={score}>{score.toFixed(1)}</button>)}</div></div>
+        <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days)} 词 · 每周 {targetOfficialSessionsPerWeek(days, progress.targetBandScore)} 套</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
       <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>

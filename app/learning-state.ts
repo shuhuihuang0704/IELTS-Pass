@@ -41,6 +41,7 @@ export type DailyStudyRecord = {
 
 export type LearningProgress = {
   vocabularyLibraryVersion: string;
+  targetBandScore: number;
   studyPlanDays: number;
   studyPlanStartedAt: string;
   completed: Record<Skill, boolean>;
@@ -94,6 +95,22 @@ export function estimatedDailyMinutes(planDays: number) {
   return 35 + Math.ceil(dailyVocabularyTarget(planDays) * .15);
 }
 
+export function normalizeTargetBandScore(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 7;
+  return Math.max(5.5, Math.min(8.5, Math.round(value * 2) / 2));
+}
+
+export function targetOfficialSessionsPerWeek(planDays: number, targetBandScore: number) {
+  const score = normalizeTargetBandScore(targetBandScore);
+  const scoreBonus = score >= 8 ? 2 : score >= 7.5 ? 1 : 0;
+  return Math.min(7, officialSessionsPerWeek(planDays) + scoreBonus);
+}
+
+export function targetEstimatedDailyMinutes(planDays: number, targetBandScore: number) {
+  const score = normalizeTargetBandScore(targetBandScore);
+  return Math.max(30, estimatedDailyMinutes(planDays) + Math.round((score - 7) * 8));
+}
+
 export function localDayKey(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -116,6 +133,68 @@ export function dayKeyAfter(days: number, from = localDayKey()) {
   return localDayKey(date);
 }
 
+export type PlanProgressDetails = {
+  percent: number;
+  expectedPercent: number;
+  planDay: number;
+  remainingDays: number;
+  vocabularyPercent: number;
+  dailyTaskPercent: number;
+  officialPracticePercent: number;
+  consistencyPercent: number;
+  completedDailyTasks: number;
+  completedOfficialSessions: number;
+  plannedOfficialSessions: number;
+};
+
+export function overallPlanProgress(progress: LearningProgress, today = localDayKey()): PlanProgressDetails {
+  const planDays = normalizeStudyPlanDays(progress.studyPlanDays);
+  const targetScore = normalizeTargetBandScore(progress.targetBandScore);
+  const startedAt = /^\d{4}-\d{2}-\d{2}$/.test(progress.studyPlanStartedAt) ? progress.studyPlanStartedAt : today;
+  const planEnd = dayKeyAfter(planDays - 1, startedAt);
+  const elapsedDays = Math.floor((new Date(`${today}T12:00:00`).getTime() - new Date(`${startedAt}T12:00:00`).getTime()) / 86_400_000) + 1;
+  const planDay = Math.min(planDays, Math.max(1, elapsedDays));
+  const records = Object.values(progress.dailyStudyHistory).filter((record) => record.date >= startedAt && record.date <= today && record.date <= planEnd);
+  const completedDailyTasks = records.reduce((total, record) => total + Math.min(4, new Set(record.activities
+    .filter((activity) => activity.id.startsWith("daily-skill:"))
+    .map((activity) => activity.id)).size), 0);
+  const officialSessionIds = new Set(records.flatMap((record) => record.activities
+    .filter((activity) => activity.id.startsWith("official-session:"))
+    .map((activity) => activity.id)));
+  const activeDays = records.filter((record) => record.activeSeconds >= 60 || record.activities.some((activity) => activity.id !== "app-active-time")).length;
+  const plannedOfficialSessions = Math.max(1, Math.ceil(planDays / 7) * targetOfficialSessionsPerWeek(planDays, targetScore));
+  const vocabularyPercent = Math.min(100, progress.masteredWords.length / vocabularyPlanSize * 100);
+  const dailyTaskPercent = Math.min(100, completedDailyTasks / (planDays * 4) * 100);
+  const officialPracticePercent = Math.min(100, officialSessionIds.size / plannedOfficialSessions * 100);
+  const consistencyPercent = Math.min(100, activeDays / planDays * 100);
+  const weights = targetScore >= 8
+    ? { vocabulary: 25, daily: 30, official: 35, consistency: 10 }
+    : targetScore >= 7.5
+      ? { vocabulary: 30, daily: 35, official: 25, consistency: 10 }
+      : targetScore >= 6.5
+        ? { vocabulary: 35, daily: 35, official: 20, consistency: 10 }
+        : { vocabulary: 40, daily: 40, official: 10, consistency: 10 };
+  const percent = Math.min(100, Math.round(
+    vocabularyPercent * weights.vocabulary / 100
+    + dailyTaskPercent * weights.daily / 100
+    + officialPracticePercent * weights.official / 100
+    + consistencyPercent * weights.consistency / 100,
+  ));
+  return {
+    percent,
+    expectedPercent: Math.min(100, Math.round(planDay / planDays * 100)),
+    planDay,
+    remainingDays: Math.max(0, planDays - planDay),
+    vocabularyPercent: Math.round(vocabularyPercent),
+    dailyTaskPercent: Math.round(dailyTaskPercent),
+    officialPracticePercent: Math.round(officialPracticePercent),
+    consistencyPercent: Math.round(consistencyPercent),
+    completedDailyTasks,
+    completedOfficialSessions: officialSessionIds.size,
+    plannedOfficialSessions,
+  };
+}
+
 export function calculateStudyStreak(
   history: Record<string, DailyStudyRecord>,
   today = localDayKey(),
@@ -135,6 +214,7 @@ export function calculateStudyStreak(
 
 export const defaultProgress: LearningProgress = {
   vocabularyLibraryVersion,
+  targetBandScore: 7,
   studyPlanDays: 36,
   studyPlanStartedAt: localDayKey(),
   completed: { vocabulary: false, listening: false, speaking: false, reading: false },
@@ -285,6 +365,7 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   const isCurrentDay = stored.dailyVocabularyDate === today;
   const isCurrentVocabularyLibrary = stored.vocabularyLibraryVersion === vocabularyLibraryVersion;
   const studyPlanDays = normalizeStudyPlanDays(stored.studyPlanDays);
+  const targetBandScore = normalizeTargetBandScore(stored.targetBandScore);
   const studyPlanStartedAt = typeof stored.studyPlanStartedAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(stored.studyPlanStartedAt)
     ? stored.studyPlanStartedAt
     : today;
@@ -324,6 +405,7 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     ...defaultProgress,
     ...stored,
     vocabularyLibraryVersion,
+    targetBandScore,
     studyPlanDays,
     studyPlanStartedAt,
     completed,
