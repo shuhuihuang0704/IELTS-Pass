@@ -35,6 +35,14 @@ export type PersonalWordbookEntry = {
   addedAt: string;
 };
 
+export type PointReward = {
+  id: string;
+  label: string;
+  points: number;
+  category: "daily" | "official" | "carryover";
+  earnedAt: string;
+};
+
 export type OfficialTaskResult = {
   score: number | null;
   total: number;
@@ -79,6 +87,8 @@ export type LearningProgress = {
   reviewSchedule: Record<string, ReviewScheduleItem>;
   notebook: NotebookEntry[];
   personalWordbook: PersonalWordbookEntry[];
+  points: number;
+  pointRewards: PointReward[];
   dailyVocabularyDate: string;
   dailyVocabularySeen: string[];
   dailyVocabularyKnown: string[];
@@ -285,6 +295,8 @@ export const defaultProgress: LearningProgress = {
   reviewSchedule: {},
   notebook: [],
   personalWordbook: [],
+  points: 0,
+  pointRewards: [],
   dailyVocabularyDate: localDayKey(),
   dailyVocabularySeen: [],
   dailyVocabularyKnown: [],
@@ -330,6 +342,19 @@ export function recordStudyActivity(
     ...progress,
     dailyStudyHistory,
     streak: calculateStudyStreak(dailyStudyHistory),
+  };
+}
+
+export function grantPoints(
+  progress: LearningProgress,
+  reward: Omit<PointReward, "earnedAt">,
+): LearningProgress {
+  if (progress.pointRewards.some((item) => item.id === reward.id)) return progress;
+  const pointReward: PointReward = { ...reward, earnedAt: new Date().toISOString() };
+  return {
+    ...progress,
+    points: progress.points + reward.points,
+    pointRewards: [pointReward, ...progress.pointRewards],
   };
 }
 
@@ -507,6 +532,17 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
     return [date, { date, activeSeconds, minutes: Math.floor(activeSeconds / 60), activities }];
   })) as Record<string, DailyStudyRecord>;
   const activeStudySeconds = Object.values(dailyStudyHistory).reduce((total, record) => total + record.activeSeconds, 0);
+  const pointRewards = Array.isArray(stored.pointRewards)
+    ? stored.pointRewards.filter((reward): reward is PointReward => Boolean(
+      reward
+      && typeof reward === "object"
+      && typeof (reward as PointReward).id === "string"
+      && typeof (reward as PointReward).label === "string"
+      && typeof (reward as PointReward).points === "number"
+      && typeof (reward as PointReward).earnedAt === "string",
+    ))
+    : [];
+  const points = pointRewards.reduce((total, reward) => total + Math.max(0, Math.floor(reward.points)), 0);
   return {
     ...defaultProgress,
     ...stored,
@@ -537,6 +573,8 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
         && typeof (entry as PersonalWordbookEntry).addedAt === "string",
       ))
       : [],
+    points,
+    pointRewards,
     dailyVocabularyDate: today,
     dailyVocabularySeen: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularySeen) ? stored.dailyVocabularySeen : [],
     dailyVocabularyKnown: isCurrentVocabularyDay && Array.isArray(stored.dailyVocabularyKnown) ? stored.dailyVocabularyKnown : [],

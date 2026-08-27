@@ -26,6 +26,7 @@ import {
   dailyVocabularyTarget,
   dayKeyAfter,
   defaultProgress,
+  grantPoints,
   localDayKey,
   localWeekKey,
   mergeStoredProgress,
@@ -866,6 +867,10 @@ export default function IeltsApp() {
 
   const completeSkill = (skill: Skill, minutes: number) => {
     updateProgress((current) => {
+      const today = localDayKey();
+      const skillLabel = skills.find((item) => item.id === skill)?.label ?? skill;
+      const carryoverSourceDate = current.carryoverTaskDates[skill] ?? activeContentDate;
+      const isCarryoverCompletion = current.carryoverTasks.includes(skill) && activeContentDate !== today;
       const remainingCarryoverDates = Object.fromEntries(Object.entries(current.carryoverTaskDates).filter(([skillId]) => skillId !== skill)) as Partial<Record<Skill, string>>;
       const next = {
         ...current,
@@ -873,12 +878,25 @@ export default function IeltsApp() {
         carryoverTasks: current.carryoverTasks.filter((item) => item !== skill),
         carryoverTaskDates: remainingCarryoverDates,
       };
-      if (current.completed[skill]) return next;
-      return recordStudyActivity(next, {
+      let rewarded = current.completed[skill] ? next : recordStudyActivity(next, {
         id: `daily-skill:${skill}`,
-        label: skills.find((item) => item.id === skill)?.label ?? skill,
+        label: skillLabel,
         minutes,
       });
+      if (isCarryoverCompletion) rewarded = grantPoints(rewarded, {
+        id: `carryover:${carryoverSourceDate}:${skill}`,
+        label: `补完昨日任务 · ${skillLabel}`,
+        points: 5,
+        category: "carryover",
+      });
+      const completedToday = activeContentDate === today && skills.every((item) => rewarded.completed[item.id]);
+      if (completedToday) rewarded = grantPoints(rewarded, {
+        id: `daily:${today}`,
+        label: "完成今日全部训练",
+        points: 20,
+        category: "daily",
+      });
+      return rewarded;
     });
   };
 
@@ -1450,9 +1468,14 @@ function OfficialTestRunner({
           ? [...current.officialPracticeCompleted, recordId]
           : current.officialPracticeCompleted,
       };
-      return isFirstSessionCompletion
-        ? recordStudyActivity(next, { id: `official-session:${recordId}`, label: `套题 · ${session.title}`, minutes: session.durationMinutes })
-        : next;
+      if (!isFirstSessionCompletion) return next;
+      const recorded = recordStudyActivity(next, { id: `official-session:${recordId}`, label: `套题 · ${session.title}`, minutes: session.durationMinutes });
+      return grantPoints(recorded, {
+        id: `official:${recordId}`,
+        label: `完成套题 · ${session.title}`,
+        points: 10,
+        category: "official",
+      });
     });
   };
   const changeTask = (index: number) => {
@@ -4159,8 +4182,45 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
   </div>;
 }
 
+const experienceLeaderboard = [
+  { id: "demo-1", name: "学习者 A", points: 180 },
+  { id: "demo-2", name: "学习者 B", points: 135 },
+  { id: "demo-3", name: "学习者 C", points: 95 },
+  { id: "demo-4", name: "学习者 D", points: 60 },
+  { id: "demo-5", name: "学习者 E", points: 30 },
+];
+
+function rewardLeaderboard(points: number) {
+  return [...experienceLeaderboard, { id: "me", name: "我", points }]
+    .sort((left, right) => right.points - left.points || left.name.localeCompare(right.name));
+}
+
+function RewardCenterView({ progress, onBack }: { progress: LearningProgress; onBack: () => void }) {
+  const leaderboard = rewardLeaderboard(progress.points);
+  const myRank = leaderboard.findIndex((entry) => entry.id === "me") + 1;
+  return (
+    <>
+      <button className="reward-back" onClick={onBack}>← 返回“我的”</button>
+      <PageHeader eyebrow="POINTS & RANKING" title="每一次完成，都有" accent="积分回报。" />
+      <section className="reward-overview">
+        <div><span>我的积分</span><strong>{progress.points}<small> pts</small></strong><p>体验榜当前第 {myRank} 名</p></div>
+        <div className="reward-rules"><article><b>+20</b><span>完成今日全部训练</span></article><article><b>+10</b><span>完成一次套题训练</span></article><article><b>+5</b><span>补完一个昨日任务</span></article></div>
+      </section>
+      <section className="reward-ranking">
+        <header><div><span>EXPERIENCE LEADERBOARD</span><h2>积分排行</h2></div><small>当前版本为本机体验榜；接入账号后切换为真实用户排行</small></header>
+        <div>{leaderboard.map((entry, index) => <article className={entry.id === "me" ? "is-me" : ""} key={entry.id}><b>{index + 1}</b><span>{entry.name}</span><strong>{entry.points}<small> pts</small></strong></article>)}</div>
+      </section>
+      <section className="reward-history">
+        <header><span>POINT HISTORY</span><h2>最近获得</h2></header>
+        {progress.pointRewards.length === 0 ? <div className="empty-state"><strong>还没有获得积分</strong><p>完成今日四项训练、套题或昨日补做任务后，积分会自动记录在这里。</p></div> : <div>{progress.pointRewards.slice(0, 20).map((reward) => <article key={reward.id}><div><strong>{reward.label}</strong><small>{new Date(reward.earnedAt).toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</small></div><b>+{reward.points}</b></article>)}</div>}
+      </section>
+    </>
+  );
+}
+
 function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { progress: LearningProgress; onReset: () => void; onOpenNotebook: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
+  const [showRewards, setShowRewards] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
   const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
@@ -4212,6 +4272,8 @@ function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { pr
     };
   });
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} />;
+  if (showRewards) return <RewardCenterView progress={progress} onBack={() => setShowRewards(false)} />;
+  const myExperienceRank = rewardLeaderboard(progress.points).findIndex((entry) => entry.id === "me") + 1;
   return (
     <>
       <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent={`雅思 ${progress.targetBandScore.toFixed(1)}。`} />
@@ -4225,6 +4287,7 @@ function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { pr
           <div className="profile-grid"><div><span>累计学习</span><strong>{progress.minutes} 分钟</strong></div><button className="profile-notebook-card" onClick={onOpenNotebook}><span>我的笔记</span><strong>{progress.notebook.length}</strong><b>进入我的笔记 →</b></button></div>
         </div>
       </section>
+      <button className="profile-rewards-card" onClick={() => setShowRewards(true)}><span className="profile-reward-mark">★</span><span><small>POINTS & RANKING</small><strong>{progress.points} 积分</strong><p>体验榜第 {myExperienceRank} 名 · 查看积分明细与奖励规则</p></span><b>进入积分排行 →</b></button>
       <section className="study-plan-card">
         <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>当前为“{planFocus.label}”计划；目标分数会同时改变每天的训练量、复习量、训练重点与套题频率。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
         <div className="study-plan-summary">
