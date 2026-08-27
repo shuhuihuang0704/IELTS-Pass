@@ -3,7 +3,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import type { AuthUser } from "./auth-server";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
-import RecoveryCodesCard from "./RecoveryCodesCard";
 
 type AuthMethod = "phone" | "email";
 type StudyPeriodMode = "days" | "exam-date";
@@ -11,7 +10,6 @@ type AuthResponse = {
   user?: AuthUser;
   progress?: unknown;
   isNew?: boolean;
-  recoveryCodes?: string[];
   message?: string;
 };
 
@@ -44,13 +42,10 @@ export default function AuthFlow({
   onCompleteOnboarding: (targetBandScore: number, displayName: string, avatarUrl: string, studyPlanDays: number, examDate: string | null) => Promise<void>;
 }) {
   const [mode, setMode] = useState<"login" | "register">("register");
-  const [recovering, setRecovering] = useState(false);
   const [method, setMethod] = useState<AuthMethod>("phone");
   const [identifier, setIdentifier] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
-  const [recoveryCode, setRecoveryCode] = useState("");
-  const [issuedRecoveryCodes, setIssuedRecoveryCodes] = useState<string[]>([]);
   const [targetBandScore, setTargetBandScore] = useState<number | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [avatarChoice, setAvatarChoice] = useState<string | null>(null);
@@ -73,37 +68,10 @@ export default function AuthFlow({
       });
       const result = await response.json() as AuthResponse;
       if (!response.ok || !result.user) throw new Error(result.message || "登录失败，请稍后重试");
-      if (result.recoveryCodes?.length) setIssuedRecoveryCodes(result.recoveryCodes);
       onAuthenticated(result);
     } catch (error) {
       if (mode === "login") setPassword("");
       setMessage(error instanceof Error ? error.message : "登录失败，请稍后重试");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const submitRecovery = async (event: FormEvent) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "recover", provider: method, identifier, recoveryCode, password }),
-      });
-      const result = await response.json() as AuthResponse & { ok?: boolean };
-      if (!response.ok || !result.ok) throw new Error(result.message || "密码重设失败，请重试");
-      setRecovering(false);
-      setMode("login");
-      setRecoveryCode("");
-      setPassword("");
-      setMessage(result.message || "密码已重设，请使用新密码登录");
-    } catch (error) {
-      setRecoveryCode("");
-      setPassword("");
-      setMessage(error instanceof Error ? error.message : "密码重设失败，请重试");
     } finally {
       setSubmitting(false);
     }
@@ -142,16 +110,6 @@ export default function AuthFlow({
     }
   };
 
-  if (user && issuedRecoveryCodes.length > 0) return (
-    <main className="onboarding-shell">
-      <section className="onboarding-card recovery-onboarding-card">
-        <header className="onboarding-brand"><span>IP</span><strong>IELTS PASS</strong></header>
-        <div className="onboarding-progress"><i /><i className="is-active" /></div>
-        <RecoveryCodesCard codes={issuedRecoveryCodes} onDone={() => setIssuedRecoveryCodes([])} />
-      </section>
-    </main>
-  );
-
   if (user) return (
     <main className="onboarding-shell">
       <section className="onboarding-card">
@@ -189,23 +147,21 @@ export default function AuthFlow({
       </section>
       <section className="auth-panel">
         <div className="auth-panel-inner">
-          <header><span>欢迎使用 IELTS PASS</span><h2>{recovering ? "使用恢复码重设密码" : mode === "register" ? "创建你的学习账户" : "继续你的学习计划"}</h2><p>{recovering ? "输入注册账号、一个未使用的恢复码和新密码。" : mode === "register" ? "注册后只需选择目标分数，即可生成个人学习路线。" : "登录后恢复你的目标、笔记与学习进度。"}</p></header>
-          {!recovering && <div className="auth-mode-tabs" role="tablist" aria-label="登录或注册">
+          <header><span>欢迎使用 IELTS PASS</span><h2>{mode === "register" ? "创建你的学习账户" : "继续你的学习计划"}</h2><p>{mode === "register" ? "注册后只需选择目标分数，即可生成个人学习路线。" : "登录后恢复你的目标、笔记与学习进度。"}</p></header>
+          <div className="auth-mode-tabs" role="tablist" aria-label="登录或注册">
             <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "is-active" : ""} onClick={() => { setMode("register"); setMessage(""); }}>注册</button>
             <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "is-active" : ""} onClick={() => { setMode("login"); setMessage(""); }}>登录</button>
-          </div>}
-          {recovering && <button type="button" className="auth-recovery-back" onClick={() => { setRecovering(false); setRecoveryCode(""); setPassword(""); setMessage(""); }}>← 返回登录</button>}
+          </div>
           <div className="auth-method-tabs" role="tablist" aria-label="选择账号方式">
             <button type="button" role="tab" aria-selected={method === "phone"} className={method === "phone" ? "is-active" : ""} onClick={() => { setMethod("phone"); setIdentifier(""); setMessage(""); }}>手机号</button>
             <button type="button" role="tab" aria-selected={method === "email"} className={method === "email" ? "is-active" : ""} onClick={() => { setMethod("email"); setIdentifier(""); setMessage(""); }}>Email</button>
           </div>
-          <form className="auth-form" onSubmit={recovering ? submitRecovery : submitCredentials}>
-            {!recovering && mode === "register" && <label><span>昵称</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="怎么称呼你" autoComplete="name" /></label>}
+          <form className="auth-form" onSubmit={submitCredentials}>
+            {mode === "register" && <label><span>昵称</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="怎么称呼你" autoComplete="name" /></label>}
             <label><span>{method === "phone" ? "手机号" : "Email"}</span><input type={method === "email" ? "email" : "tel"} value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder={method === "phone" ? "+86 138 0000 0000" : "name@example.com"} autoComplete={method === "email" ? "email" : "tel"} required /></label>
-            {recovering && <label><span>一次性恢复码</span><input value={recoveryCode} onChange={(event) => setRecoveryCode(event.target.value.toUpperCase())} placeholder="IP-XXXX-XXXX-XXXX" autoComplete="off" spellCheck={false} required /></label>}
-            <label><div className="auth-password-heading"><span>{recovering ? "设置新密码" : "密码"}</span>{!recovering && mode === "login" && <button type="button" onClick={() => { setRecovering(true); setPassword(""); setMessage(""); }}>忘记密码？</button>}</div><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="至少 8 个字符" autoComplete={recovering || mode === "register" ? "new-password" : "current-password"} minLength={8} required /></label>
+            <label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="至少 8 个字符" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={8} required /></label>
             {message && <p className="auth-message" role="alert">{message}</p>}
-            <button type="submit" className="auth-submit" disabled={submitting}>{submitting ? "请稍候…" : recovering ? "验证恢复码并重设密码 →" : mode === "register" ? "注册并选择目标分数 →" : "登录 →"}</button>
+            <button type="submit" className="auth-submit" disabled={submitting}>{submitting ? "请稍候…" : mode === "register" ? "注册并选择目标分数 →" : "登录 →"}</button>
           </form>
           <p className="auth-legal">继续即表示你同意服务条款与隐私政策。账号密码经过加盐加密保存，不会明文存储。</p>
         </div>

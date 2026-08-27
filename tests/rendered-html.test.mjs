@@ -789,7 +789,7 @@ test("shows the signed-in avatar and name outside the Today homepage", async () 
   assert.match(styles, /position:fixed/);
 });
 
-test("ships account registration, recovery-ready login, secure sessions and score onboarding", async () => {
+test("ships account registration, secure sessions and score onboarding", async () => {
   const [flow, avatars, route, authServer, hosting, schema, migration, planMigration] = await Promise.all([
     readFile(new URL("../app/AuthFlow.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/AccountAvatar.tsx", import.meta.url), "utf8"),
@@ -803,7 +803,7 @@ test("ships account registration, recovery-ready login, secure sessions and scor
   assert.match(flow, /手机号/);
   assert.match(flow, /Email/);
   assert.doesNotMatch(flow, /使用微信继续|微信登录 · 等待开放平台配置/);
-  assert.match(flow, /忘记密码？/);
+  assert.doesNotMatch(flow, /忘记密码|恢复码|RecoveryCodes/);
   assert.match(flow, /选择目标分数/);
   assert.match(flow, /5\.5, 6, 6\.5, 7, 7\.5, 8, 8\.5/);
   assert.match(flow, /设置你的头像、名字与目标/);
