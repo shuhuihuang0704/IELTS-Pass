@@ -18,10 +18,10 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
-  assert.match(html, /<title>IELTS AI/);
+  assert.match(html, /<title>IELTS Pass/);
   assert.match(html, /场景化雅思学习/);
-  assert.match(html, /IELTS AI/);
-  assert.match(html, /一轮雅思训练/);
+  assert.match(html, /IELTS PASS/);
+  assert.match(html, /完成今天的/);
   assert.match(html, /每日 100 词/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape|react-loading-skeleton/i);
 });

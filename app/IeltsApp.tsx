@@ -854,8 +854,8 @@ function Sidebar({
   return (
     <aside className="side-rail">
       <button className="brand-lockup" onClick={() => onNavigate("today")}>
-        <span className="brand-mark">IA</span>
-        <span><strong>IELTS AI</strong><small>Your daily English flow</small></span>
+        <span className="brand-mark">IP</span>
+        <span><strong>IELTS PASS</strong><small>Daily study system</small></span>
       </button>
       <nav className="desktop-nav" aria-label="主导航">
         {nav.map((item, index) => (
@@ -943,7 +943,7 @@ function TodayView({
     ?? officialTestSchedule[0];
   return (
     <>
-      <PageHeader eyebrow="DAY 06 · 距离考试还有 86 天" title="把今天，练成一句" accent="流利的英语。" onDictionarySearch={onDictionarySearch} />
+      <PageHeader eyebrow="TODAY · IELTS ACADEMIC" title="今天，只做好" accent="下一步。" onDictionarySearch={onDictionarySearch} />
       {progress.carryoverTasks.length > 0 ? (
         <section className="carryover-strip">
           <div><span>ROLLED OVER FROM YESTERDAY</span><strong>先补完昨天没有完成的任务</strong><p>补做任务不会自动打勾；完成完整专项后才会从这里移除。</p></div>
@@ -958,8 +958,8 @@ function TodayView({
       <div className="dashboard-grid">
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
-          <div className="scene-heading"><span>TODAY PLAN · IELTS ACADEMIC</span><span>约 50 分钟</span></div>
-          <h2>今天完成<br />一轮雅思训练</h2><p>100 词 + 听力场景 + 口语 Part 3 + Academic Reading</p>
+          <div className="scene-heading"><span>YOUR FOCUS · FOUR SKILLS</span><span>约 50 分钟</span></div>
+          <h2>完成今天的<br />雅思训练</h2><p>100 词 · 听力场景 · 口语互动 · Academic Reading</p>
           <button className="voice-orb" aria-label="试听场景" onClick={() => speak("Hello, I'm calling about the room for rent.")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
             {skills.map((skill, index) => (
