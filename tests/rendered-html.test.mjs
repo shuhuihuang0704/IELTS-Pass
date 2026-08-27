@@ -268,6 +268,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /我的选择/);
   assert.match(app, /revealedNotebookAnswerIds/);
   assert.match(app, /expandedNotebookIds/);
+  assert.match(app, /type NotebookCategory = "all" \| "word" \| "listening" \| "reading" \| "speaking" \| "writing" \| "other"/);
+  assert.match(app, /notebookEntryCategory/);
+  assert.match(app, /notebookCategoryLabels/);
+  assert.match(app, /notebook-category-tabs/);
+  assert.match(app, /按科目筛选笔记/);
+  assert.match(app, /visibleNotebookEntries/);
   assert.match(app, /notebook-entry-toggle/);
   assert.match(app, /notebook-entry-preview/);
   assert.match(app, /aria-expanded=\{expanded\}/);
@@ -281,6 +287,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.notebook-listening-options button\.is-selected/);
   assert.match(styles, /\.notebook-entry\.is-collapsed/);
   assert.match(styles, /\.notebook-entry-preview/);
+  assert.match(styles, /\.notebook-category-tabs/);
+  assert.match(styles, /\.notebook-kind\.listening/);
+  assert.match(styles, /\.notebook-kind\.reading/);
   assert.match(app, /dailyDifficultyProfileForDate/);
   assert.match(app, /dailyDifficultyProfiles/);
   assert.match(state, /export type DailyDifficultyBand = 6 \| 7 \| 8/);

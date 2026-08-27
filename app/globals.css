@@ -1035,13 +1035,23 @@ button { cursor: pointer; }
 .notebook-summary strong { display:block; margin-top:11px; font-size:31px; }
 .notebook-summary p { margin:8px 0 0; font-size:11px; opacity:.76; }
 .notebook-summary .notebook-mark { font-size:115px; line-height:1; opacity:.13; }
+.notebook-category-tabs { margin-top:12px; padding:5px; display:flex; gap:5px; overflow-x:auto; border-radius:14px; background:#e9e5ea; scrollbar-width:none; }
+.notebook-category-tabs::-webkit-scrollbar { display:none; }
+.notebook-category-tabs button { min-width:max-content; min-height:38px; padding:0 12px; display:flex; align-items:center; gap:7px; border:0; border-radius:10px; color:#736c76; background:transparent; font-size:9px; }
+.notebook-category-tabs button b { min-width:19px; height:19px; padding:0 5px; display:grid; place-items:center; border-radius:10px; color:#766f7b; background:rgba(79,70,85,.08); font-size:7px; }
+.notebook-category-tabs button.is-active { color:#5143b6; background:white; font-weight:750; box-shadow:0 3px 10px rgba(43,34,50,.06); }
+.notebook-category-tabs button.is-active b { color:white; background:#5849bd; }
 .notebook-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; margin-top:14px; }
 .notebook-list>.empty-state { grid-column:1 / -1; }
 .notebook-entry { min-width:0; padding:18px; border:1px solid #ece7ed; border-radius:19px; background:white; box-shadow:0 8px 28px rgba(40,33,45,.035); }
 .notebook-entry.is-collapsed { padding:14px 16px; }
 .notebook-entry>header { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; align-items:center; gap:8px; }
 .notebook-kind { padding:4px 7px; border-radius:8px; color:#4f43b4; background:#ece8fa; font-size:8px; font-weight:700; }
-.notebook-kind.question { color:#a24b3e; background:#f8e9e6; }
+.notebook-kind.listening { color:#23608e; background:#e7f2fa; }
+.notebook-kind.reading { color:#217156; background:#e6f5ef; }
+.notebook-kind.speaking { color:#9b5632; background:#faeee5; }
+.notebook-kind.writing { color:#704fa0; background:#f0eafa; }
+.notebook-kind.other { color:#69636c; background:#efedef; }
 .notebook-entry>header small { overflow:hidden; color:#938d95; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
 .notebook-entry>header button { min-height:28px; padding:0 7px; border:0; border-radius:7px; background:transparent; font-size:8px; }
 .notebook-entry>header .notebook-entry-toggle { color:#5143b6; background:#eeebfa; font-weight:750; }

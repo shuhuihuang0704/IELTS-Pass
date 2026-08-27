@@ -3942,8 +3942,25 @@ function ReadingPractice({
   );
 }
 
+type NotebookCategory = "all" | "word" | "listening" | "reading" | "speaking" | "writing" | "other";
+
+function notebookEntryCategory(entry: NotebookEntry): Exclude<NotebookCategory, "all"> {
+  if (entry.kind === "word") return "word";
+  const context = `${entry.id} ${entry.source}`.toLowerCase();
+  if (context.includes("listening") || context.includes("听力")) return "listening";
+  if (context.includes("reading") || context.includes("阅读")) return "reading";
+  if (context.includes("speaking") || context.includes("口语")) return "speaking";
+  if (context.includes("writing") || context.includes("写作")) return "writing";
+  return "other";
+}
+
+const notebookCategoryLabels: Record<NotebookCategory, string> = {
+  all: "全部", word: "词汇", listening: "听力", reading: "阅读", speaking: "口语", writing: "写作", other: "其他",
+};
+
 function ReviewView({ progress, updateProgress }: { progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [mode, setMode] = useState<"notebook" | "review">("notebook");
+  const [notebookCategory, setNotebookCategory] = useState<NotebookCategory>("all");
   const [activeNotebookAudioId, setActiveNotebookAudioId] = useState("");
   const [revealedNotebookAnswerIds, setRevealedNotebookAnswerIds] = useState<string[]>([]);
   const [expandedNotebookIds, setExpandedNotebookIds] = useState<string[]>([]);
@@ -3954,8 +3971,18 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
   const reviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
   const reviewItems = progress.reviewWords.filter((item) => (progress.reviewSchedule[item]?.dueDate ?? today) <= today);
   const scheduledCount = progress.reviewWords.length - reviewItems.length;
-  const wordNotes = progress.notebook.filter((entry) => entry.kind === "word").length;
-  const questionNotes = progress.notebook.length - wordNotes;
+  const notebookEntries = progress.notebook.map(enrichLegacyOfficialNotebookEntry);
+  const categoryCounts = notebookEntries.reduce<Record<Exclude<NotebookCategory, "all">, number>>((counts, entry) => {
+    const category = notebookEntryCategory(entry);
+    counts[category] += 1;
+    return counts;
+  }, { word: 0, listening: 0, reading: 0, speaking: 0, writing: 0, other: 0 });
+  const wordNotes = categoryCounts.word;
+  const categoryOptions = (["all", "word", "listening", "reading", "speaking", "writing", "other"] as NotebookCategory[])
+    .filter((category) => category === "all" || categoryCounts[category] > 0);
+  const visibleNotebookEntries = notebookCategory === "all"
+    ? notebookEntries
+    : notebookEntries.filter((entry) => notebookEntryCategory(entry) === notebookCategory);
   useEffect(() => () => {
     notebookAudioRef.current?.pause();
     notebookAudioRef.current = null;
@@ -4023,12 +4050,15 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
       </div>
       {mode === "notebook" ? (
         <section className="notebook-section">
-          <header className="notebook-summary"><div><span>PERSONAL KNOWLEDGE BASE</span><strong>{progress.notebook.length} 条笔记</strong><p>{wordNotes} 个词汇 · {questionNotes} 道题目</p></div><span className="notebook-mark" aria-hidden="true">✦</span></header>
+          <header className="notebook-summary"><div><span>PERSONAL KNOWLEDGE BASE</span><strong>{progress.notebook.length} 条笔记</strong><p>{wordNotes} 个词汇 · {categoryCounts.listening} 道听力 · {categoryCounts.reading} 道阅读 · {categoryCounts.speaking} 道口语{categoryCounts.writing > 0 ? ` · ${categoryCounts.writing} 道写作` : ""}</p></div><span className="notebook-mark" aria-hidden="true">✦</span></header>
+          {progress.notebook.length > 0 && <nav className="notebook-category-tabs" aria-label="按科目筛选笔记">{categoryOptions.map((category) => { const count = category === "all" ? progress.notebook.length : categoryCounts[category]; return <button type="button" aria-pressed={notebookCategory === category} className={notebookCategory === category ? "is-active" : ""} onClick={() => setNotebookCategory(category)} key={category}><span>{notebookCategoryLabels[category]}</span><b>{count}</b></button>; })}</nav>}
           <div className="notebook-list">
             {progress.notebook.length === 0 ? (
               <div className="empty-state"><strong>笔记本还是空的</strong><p>在单词卡点击“加入笔记”，或在真题答题卡点击“标记”，内容就会保存在这里。</p></div>
-            ) : progress.notebook.map((storedEntry) => {
-              const entry = enrichLegacyOfficialNotebookEntry(storedEntry);
+            ) : visibleNotebookEntries.length === 0 ? (
+              <div className="empty-state"><strong>这个分类还没有笔记</strong><p>在{notebookCategoryLabels[notebookCategory]}训练中加入的内容会自动归到这里。</p></div>
+            ) : visibleNotebookEntries.map((entry) => {
+              const entryCategory = notebookEntryCategory(entry);
               const readingReview = readingNotebookReview(entry);
               const listeningReview = listeningNotebookReview(entry);
               const expanded = expandedNotebookIds.includes(entry.id);
@@ -4040,7 +4070,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               const notebookPreview = readingReview?.question ?? listeningReview?.question ?? (entry.kind === "word" ? `${entry.title} · ${detailPreview}` : detailPreview || entry.title);
               const notebookContentId = `notebook-content-${entry.id.replace(/[^a-z0-9_-]/gi, "-")}`;
               return <article className={`notebook-entry${expanded ? " is-expanded" : " is-collapsed"}`} key={entry.id}>
-                <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "题目"}</span><small>{entry.source}</small><button type="button" className="notebook-entry-toggle" aria-expanded={expanded} aria-controls={notebookContentId} onClick={() => { if (expanded && activeNotebookAudioId === entry.id) { notebookAudioRef.current?.pause(); notebookAudioRef.current = null; setActiveNotebookAudioId(""); } setExpandedNotebookIds((current) => expanded ? current.filter((id) => id !== entry.id) : [...current, entry.id]); }}>{expanded ? "收起" : "展开"}</button><button type="button" className="notebook-entry-delete" onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
+                <header><span className={`notebook-kind ${entryCategory}`}>{notebookCategoryLabels[entryCategory]}</span><small>{entry.source}</small><button type="button" className="notebook-entry-toggle" aria-expanded={expanded} aria-controls={notebookContentId} onClick={() => { if (expanded && activeNotebookAudioId === entry.id) { notebookAudioRef.current?.pause(); notebookAudioRef.current = null; setActiveNotebookAudioId(""); } setExpandedNotebookIds((current) => expanded ? current.filter((id) => id !== entry.id) : [...current, entry.id]); }}>{expanded ? "收起" : "展开"}</button><button type="button" className="notebook-entry-delete" onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
                 {!expanded && <p className="notebook-entry-preview">{notebookPreview}</p>}
                 {expanded && <div id={notebookContentId} className="notebook-entry-expanded">
                 <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div>{!readingReview && !listeningReview && <h2>{entry.title}</h2>}{readingReview ? <section className="notebook-reading-review">
