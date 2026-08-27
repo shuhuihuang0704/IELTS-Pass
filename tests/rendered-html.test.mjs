@@ -642,6 +642,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /getDailyListeningVocabulary\(contentDate/);
   assert.match(app, /YESTERDAY&apos;S TASK/);
   assert.match(styles, /\.carryover-context-banner/);
+  assert.match(app, /className="daily-training-nav"/);
+  assert.match(app, /每日雅思训练页面导航/);
+  assert.match(app, /onHome={\(\) => setView\("today"\)\}/);
+  assert.match(styles, /\.daily-training-nav button/);
   assert.doesNotMatch(app, /TASK ROLLOVER|目前没有昨日待补做任务|carryover-strip is-empty/);
   assert.match(app, /carryoverTasks\.filter/);
   assert.match(data, /vocabulary|listening|speaking|reading/);

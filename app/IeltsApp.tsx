@@ -954,6 +954,7 @@ export default function IeltsApp() {
             contentDate={activeContentDate}
             progress={progress}
             onSelectSkill={(skill) => openSkill(skill, activeContentDate)}
+            onHome={() => setView("today")}
             onComplete={completeSkill}
             updateProgress={updateProgress}
           />
@@ -2407,6 +2408,7 @@ function SceneView({
   contentDate,
   progress,
   onSelectSkill,
+  onHome,
   onComplete,
   updateProgress,
 }: {
@@ -2414,6 +2416,7 @@ function SceneView({
   contentDate: string;
   progress: LearningProgress;
   onSelectSkill: (skill: Skill) => void;
+  onHome: () => void;
   onComplete: (skill: Skill, minutes: number) => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
@@ -2457,6 +2460,10 @@ function SceneView({
   };
   return (
     <>
+      <nav className="daily-training-nav" aria-label="每日雅思训练页面导航">
+        <button onClick={onHome}>⌂ 返回首页</button>
+        <span>每日雅思训练</span>
+      </nav>
       <PageHeader eyebrow={header.eyebrow} title={header.title} accent={header.accent} />
       {isCarryoverContent && <section className="carryover-context-banner"><div><span>YESTERDAY&apos;S TASK</span><strong>正在补做 {contentDate} 的{activeSkill === "vocabulary" ? "词汇与听写" : skills.find((skill) => skill.id === activeSkill)?.label}</strong></div><small>本页题目按原任务日期加载；完成后才会从昨日未完成列表移除。</small></section>}
       <div className="scene-tabs" role="tablist" aria-label="场景训练步骤">

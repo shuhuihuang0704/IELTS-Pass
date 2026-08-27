@@ -715,6 +715,9 @@ button { cursor: pointer; }
 .official-transcript-lock-note b { font-size:9px; }
 .official-transcript-lock-note span { color:#918a93; font-size:8px; text-align:right; }
 .official-paper-frame { width:100%; height:760px; margin-top:14px; display:block; border:1px solid #ddd8df; border-radius:15px; background:#efedf0; }
+.daily-training-nav { margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.daily-training-nav button { min-height:38px; padding:0 13px; border:0; border-radius:11px; color:white; background:var(--ink); font-size:9px; font-weight:700; }
+.daily-training-nav span { color:var(--muted); font-size:8px; font-weight:750; letter-spacing:.7px; }
 .scene-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:30px; padding:7px; border-radius:18px; background:#e5e0da; }
 .scene-tabs button { min-height:48px; border:0; border-radius:13px; color:#777179; background:transparent; font-size:12px; }
 .scene-tabs button span { display:inline-grid; width:23px; height:23px; margin-right:7px; place-items:center; border-radius:50%; color:#827b84; background:rgba(255,255,255,.55); font-size:9px; }
