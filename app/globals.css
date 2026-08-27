@@ -1063,7 +1063,7 @@ button { cursor: pointer; }
 .profile-water-copy>p { max-width:220px; margin:16px 0 0; color:var(--muted); font-size:10px; line-height:1.55; }
 .profile-water-breakdown { margin-top:13px; display:grid; grid-template-columns:1fr 1fr; gap:5px; }
 .profile-water-breakdown span { padding:6px 7px; border:1px solid rgba(80,70,170,.09); border-radius:8px; color:#5f5785; background:rgba(255,255,255,.58); font-size:7px; font-weight:700; letter-spacing:0; }
-.profile-overview-column { display:grid; grid-template-rows:auto 1fr; gap:12px; }
+.profile-overview-column { display:grid; grid-template-rows:auto auto 1fr; gap:12px; }
 .profile-streak-card { width:100%; min-height:105px; padding:18px; display:flex; align-items:center; gap:13px; border:1px solid rgba(65,53,120,.09); border-radius:21px; color:inherit; background:white; text-align:left; box-shadow:0 9px 25px rgba(35,30,48,.045); }
 .profile-streak-card>span:nth-child(2) { flex:1; }
 .profile-streak-card strong,.profile-streak-card small { display:block; }
@@ -1154,6 +1154,10 @@ button { cursor: pointer; }
 .profile-wordbook strong { margin-top:5px; font-size:18px; }
 .profile-wordbook p { margin:5px 0 0; color:var(--muted); font-size:10px; }
 .profile-wordbook>b { color:#4e42ae; font-size:10px; }
+.profile-overview-column>.profile-wordbook { margin-top:0; padding:17px 18px; gap:13px; border-radius:21px; }
+.profile-overview-column>.profile-wordbook .profile-wordbook-mark { width:48px; height:48px; border-radius:15px 15px 15px 6px; font-size:16px; }
+.profile-overview-column>.profile-wordbook strong { font-size:15px; }
+.profile-overview-column>.profile-wordbook p { font-size:9px; line-height:1.45; }
 .wordbook-back { margin-bottom:20px; padding:9px 12px; border:0; border-radius:11px; color:#5145b6; background:#e9e4f7; font-size:10px; }
 .wordbook-hero { margin-top:32px; padding:27px; display:flex; align-items:center; justify-content:space-between; gap:24px; border-radius:27px; color:white; background:radial-gradient(circle at 90% 10%,rgba(242,162,220,.55),transparent 34%),linear-gradient(135deg,#5943bb,#3e489f); box-shadow:0 18px 40px rgba(57,46,137,.18); }
 .wordbook-hero>div:first-child>span { color:rgba(255,255,255,.7); font-size:8px; letter-spacing:1px; }
@@ -1531,7 +1535,7 @@ button { -webkit-tap-highlight-color:transparent; }
   .ai-tutor-sidebar { padding:23px; }
   .ai-tutor-sidebar>div:nth-child(2) { margin-top:55px; }
   .profile-progress-dashboard { grid-template-columns:1fr; }
-  .profile-overview-column { grid-template-columns:1fr 1fr; grid-template-rows:auto; }
+  .profile-overview-column { grid-template-columns:1fr; grid-template-rows:auto auto auto; }
   .study-plan-presets { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 

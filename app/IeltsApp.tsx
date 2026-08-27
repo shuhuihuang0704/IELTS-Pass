@@ -4283,6 +4283,11 @@ function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { pr
           <div className="profile-water-copy"><span>OVERALL PLAN LEVEL</span><strong>{planProgress.percent}<small>%</small></strong><p>第 {planDay} / {progress.studyPlanDays} 天 · 当前节奏 {planProgress.expectedPercent}%<br />{paceMessage}</p><div className="profile-water-breakdown"><span>词汇 {planProgress.vocabularyPercent}%</span><span>每日任务 {planProgress.dailyTaskPercent}%</span><span>套题 {planProgress.officialPracticePercent}%</span><span>坚持度 {planProgress.consistencyPercent}%</span></div></div>
         </div>
         <div className="profile-overview-column">
+          <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
+            <span className="profile-wordbook-mark">Aa</span>
+            <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length + progress.personalWordbook.length} 个学习词汇 · 可从全英语查词结果自行添加</p></span>
+            <b>进入单词本 →</b>
+          </button>
           <button className="profile-streak-card" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <div className="profile-grid"><div><span>累计学习</span><strong>{progress.minutes} 分钟</strong></div><button className="profile-notebook-card" onClick={onOpenNotebook}><span>我的笔记</span><strong>{progress.notebook.length}</strong><b>进入我的笔记 →</b></button></div>
         </div>
@@ -4304,11 +4309,6 @@ function ProfileView({ progress, onReset, onOpenNotebook, updateProgress }: { pr
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
-      <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
-        <span className="profile-wordbook-mark">Aa</span>
-        <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length + progress.personalWordbook.length} 个学习词汇 · 可从全英语查词结果自行添加</p></span>
-        <b>进入单词本 →</b>
-      </button>
       <section className="profile-settings"><div><strong>本机测试数据</strong><p>当前版本把进度保存在这个浏览器中。登录和跨设备云同步会在后续接入。</p></div><button onClick={onReset}>重置学习进度</button></section>
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>

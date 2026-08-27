@@ -374,9 +374,14 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.extra-study-panel/);
   assert.match(styles, /\.extra-study-options/);
   assert.match(styles, /\.profile-wordbook/);
+  assert.match(styles, /\.profile-overview-column>\.profile-wordbook/);
   assert.match(styles, /\.wordbook-list/);
   assert.match(styles, /\.wordbook-entry/);
   assert.match(styles, /\.wordbook-entry-actions/);
+  const wordbookPosition = app.indexOf('className="profile-wordbook"');
+  const streakPosition = app.indexOf('className="profile-streak-card"');
+  assert.ok(wordbookPosition > -1 && wordbookPosition < streakPosition, "wordbook should appear before the streak card");
+  assert.equal((app.match(/className="profile-wordbook"/g) ?? []).length, 1, "wordbook entry should render once");
   assert.match(styles, /\.topbar-dictionary-search/);
   assert.match(styles, /\.dictionary-search-dialog/);
   assert.match(styles, /\.dictionary-local-results/);
