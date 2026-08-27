@@ -48,7 +48,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /SpeechSynthesisUtterance/);
   assert.match(app, /DailyVocabularySprint/);
   assert.match(app, /Matching Headings|Matching Information|Summary Completion/);
-  assert.match(app, /Speaking Part 3|真实考试结构|考官/);
+  assert.match(app, /Speaking Part 3|考官/);
+  assert.doesNotMatch(app, /真实考试结构/);
   assert.match(app, /Form Completion|Choose TWO|提交 10 道答案/);
   assert.match(state, /dailyVocabularyDate|dailyVocabularySeen|dailyVocabularyKnown/);
   assert.match(state, /studyPlanDays: number/);

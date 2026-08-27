@@ -2753,10 +2753,6 @@ function SpeakingPractice({
   onComplete: () => void;
 }) {
   const questionIndex = Math.min(progress.speakingPart3Turns, speakingScenario.questions.length - 1);
-  const [messages, setMessages] = useState<Array<{ from: "ai" | "user"; text: string }>>([
-    { from: "ai", text: speakingScenario.opening },
-    { from: "ai", text: speakingScenario.questions[questionIndex] },
-  ]);
   const [draft, setDraft] = useState("");
   const [micStatus, setMicStatus] = useState("");
   const [answerFeedback, setAnswerFeedback] = useState("");
@@ -2764,7 +2760,7 @@ function SpeakingPractice({
   const [speakingStarted, setSpeakingStarted] = useState(false);
   const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
   const examinerUtterance = useRef<SpeechSynthesisUtterance | null>(null);
-  const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => `${speakingScenario.opening} ${speakingScenario.questions[questionIndex]}`);
+  const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => speakingScenario.questions[questionIndex]);
 
   useEffect(() => () => {
     if (examinerUtterance.current) {
@@ -2821,7 +2817,6 @@ function SpeakingPractice({
     const hasDevelopment = /because|since|for example|for instance|however|although|whereas|therefore|so that/i.test(text);
     if (wordCount < 10) {
       const reply = "Could you explain that in a little more detail?";
-      setMessages((current) => [...current, { from: "user", text }, { from: "ai", text: reply }]);
       setDraft("");
       setAnswerFeedback("回答偏短：Part 3 需要观点 + 原因，尽量再展开 2–3 句。");
       setActiveExaminerPrompt(reply);
@@ -2834,7 +2829,6 @@ function SpeakingPractice({
     const reply = finished
       ? "Thank you. That is the end of the speaking test."
       : speakingScenario.questions[nextTurns];
-    setMessages((current) => [...current, { from: "user", text }, { from: "ai", text: reply }]);
     setDraft("");
     setAnswerFeedback(hasDevelopment
       ? `本轮完成：${wordCount} 词，并使用了展开信号。继续保持观点—原因—例子的结构。`
@@ -2863,23 +2857,21 @@ function SpeakingPractice({
   };
 
   return (
-    <div className="exercise-layout speaking-layout">
+    <div className="exercise-layout speaking-layout is-single-column">
       <div className="exercise-main conversation-panel">
         <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>{Math.min(progress.speakingPart3Turns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
-        <h2>{speakingScenario.title}</h2>
         <div className="speaking-audio-controls">
           <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => playExaminerPrompt(activeExaminerPrompt) : startSpeaking}>{speakingStarted ? "↺ 重听当前问题" : "▶ 开始口语模拟"}</button>
           <button disabled={examinerAudioState === "idle"} onClick={toggleExaminerPause}>{examinerAudioState === "paused" ? "▶ 继续播放" : "Ⅱ 暂停"}</button>
           <button disabled={!speakingStarted} onClick={() => setShowExaminerSubtitles((current) => !current)}>{showExaminerSubtitles ? "隐藏字幕" : "听不懂？显示字幕"}</button>
         </div>
-        <div className="conversation" aria-live="polite">
-          {messages.map((message, index) => <div className={`message ${message.from}`} key={`${message.from}-${index}`}><span>{message.from === "ai" ? "考官" : "你"}</span><p className={message.from === "ai" && !showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{message.from === "ai" && !speakingStarted ? "点击“开始口语模拟”后，考官会用语音提问" : message.from === "ai" && !showExaminerSubtitles ? examinerAudioState === "paused" ? "⏸ 考官音频已暂停 · 字幕已隐藏" : "🔊 考官问题 · 字幕已隐藏" : message.text}</p></div>)}
+        <div className="conversation speaking-question-stage" aria-live="polite">
+          <div className="message ai"><span>考官</span><p className={!showExaminerSubtitles ? "examiner-subtitle-hidden" : ""}>{!speakingStarted ? "点击“开始口语模拟”后，考官会用语音提问" : !showExaminerSubtitles ? examinerAudioState === "paused" ? "⏸ 考官音频已暂停 · 字幕已隐藏" : "🔊 当前考官问题 · 字幕已隐藏" : activeExaminerPrompt}</p></div>
         </div>
         <form className="speaking-form" onSubmit={send}><button disabled={!speakingStarted} type="button" className="mic-button" onClick={startMicrophone} aria-label="开始语音输入">●</button><input disabled={!speakingStarted} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={speakingStarted ? "用英语回答考官，尽量说明原因并举例…" : "请先点击开始口语模拟"} aria-label="口语回答" /><button disabled={!speakingStarted} type="submit">回答</button></form>
         <div className="mic-status" aria-live="polite">{micStatus || (speakingStarted ? "支持语音输入；也可以打字模拟回答。" : "点击开始后，考官会先读出问题。")}</div>
         {answerFeedback && <div className="speaking-feedback" aria-live="polite">{answerFeedback}</div>}
       </div>
-      <aside className="exercise-context speaking-exam-card"><span>真实考试结构</span><strong>{speakingScenario.duration}</strong><p>Part 3 与 Part 2 主题相关，但问题会转向更普遍、抽象的社会讨论。考官负责提问，不扮演场景角色。</p><ul>{speakingScenario.goals.map((goal, index) => <li className={progress.speakingPart3Turns > index ? "is-done" : ""} key={goal}>{progress.speakingPart3Turns > index ? "✓" : index + 1} · {goal}</li>)}</ul><p className="demo-note">当前反馈检查回答长度和展开信号，不冒充官方 IELTS 分数。</p></aside>
     </div>
   );
 }

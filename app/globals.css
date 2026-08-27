@@ -879,6 +879,8 @@ button { cursor: pointer; }
 .speaking-audio-controls button.speaking-start { color:white; background:var(--violet); }
 .speaking-audio-controls button:disabled,.speaking-form button:disabled { opacity:.38; cursor:not-allowed; }
 .conversation { height:270px; margin-top:17px; padding:15px; overflow-y:auto; border-radius:17px; background:#f4f1ed; }
+.conversation.speaking-question-stage { min-height:150px; height:auto; display:flex; align-items:center; }
+.speaking-question-stage .message { width:min(100%,680px); margin-bottom:0; }
 .message { max-width:82%; margin-bottom:12px; }
 .message.user { margin-left:auto; }
 .message>span { display:block; margin-bottom:4px; color:#817a83; font-size:9px; }
@@ -894,7 +896,6 @@ button { cursor: pointer; }
 .speaking-form>button:last-child { padding:0 15px; color:white; background:var(--violet); font-size:11px; }
 .mic-status { min-height:20px; margin-top:7px; color:#817a83; font-size:9px; }
 .speaking-feedback { margin-top:7px; padding:9px 11px; border-radius:10px; color:#4f4776; background:#ece8f8; font-size:10px; line-height:1.45; }
-.speaking-exam-card>strong { display:block; margin-top:16px; font-size:19px; letter-spacing:-.4px; }
 .exercise-context ul { margin:17px 0 0; padding:0; list-style:none; }
 .exercise-context li { margin-top:9px; padding:10px; border-radius:11px; color:#686169; background:#f4f1ed; font-size:11px; }
 .exercise-context li.is-done { color:#176c4f; background:#e2f3ec; }
