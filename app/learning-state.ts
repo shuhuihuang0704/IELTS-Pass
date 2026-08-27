@@ -103,7 +103,7 @@ export function normalizeTargetBandScore(value: unknown) {
 export function targetOfficialSessionsPerWeek(planDays: number, targetBandScore: number) {
   const score = normalizeTargetBandScore(targetBandScore);
   const scoreBonus = score >= 8 ? 2 : score >= 7.5 ? 1 : 0;
-  return Math.min(7, officialSessionsPerWeek(planDays) + scoreBonus);
+  return Math.min(4, officialSessionsPerWeek(planDays) + scoreBonus);
 }
 
 export function targetEstimatedDailyMinutes(planDays: number, targetBandScore: number) {

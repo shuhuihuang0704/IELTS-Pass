@@ -60,6 +60,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /targetOfficialSessionsPerWeek/);
   assert.match(state, /targetEstimatedDailyMinutes/);
   assert.match(state, /overallPlanProgress/);
+  assert.match(app, /plannedOfficialSessionsForWeek/);
+  assert.match(app, /听力、阅读、写作、口语四部分始终开放并按周轮换/);
+  assert.match(app, /officialTestSchedule\.map/);
+  assert.match(app, /本周计划/);
+  assert.match(app, /开放加练/);
+  assert.doesNotMatch(app, /officialTestSchedule\.slice\(0, sessionsPerWeek\)/);
   assert.match(state, /completedDailyTasks/);
   assert.match(state, /officialPracticePercent/);
   assert.match(state, /vocabularyLibraryVersion = "3600-v1"/);

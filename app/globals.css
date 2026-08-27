@@ -291,6 +291,9 @@ button { cursor: pointer; }
 .official-session-date span { color:var(--muted); font-size:9px; }
 .official-session-date strong { margin-top:5px; font-size:13px; }
 .official-session-copy small { color:var(--violet); font-size:8px; letter-spacing:.35px; }
+.official-session-copy small em { margin-left:6px; padding:3px 6px; border-radius:6px; color:#176c4f; background:#e3f3ec; font-style:normal; font-weight:750; letter-spacing:0; }
+.official-session.is-open-practice .official-session-copy small em { color:#6e6677; background:#eeebf0; }
+.official-session.is-open-practice .official-session-date { color:#6f6873; background:#f5f3f6; }
 .official-session-copy h3 { margin:5px 0 0; font-size:15px; }
 .official-session-copy p { max-width:580px; margin:5px 0 0; color:var(--muted); font-size:10px; line-height:1.45; }
 .official-session-copy>b { display:inline-block; margin-top:7px; color:#554a9b; font-size:9px; }

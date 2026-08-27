@@ -417,6 +417,15 @@ function officialTaskRecordId(session: OfficialTestSession, material: OfficialTe
   return `${session.setCode}:${material.id}:${task.id}`;
 }
 
+function plannedOfficialSessionsForWeek(sessionsPerWeek: number, weekKey = localWeekKey()) {
+  const count = Math.min(officialTestSchedule.length, Math.max(1, sessionsPerWeek));
+  if (count === officialTestSchedule.length) return officialTestSchedule;
+  const weekNumber = Math.floor(new Date(`${weekKey}T12:00:00`).getTime() / (7 * 86_400_000));
+  const startIndex = ((weekNumber % officialTestSchedule.length) + officialTestSchedule.length) % officialTestSchedule.length;
+  const selectedIds = new Set(Array.from({ length: count }, (_, index) => officialTestSchedule[(startIndex + index) % officialTestSchedule.length].id));
+  return officialTestSchedule.filter((session) => selectedIds.has(session.id));
+}
+
 function speak(text: string, rate = 0.9) {
   if (!("speechSynthesis" in window)) return false;
   window.speechSynthesis.cancel();
@@ -941,7 +950,7 @@ function TodayView({
     ?? skills[0];
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
   const weekKey = localWeekKey();
-  const plannedOfficialSessions = officialTestSchedule.slice(0, targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore));
+  const plannedOfficialSessions = plannedOfficialSessionsForWeek(targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore), weekKey);
   const completedOfficialSessions = plannedOfficialSessions.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)));
   const todayIsoDay = ((new Date().getDay() + 6) % 7) + 1;
   const nextOfficialSession = plannedOfficialSessions.find((session) => session.isoDay >= todayIsoDay && !progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)))
@@ -1135,24 +1144,26 @@ function OfficialPracticePlan({
 }) {
   const weekKey = localWeekKey();
   const sessionsPerWeek = targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore);
-  const plannedSessions = officialTestSchedule.slice(0, sessionsPerWeek);
+  const plannedSessions = plannedOfficialSessionsForWeek(sessionsPerWeek, weekKey);
+  const plannedSessionIds = new Set(plannedSessions.map((session) => session.id));
   const completedCount = plannedSessions.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey))).length;
 
   return (
     <section className="official-practice-plan">
       <header className="official-practice-heading">
-        <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>{progress.studyPlanDays} 天计划 · 每周 {sessionsPerWeek} 次 · 随备考周期自动调整</p></div>
-        <strong>{completedCount}<small>/{sessionsPerWeek}</small></strong>
+        <div><span>OFFICIAL SAMPLE TEST WEEK</span><h2>官方套题训练计划</h2><p>{progress.studyPlanDays} 天计划 · 本周安排 {plannedSessions.length} 次 · 听力、阅读、写作、口语四部分始终开放并按周轮换</p></div>
+        <strong>{completedCount}<small>/{plannedSessions.length}</small></strong>
       </header>
       <div className="official-source-note"><b>内容来源说明</b><p>Reading 使用 IELTS.org 官方完整 Academic Reading Sample Test（3 篇、1–40 题）。这是官方样题，不等同于已正式考过的 Cambridge 历年原卷；App 不会把两者混淆。</p></div>
       <div className="official-session-list">
-        {plannedSessions.map((session, index) => {
+        {officialTestSchedule.map((session, index) => {
           const recordId = officialPracticeRecordId(session, weekKey);
           const completed = progress.officialPracticeCompleted.includes(recordId);
+          const isPlanned = plannedSessionIds.has(session.id);
           return (
-            <article className={completed ? "official-session is-complete" : "official-session"} key={session.id}>
+            <article className={`official-session ${completed ? "is-complete " : ""}${isPlanned ? "is-planned" : "is-open-practice"}`} key={session.id}>
               <div className="official-session-date"><span>{session.dayLabel}</span><strong>{session.time}</strong></div>
-              <div className="official-session-copy"><small>0{index + 1} · {session.source}</small><h3>{session.title}</h3><p>{session.description}</p><b>{session.setCode} · {session.duration}</b></div>
+              <div className="official-session-copy"><small>0{index + 1} · {session.source} <em>{isPlanned ? "本周计划" : "开放加练"}</em></small><h3>{session.title}</h3><p>{session.description}</p><b>{session.setCode} · {session.duration}</b></div>
               <div className="official-session-actions">
                 <button onClick={() => onOpenOfficialTest(session.id)}>{completed ? "查看本套 · 已完成" : "开始本套 →"}</button>
               </div>
