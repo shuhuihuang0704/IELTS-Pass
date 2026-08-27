@@ -111,6 +111,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /carryoverTaskDates/);
   assert.match(state, /previousStudyDate/);
   assert.match(state, /newlyMissedTasks/);
+  assert.match(
+    state,
+    /const dailySkillOrder: Skill\[\] = \["vocabulary", "listening", "reading", "speaking"\]/,
+  );
+  assert.match(state, /const carryoverTasks = dailySkillOrder\.filter/);
   assert.match(state, /dailyVocabularyCompleted/);
   assert.match(state, /dailyDictationCompleted/);
   assert.match(state, /dailyDictationSeen/);

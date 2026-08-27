@@ -415,14 +415,16 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
   const completed = isCurrentDay
     ? { ...defaultProgress.completed, ...(stored.completed ?? {}) }
     : { ...defaultProgress.completed };
-  const validSkills: Skill[] = ["vocabulary", "listening", "speaking", "reading"];
+  const dailySkillOrder: Skill[] = ["vocabulary", "listening", "reading", "speaking"];
   const previousCarryover = Array.isArray(stored.carryoverTasks)
-    ? stored.carryoverTasks.filter((skill): skill is Skill => validSkills.includes(skill as Skill) && !stored.completed?.[skill as Skill])
+    ? stored.carryoverTasks.filter((skill): skill is Skill => dailySkillOrder.includes(skill as Skill) && !stored.completed?.[skill as Skill])
     : [];
   const newlyMissedTasks = isCurrentDay
     ? []
-    : validSkills.filter((skill) => !stored.completed?.[skill]);
-  const carryoverTasks = Array.from(new Set([...previousCarryover, ...newlyMissedTasks]));
+    : dailySkillOrder.filter((skill) => !stored.completed?.[skill]);
+  const carryoverTasks = dailySkillOrder.filter(
+    (skill) => previousCarryover.includes(skill) || newlyMissedTasks.includes(skill),
+  );
   const storedCarryoverTaskDates = stored.carryoverTaskDates && typeof stored.carryoverTaskDates === "object"
     ? stored.carryoverTaskDates
     : {};
