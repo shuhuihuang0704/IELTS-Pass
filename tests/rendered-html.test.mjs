@@ -317,7 +317,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /getDailyReadingExercise\(exerciseDate, difficulty\.band\)/);
   assert.match(app, /getDailySpeakingScenario\(exerciseDate, difficulty\.band\)/);
   assert.doesNotMatch(app, /PERSONALISED DAILY DIFFICULTY|daily-difficulty-panel|daily-difficulty-progress|daily-difficulty-ladder|daily-exam-format/);
-  assert.match(app, /IELTS LISTENING FORMAT/);
+  assert.doesNotMatch(app, /IELTS LISTENING FORMAT/);
+  assert.doesNotMatch(app, /reading-difficulty-brief/);
   assert.match(app, /IELTS ACADEMIC READING FORMAT/);
   assert.match(app, /IELTS SPEAKING FORMAT/);
   assert.match(app, /Band \{difficulty\.band\}\.0 训练语速/);

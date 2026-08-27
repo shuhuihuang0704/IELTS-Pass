@@ -3422,7 +3422,6 @@ function ListeningPractice({
       <div className="exercise-main listening-exam-main">
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>{exerciseDate} · Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>Band {difficulty.band}.0 · {difficulty.listening.focus} · 达标 {difficulty.listening.passScore}/10</p>
-        <div className="exam-format-strip"><b>IELTS LISTENING FORMAT</b><span>{difficulty.listening.format}</span><small>训练模式保留暂停与拖动；作答顺序和题目指令按 IELTS 方式呈现。</small></div>
         <div className="listening-controls">
           <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${playerState}`}>
@@ -3896,7 +3895,6 @@ function ReadingPractice({
         <div className="exercise-kicker"><span>Questions 1–{totalQuestions} · 达标 {difficulty.reading.passScore}/{totalQuestions}</span><span>建议 {difficulty.reading.minutes} 分钟</span></div>
         <div className="exam-format-strip"><b>IELTS ACADEMIC READING FORMAT</b><span>{difficulty.reading.format}</span><small>题号连续、题型指令和提交后定位解析均按考试型训练流程呈现。</small></div>
         <div className={`daily-reading-timer is-${readingTimerState}`}><div><span>BAND {difficulty.band}.0 TIMER</span><strong>{readingClock}</strong></div><button type="button" disabled={readingTimerState === "finished"} onClick={toggleReadingTimer}>{readingTimerState === "running" ? "Ⅱ 暂停" : readingTimerState === "paused" ? "▶ 继续" : readingTimerState === "finished" ? "时间到" : "▶ 开始计时"}</button><button type="button" onClick={() => { setReadingSeconds(difficulty.reading.minutes * 60); setReadingTimerState("idle"); }}>重置</button></div>
-        <div className="reading-difficulty-brief"><strong>Band {difficulty.band}.0 重点</strong><span>{difficulty.reading.focus}</span></div>
         <div className="reading-progress-line"><i style={{ width: `${Math.round(answeredCount / totalQuestions * 100)}%` }} /><span>{answeredCount}/{totalQuestions}</span></div>
 
         <section className="reading-question-group">

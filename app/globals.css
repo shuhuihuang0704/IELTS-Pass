@@ -704,8 +704,8 @@ button { cursor: pointer; }
 .scene-tabs button.is-active { color:#473cab; background:white; box-shadow:0 5px 15px rgba(35,30,48,.06); font-weight:650; }
 .scene-tabs button.is-active span { color:white; background:var(--violet); }
 .exercise-surface { margin-top:14px; }
-.speaking-difficulty-brief,.reading-difficulty-brief { margin:10px 0 14px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid #dfd9ed; border-radius:11px; color:#665e73; background:#f6f3fc; font-size:9px; }
-.speaking-difficulty-brief strong,.reading-difficulty-brief strong { color:#5143b6; }
+.speaking-difficulty-brief { margin:10px 0 14px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid #dfd9ed; border-radius:11px; color:#665e73; background:#f6f3fc; font-size:9px; }
+.speaking-difficulty-brief strong { color:#5143b6; }
 .daily-reading-timer { margin:10px 0 12px; padding:10px 12px; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:7px; border:1px solid #e1dce6; border-radius:11px; background:#faf9fb; }
 .daily-reading-timer div span,.daily-reading-timer div strong { display:block; }
 .daily-reading-timer div span { color:#8b8490; font-size:7px; font-weight:800; letter-spacing:.7px; }
