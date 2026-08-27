@@ -446,7 +446,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /official-paper-frame/);
   assert.match(app, /workspace is-official-test/);
   assert.match(styles, /\.workspace\.is-official-test/);
-  assert.match(styles, /grid-template-columns:minmax\(620px,1fr\) minmax\(380px,460px\)/);
+  assert.match(styles, /grid-template-columns:minmax\(0,1\.5fr\) minmax\(300px,\.72fr\)/);
   assert.match(app, /#page=\$\{displayPage\}/);
   assert.match(app, /questionPage/);
   assert.match(app, /answerPage/);
@@ -466,6 +466,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet \{ max-height:calc\(100vh - 24px\); overflow-y:auto; position:sticky/);
   assert.match(styles, /\.official-reading-booklet \{ min-width:0; max-height:calc\(100vh - 24px\)/);
   assert.match(styles, /\.official-full-reading-body>\.official-answer-sheet>footer \{[^}]*position:sticky; bottom:-15px/);
+  assert.match(styles, /\.reading-questions \{ position:sticky/);
+  assert.match(styles, /@media \(max-width:680px\)/);
   assert.match(app, /仅显示当前 Passage/);
   assert.match(app, /只包含本 Passage 的题目页/);
   assert.doesNotMatch(app, /readingBookletView|文章册与题册切换/);
