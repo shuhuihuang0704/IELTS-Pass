@@ -82,18 +82,38 @@ export function normalizeStudyPlanDays(value: unknown) {
     : 36;
 }
 
-export function dailyVocabularyTarget(planDays: number) {
-  return Math.ceil(vocabularyPlanSize / normalizeStudyPlanDays(planDays));
+function targetScoreWorkloadFactor(targetBandScore: number) {
+  const score = normalizeTargetBandScore(targetBandScore);
+  return 1 + (score - 7) * .12;
 }
 
-export function dailyDictationTarget(planDays: number) {
-  const scaledTarget = 80 * 36 / normalizeStudyPlanDays(planDays);
-  return Math.max(20, Math.min(100, Math.round(scaledTarget / 10) * 10));
+export function dailyVocabularyTarget(planDays: number, targetBandScore = 7) {
+  const scaledTarget = vocabularyPlanSize / normalizeStudyPlanDays(planDays) * targetScoreWorkloadFactor(targetBandScore);
+  return Math.max(15, Math.min(160, Math.round(scaledTarget / 5) * 5));
 }
 
-export function dailyConnectedSpeechTarget(planDays: number) {
-  const scaledTarget = 24 * 36 / normalizeStudyPlanDays(planDays);
+export function dailyDictationTarget(planDays: number, targetBandScore = 7) {
+  const scaledTarget = 80 * 36 / normalizeStudyPlanDays(planDays) * targetScoreWorkloadFactor(targetBandScore);
+  return Math.max(20, Math.min(120, Math.round(scaledTarget / 5) * 5));
+}
+
+export function dailyConnectedSpeechTarget(planDays: number, targetBandScore = 7) {
+  const scaledTarget = 24 * 36 / normalizeStudyPlanDays(planDays) * (1 + (normalizeTargetBandScore(targetBandScore) - 7) * .14);
   return Math.max(6, Math.min(30, Math.round(scaledTarget)));
+}
+
+export function dailyReviewTarget(planDays: number, targetBandScore = 7) {
+  const score = normalizeTargetBandScore(targetBandScore);
+  const reviewRatio = .15 + (score - 5.5) * .04;
+  return Math.max(5, Math.round(dailyVocabularyTarget(planDays, score) * reviewRatio));
+}
+
+export function targetPlanFocus(targetBandScore: number) {
+  const score = normalizeTargetBandScore(targetBandScore);
+  if (score >= 8) return { label: "高分精炼", listening: "弱读、转折与多重干扰", speaking: "抽象论证、追问与自然表达", reading: "复杂匹配、隐含观点与限时定位", writing: "精准论证、句式控制与高阶改写" };
+  if (score >= 7.5) return { label: "高阶提分", listening: "同义替换、连读与干扰项", speaking: "观点展开、例证与互动追问", reading: "段落匹配、判断与快速定位", writing: "论证推进、衔接与词汇准确性" };
+  if (score >= 6.5) return { label: "均衡提分", listening: "场景细节、拼写与题型切换", speaking: "完整回答、原因与例子", reading: "关键词定位、判断与摘要填空", writing: "任务回应、段落结构与常用论证" };
+  return { label: "基础巩固", listening: "高频场景、数字与基础拼写", speaking: "清晰短句、常用话题与基本展开", reading: "主旨、事实信息与基础定位", writing: "完整句、基础结构与切题表达" };
 }
 
 export function officialSessionsPerWeek(planDays: number) {
@@ -101,8 +121,8 @@ export function officialSessionsPerWeek(planDays: number) {
   return days <= 45 ? 4 : days <= 90 ? 3 : 2;
 }
 
-export function estimatedDailyMinutes(planDays: number) {
-  return 35 + Math.ceil(dailyVocabularyTarget(planDays) * .15);
+export function estimatedDailyMinutes(planDays: number, targetBandScore = 7) {
+  return 35 + Math.ceil(dailyVocabularyTarget(planDays, targetBandScore) * .15);
 }
 
 export function normalizeTargetBandScore(value: unknown) {
@@ -118,7 +138,7 @@ export function targetOfficialSessionsPerWeek(planDays: number, targetBandScore:
 
 export function targetEstimatedDailyMinutes(planDays: number, targetBandScore: number) {
   const score = normalizeTargetBandScore(targetBandScore);
-  return Math.max(30, estimatedDailyMinutes(planDays) + Math.round((score - 7) * 8));
+  return Math.max(30, estimatedDailyMinutes(planDays, score) + Math.round((score - 7) * 4));
 }
 
 export function localDayKey(date = new Date()) {

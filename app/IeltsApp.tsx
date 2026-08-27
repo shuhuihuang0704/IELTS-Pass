@@ -20,6 +20,7 @@ import {
   completionPercent,
   dailyConnectedSpeechTarget,
   dailyDictationTarget,
+  dailyReviewTarget,
   dailyVocabularyTarget,
   defaultProgress,
   localDayKey,
@@ -35,6 +36,7 @@ import {
   scheduleWordForReview,
   targetEstimatedDailyMinutes,
   targetOfficialSessionsPerWeek,
+  targetPlanFocus,
   type LearningProgress,
   type NotebookEntry,
   type WordRating,
@@ -982,7 +984,10 @@ function TodayView({
 }) {
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [showExtraStudy, setShowExtraStudy] = useState(false);
-  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
+  const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
+  const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
+  const planFocus = targetPlanFocus(progress.targetBandScore);
   const dailyMinutes = targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore);
   const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
   const carryoverSkill = progress.carryoverTasks.find((skill) => !progress.completed[skill]);
@@ -1010,7 +1015,7 @@ function TodayView({
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
           <div className="scene-heading"><span>PLAN DAY {planDay} / {progress.studyPlanDays}</span><span>约 {dailyMinutes} 分钟</span></div>
-          <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · 听力场景 · 口语互动 · Academic Reading</p>
+          <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · {dictationTarget} 听写 · {phraseTarget} 连读 · {planFocus.label}</p>
           <button className="voice-orb" aria-label="试听场景" onClick={() => speak("Hello, I'm calling about the room for rent.")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
             {skills.map((skill, index) => (
@@ -2132,7 +2137,7 @@ async function buildTutorReply(question: string, progress: LearningProgress, pre
   if (topic === "词汇") return { topic, text: `你目前有 ${progress.reviewWords.length} 个词进入复习队列。针对具体单词，请直接问“academic 是什么意思/怎么用”，我会返回中文、词性、英文释义和例句；针对记忆方法，模糊和不熟悉的词应在本轮重复，并进入 1、3、7、14、30、60 天复习。` };
   if (topic === "学习计划") {
     const done = Object.values(progress.completed).filter(Boolean).length;
-    return { topic, text: `这是根据你当前 App 进度生成的回答：你的目标是 IELTS ${progress.targetBandScore.toFixed(1)}，选择了 ${progress.studyPlanDays} 天计划，每日词汇目标 ${dailyVocabularyTarget(progress.studyPlanDays)} 词；今天完成 ${done}/4 项，完成度 ${completionPercent(progress)}%。${done < 4 ? "下一步先完成尚未打勾的任务，再进入套题训练。" : "今日基础任务已完成，可以复习错词或增加一组套题。"}` };
+    return { topic, text: `这是根据你当前 App 进度生成的回答：你的目标是 IELTS ${progress.targetBandScore.toFixed(1)}，选择了 ${progress.studyPlanDays} 天计划，每日词汇目标 ${dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore)} 词、听写 ${dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore)} 词、连读 ${dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore)} 组；今天完成 ${done}/4 项，完成度 ${completionPercent(progress)}%。${done < 4 ? "下一步先完成尚未打勾的任务，再进入套题训练。" : "今日基础任务已完成，可以复习错词或增加一组套题。"}` };
   }
   if (topic === "范围外") return { topic, text: "这个页面目前只回答 IELTS 学习相关问题，我不想在不相关领域给你一个看似确定但可能错误的答案。你可以问词汇、听力、口语、阅读、写作、套题或学习计划。" };
   return { topic: "需要补充", text: "我还不能确定你具体在问哪一部分，所以先不猜。请补充一个关键词（词汇 / 听力 / 口语 / 阅读 / 写作），或直接粘贴题干、原文和你的答案，我会围绕这些内容回答。" };
@@ -2206,9 +2211,9 @@ function SceneView({
   onComplete: (skill: Skill, minutes: number) => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
-  const dictationTarget = dailyDictationTarget(progress.studyPlanDays);
-  const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays);
+  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
+  const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
+  const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
   const [vocabularyMode, setVocabularyMode] = useState<"daily" | "typing" | "phrases">("daily");
   const vocabularyHeader = vocabularyMode === "typing"
     ? { eyebrow: "SCENE DICTATION", title: `每天 ${dictationTarget} 个听写词，`, accent: "听清再写准。" }
@@ -2282,9 +2287,9 @@ function VocabularyPractice({
   onSectionComplete: (section: "daily" | "dictation") => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
-  const dictationTarget = dailyDictationTarget(progress.studyPlanDays);
-  const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays);
+  const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
+  const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
+  const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
   const dailyDictationWords = useMemo(
     () => getDailyListeningVocabulary(progress.dailyVocabularyDate, dictationTarget),
     [dictationTarget, progress.dailyVocabularyDate],
@@ -2658,7 +2663,7 @@ function DailyVocabularySprint({
   onComplete: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
-  const dailyTarget = dailyVocabularyTarget(progress.studyPlanDays);
+  const dailyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
   const dailyWords = useMemo(() => getDailyVocabulary(progress.dailyVocabularyDate, dailyTarget), [dailyTarget, progress.dailyVocabularyDate]);
   const total = dailyWords.length;
   const groupSize = 20;
@@ -3172,6 +3177,7 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
 function ReviewView({ progress, updateProgress }: { progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [mode, setMode] = useState<"notebook" | "review">("notebook");
   const today = localDayKey();
+  const reviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
   const reviewItems = progress.reviewWords.filter((item) => (progress.reviewSchedule[item]?.dueDate ?? today) <= today);
   const scheduledCount = progress.reviewWords.length - reviewItems.length;
   const wordNotes = progress.notebook.filter((entry) => entry.kind === "word").length;
@@ -3211,7 +3217,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
         </section>
       ) : (
         <>
-          <section className="review-hero"><div><span>今日到期复习</span><strong>{reviewItems.length}</strong><p>{scheduledCount} 个词已安排在未来出现 · 间隔按 1、3、7、14、30、60 天递增</p></div><span className="review-loop" aria-hidden="true">↺</span></section>
+          <section className="review-hero"><div><span>今日到期复习</span><strong>{reviewItems.length}</strong><p>当前计划每日复习容量约 {reviewTarget} 词 · {scheduledCount} 个词已排到未来 · 间隔按 1、3、7、14、30、60 天递增</p></div><span className="review-loop" aria-hidden="true">↺</span></section>
           <div className="review-list">
         {reviewItems.length === 0 ? <div className="empty-state"><strong>今天没有到期内容</strong><p>{scheduledCount > 0 ? `${scheduledCount} 个词已按记忆间隔排到后续日期。` : "模糊、不熟悉和拼错的内容会自动进入这里。"}</p></div> : reviewItems.map((item) => {
           const word = vocabulary.find((entry) => entry.word === item) ?? dailyVocabulary.find((entry) => entry.word === item);
@@ -3572,10 +3578,12 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
   const [showWordbook, setShowWordbook] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
-  const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays);
-  const planDictationTarget = dailyDictationTarget(progress.studyPlanDays);
-  const planPhraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays);
+  const planVocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
+  const planDictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
+  const planPhraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
+  const planReviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
   const planSessions = targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore);
+  const planFocus = targetPlanFocus(progress.targetBandScore);
   const planProgress = overallPlanProgress(progress);
   const planDay = planProgress.planDay;
   const planEndDate = new Date(`${progress.studyPlanStartedAt}T12:00:00`);
@@ -3595,8 +3603,8 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
     setCustomPlanDays(String(nextDays));
     updateProgress((current) => {
       if (current.studyPlanDays === nextDays) return current;
-      const targetWords = getDailyVocabulary(current.dailyVocabularyDate, dailyVocabularyTarget(nextDays));
-      const targetDictationWords = getDailyListeningVocabulary(current.dailyVocabularyDate, dailyDictationTarget(nextDays));
+      const targetWords = getDailyVocabulary(current.dailyVocabularyDate, dailyVocabularyTarget(nextDays, current.targetBandScore));
+      const targetDictationWords = getDailyListeningVocabulary(current.dailyVocabularyDate, dailyDictationTarget(nextDays, current.targetBandScore));
       const dailyVocabularyCompleted = targetWords.every((item) => current.dailyVocabularyKnown.includes(item.word));
       const dailyDictationCompleted = targetDictationWords.every((item) => current.dailyDictationSeen.includes(item.word));
       return {
@@ -3608,7 +3616,20 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
       };
     });
   };
-  const selectTargetBand = (score: number) => updateProgress((current) => ({ ...current, targetBandScore: normalizeTargetBandScore(score) }));
+  const selectTargetBand = (score: number) => updateProgress((current) => {
+    const targetBandScore = normalizeTargetBandScore(score);
+    const targetWords = getDailyVocabulary(current.dailyVocabularyDate, dailyVocabularyTarget(current.studyPlanDays, targetBandScore));
+    const targetDictationWords = getDailyListeningVocabulary(current.dailyVocabularyDate, dailyDictationTarget(current.studyPlanDays, targetBandScore));
+    const dailyVocabularyCompleted = targetWords.every((item) => current.dailyVocabularyKnown.includes(item.word));
+    const dailyDictationCompleted = targetDictationWords.every((item) => current.dailyDictationSeen.includes(item.word));
+    return {
+      ...current,
+      targetBandScore,
+      dailyVocabularyCompleted,
+      dailyDictationCompleted,
+      completed: { ...current.completed, vocabulary: dailyVocabularyCompleted && dailyDictationCompleted },
+    };
+  });
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} />;
   return (
     <>
@@ -3624,18 +3645,20 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
         </div>
       </section>
       <section className="study-plan-card">
-        <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>水位根据目标难度、计划日期、词汇掌握、每日任务、套题和坚持天数共同变化。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
+        <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>当前为“{planFocus.label}”计划；目标分数会同时改变每天的训练量、复习量、训练重点与套题频率。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
         <div className="study-plan-summary">
           <article><span>目标分数</span><strong>{progress.targetBandScore.toFixed(1)}</strong></article>
           <article><span>每日核心词</span><strong>{planVocabularyTarget}<small> 词</small></strong></article>
           <article><span>场景听写</span><strong>{planDictationTarget}<small> 词</small></strong></article>
           <article><span>连读词组</span><strong>{planPhraseTarget}<small> 组</small></strong></article>
+          <article><span>复习容量</span><strong>{planReviewTarget}<small> 词 / 日</small></strong></article>
           <article><span>套题频率</span><strong>{planSessions}<small> 次 / 周</small></strong></article>
           <article><span>每日预计</span><strong>{targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore)}<small> 分钟</small></strong></article>
           <article><span>预计结束</span><strong>{planEndDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}</strong></article>
         </div>
-        <div className="target-band-selector"><div><strong>目标分数</strong><small>分数越高，套题训练在总进度中的权重越高</small></div><div>{[5.5, 6, 6.5, 7, 7.5, 8, 8.5].map((score) => <button className={progress.targetBandScore === score ? "is-active" : ""} onClick={() => selectTargetBand(score)} key={score}>{score.toFixed(1)}</button>)}</div></div>
-        <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days)} 核心词 · {dailyDictationTarget(days)} 听写 · {dailyConnectedSpeechTarget(days)} 词组</small></button>)}</div>
+        <div className="target-band-selector"><div><strong>目标分数 · {planFocus.label}</strong><small>切换后立即重算词汇、听写、连读、复习和套题安排</small></div><div>{[5.5, 6, 6.5, 7, 7.5, 8, 8.5].map((score) => <button className={progress.targetBandScore === score ? "is-active" : ""} onClick={() => selectTargetBand(score)} key={score}>{score.toFixed(1)}</button>)}</div></div>
+        <div className="study-plan-focus" aria-label="当前分数训练重点"><article><span>听力重点</span><strong>{planFocus.listening}</strong></article><article><span>口语重点</span><strong>{planFocus.speaking}</strong></article><article><span>阅读重点</span><strong>{planFocus.reading}</strong></article><article><span>写作重点</span><strong>{planFocus.writing}</strong></article></div>
+        <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
       <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>

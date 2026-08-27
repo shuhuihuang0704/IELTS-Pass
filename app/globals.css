@@ -1025,7 +1025,7 @@ button { cursor: pointer; }
 .study-plan-card>header p { margin:7px 0 0; color:var(--muted); font-size:10px; line-height:1.5; }
 .study-plan-card>header>strong { flex:0 0 auto; color:#5147b7; font-size:25px; }
 .study-plan-card>header>strong small { color:#88828e; font-size:10px; letter-spacing:0; }
-.study-plan-summary { margin-top:22px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; }
+.study-plan-summary { margin-top:22px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
 .study-plan-summary article { min-height:86px; padding:14px; border-radius:15px; background:#f6f5f8; }
 .study-plan-summary span,.study-plan-summary strong { display:block; }
 .study-plan-summary span { color:var(--muted); font-size:8px; }
@@ -1038,6 +1038,11 @@ button { cursor: pointer; }
 .target-band-selector>div:last-child { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
 .target-band-selector button { min-width:43px; min-height:34px; border:1px solid #ddd8e6; border-radius:10px; color:#5d5667; background:white; font-size:9px; font-weight:700; }
 .target-band-selector button.is-active { color:white; border-color:#6257dc; background:#6257dc; box-shadow:0 6px 14px rgba(77,65,178,.18); }
+.study-plan-focus { margin-top:10px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.study-plan-focus article { min-height:66px; padding:13px 14px; border:1px solid #ebe7ef; border-radius:14px; background:linear-gradient(135deg,#fbfafe,#f5f3fb); }
+.study-plan-focus span,.study-plan-focus strong { display:block; }
+.study-plan-focus span { color:var(--violet); font-size:8px; font-weight:750; letter-spacing:.5px; }
+.study-plan-focus strong { margin-top:8px; color:#403a49; font-size:10px; line-height:1.45; }
 .study-plan-presets { margin-top:15px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
 .study-plan-presets button { min-height:74px; padding:13px; border:1px solid #e4dfea; border-radius:14px; color:inherit; background:white; text-align:left; }
 .study-plan-presets button strong,.study-plan-presets button small { display:block; }
@@ -1286,6 +1291,7 @@ button { cursor: pointer; }
   .matching-row { align-items:flex-start; flex-direction:column; }
   .matching-row select { width:100%; }
   .profile-grid { grid-template-columns:1fr 1fr; }
+  .study-plan-focus { grid-template-columns:1fr; }
   .profile-wordbook { grid-template-columns:auto 1fr; padding:18px; }
   .profile-wordbook>b { grid-column:2; }
   .wordbook-hero { align-items:flex-start; flex-direction:column; }

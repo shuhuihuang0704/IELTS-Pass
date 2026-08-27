@@ -65,6 +65,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /dailyVocabularyTarget/);
   assert.match(state, /dailyDictationTarget/);
   assert.match(state, /dailyConnectedSpeechTarget/);
+  assert.match(state, /dailyReviewTarget/);
+  assert.match(state, /targetScoreWorkloadFactor/);
+  assert.match(state, /targetPlanFocus/);
   assert.match(state, /officialSessionsPerWeek/);
   assert.match(state, /estimatedDailyMinutes/);
   assert.match(state, /normalizeTargetBandScore/);
@@ -216,7 +219,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /profile-water-fill/);
   assert.match(app, /整体备考计划完成度/);
   assert.match(app, /OVERALL PLAN LEVEL/);
-  assert.match(app, /水位根据目标难度、计划日期、词汇掌握、每日任务、套题和坚持天数共同变化/);
+  assert.match(app, /目标分数会同时改变每天的训练量、复习量、训练重点与套题频率/);
   assert.doesNotMatch(app, /每完成一项今日任务，水位会上升 25%/);
   assert.match(app, /target-band-selector/);
   assert.match(app, /目标分数与备考周期/);
@@ -224,9 +227,12 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /设置目标分数与备考周期/);
   assert.match(app, /自定义学习天数/);
   assert.match(app, /重新生成计划/);
-  assert.match(app, /dailyVocabularyTarget\(progress\.studyPlanDays\)/);
+  assert.match(app, /dailyVocabularyTarget\(progress\.studyPlanDays, progress\.targetBandScore\)/);
+  assert.match(app, /目标分数会同时改变每天的训练量、复习量、训练重点与套题频率/);
+  assert.match(app, /切换后立即重算词汇、听写、连读、复习和套题安排/);
   assert.match(styles, /\.study-plan-card/);
   assert.match(styles, /\.study-plan-presets/);
+  assert.match(styles, /\.study-plan-focus/);
   assert.doesNotMatch(app, /\["今日词汇"|\["待强化词汇"/);
   assert.match(styles, /\.ai-tutor-shell/);
   assert.match(styles, /\.profile-water-gauge/);
