@@ -1110,6 +1110,10 @@ button { cursor: pointer; }
 .wordbook-global-meaning span { color:var(--violet); font-size:8px; font-weight:750; }
 .wordbook-global-meaning strong { font-size:14px; }
 .wordbook-global-meaning strong.is-unavailable { color:#8d7c74; font-size:10px; font-weight:500; }
+.wordbook-global-example { margin-top:10px; padding:11px 12px; display:grid; grid-template-columns:76px 1fr; gap:10px; border-radius:12px; background:#f3f7f4; }
+.wordbook-global-example>span { color:#287154; font-size:8px; font-weight:750; }
+.wordbook-global-example>span small { margin-top:3px; display:block; color:#789085; font-size:7px; font-weight:500; }
+.wordbook-global-example blockquote { margin:0; color:#494f4b; font-family:Georgia,"Times New Roman",serif; font-size:10px; line-height:1.55; }
 .wordbook-global-definition { margin-top:11px; display:grid; grid-template-columns:76px 1fr; gap:10px; }
 .wordbook-global-definition>span { color:var(--violet); font-size:8px; font-weight:750; }
 .wordbook-global-definition p { margin:0; color:#49424d; font-size:10px; line-height:1.55; }
@@ -1188,6 +1192,10 @@ button { cursor: pointer; }
 .dictionary-result>div>.dictionary-chinese-meaning>p { margin:0; color:#211d28; font-size:15px; font-weight:680; line-height:1.45; }
 .dictionary-result>div>.dictionary-chinese-meaning.is-unavailable { border-color:#eadfd9; background:#fff9f5; }
 .dictionary-result>div>.dictionary-chinese-meaning.is-unavailable>p { color:#8c7469; font-size:10px; font-weight:500; }
+.dictionary-result>div>.dictionary-example-card { border-radius:13px; background:#f2f7f3; }
+.dictionary-example-card>b { color:#287154!important; }
+.dictionary-example-card blockquote { margin:0; color:#3f4d46; line-height:1.6; }
+.dictionary-example-card small { margin-top:5px; display:block; color:#7b8881; font-size:8px; }
 .dictionary-english-heading { margin-top:14px; padding-bottom:7px; border-bottom:1px solid #ece7ee; color:#8a8390; font-size:8px; font-weight:750; letter-spacing:.5px; }
 .dictionary-result>div>section { margin-top:13px; display:grid; grid-template-columns:80px 1fr; gap:12px; }
 .dictionary-result>div>section>b { color:var(--violet); font-size:9px; }

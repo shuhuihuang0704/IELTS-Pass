@@ -3444,18 +3444,33 @@ function findLocalDictionaryEntries(query: string, personalEntries: WordbookEntr
   return entries.filter((entry) => entry.word.toLowerCase().startsWith(normalized) || entry.meaning.includes(query.trim())).slice(0, 8);
 }
 
+function dictionaryContextExample(result: DictionaryResult) {
+  for (const meaning of result.meanings) {
+    const definitionWithExample = meaning.definitions.find((definition) => definition.example?.trim());
+    if (definitionWithExample?.example) return { text: definitionWithExample.example.trim(), isFallback: false };
+  }
+  const definition = result.meanings[0]?.definitions[0]?.definition?.trim().replace(/[.!?]+$/, "");
+  return {
+    text: definition
+      ? `The article uses “${result.word}” when discussing ${definition.toLowerCase()}.`
+      : `The learner wrote a sentence using the word “${result.word}”.`,
+    isFallback: true,
+  };
+}
+
 function addDictionaryResultToWordbook(progress: LearningProgress, result: DictionaryResult) {
   const normalized = result.word.trim().toLowerCase();
   if (!normalized || wordbookEntries.some((entry) => entry.word.toLowerCase() === normalized) || progress.personalWordbook.some((entry) => entry.word.toLowerCase() === normalized)) return progress;
   const firstMeaning = result.meanings[0];
   const firstDefinition = firstMeaning?.definitions[0];
+  const contextExample = dictionaryContextExample(result);
   return {
     ...progress,
     personalWordbook: [...progress.personalWordbook, {
       word: result.word.trim(),
       meaning: result.chineseMeaning?.trim() || firstDefinition?.definition || "释义待补充",
       partOfSpeech: firstMeaning?.partOfSpeech || "word",
-      example: firstDefinition?.example || "暂未提供例句。",
+      example: contextExample.text,
       addedAt: new Date().toISOString(),
     }],
   };
@@ -3532,12 +3547,14 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
           const firstMeaning = result.meanings[0];
           const firstDefinition = firstMeaning?.definitions[0];
           const chineseMeaning = result.chineseMeaning?.trim();
+          const contextExample = dictionaryContextExample(result);
           const noteId = `word:${result.word.toLowerCase()}`;
           const isSaved = progress.notebook.some((item) => item.id === noteId);
           const isInWordbook = allWordbookEntries.some((entry) => entry.word.toLowerCase() === result.word.toLowerCase());
           return <article key={`${result.word}-${resultIndex}`}>
-            <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isInWordbook ? "is-in-wordbook" : ""} disabled={isInWordbook} onClick={() => updateProgress((current) => addDictionaryResultToWordbook(current, result))}>{isInWordbook ? "✓ 已在单词本" : "+ 加入单词本"}</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "全英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+            <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isInWordbook ? "is-in-wordbook" : ""} disabled={isInWordbook} onClick={() => updateProgress((current) => addDictionaryResultToWordbook(current, result))}>{isInWordbook ? "✓ 已在单词本" : "+ 加入单词本"}</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}\n${contextExample.text}`, source: "全英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
             <div className="wordbook-global-meaning"><span>中文意思</span><strong className={chineseMeaning ? "" : "is-unavailable"}>{chineseMeaning || "中文翻译暂时不可用"}</strong></div>
+            <div className="wordbook-global-example"><span>语境例句<small>{contextExample.isFallback ? "辅助例句" : "词典例句"}</small></span><blockquote>{contextExample.text}</blockquote></div>
             {firstDefinition && <div className="wordbook-global-definition"><span>{firstMeaning?.partOfSpeech ?? "word"}</span><p>{firstDefinition.definition}</p>{firstDefinition.example && <blockquote>{firstDefinition.example}</blockquote>}</div>}
           </article>;
         })}
@@ -3617,12 +3634,13 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
         const firstMeaning = result.meanings[0];
         const firstDefinition = firstMeaning?.definitions[0];
         const chineseMeaning = result.chineseMeaning?.trim();
+        const contextExample = dictionaryContextExample(result);
         const noteId = `word:${result.word.toLowerCase()}`;
         const isSaved = progress.notebook.some((item) => item.id === noteId);
         const isInWordbook = wordbookEntries.some((entry) => entry.word.toLowerCase() === result.word.toLowerCase()) || progress.personalWordbook.some((entry) => entry.word.toLowerCase() === result.word.toLowerCase());
         return <article className="dictionary-result" key={`${result.word}-${resultIndex}`}>
-          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isInWordbook ? "is-in-wordbook" : ""} disabled={isInWordbook} onClick={() => { updateProgress((current) => addDictionaryResultToWordbook(current, result)); setResults([]); }}>{isInWordbook ? "✓ 已在单词本" : "+ 加入单词本"}</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
-          <div>{chineseMeaning ? <section className="dictionary-chinese-meaning"><b>中文意思</b><p>{chineseMeaning}</p></section> : <section className="dictionary-chinese-meaning is-unavailable"><b>中文意思</b><p>中文翻译暂时不可用，请稍后重试。</p></section>}<div className="dictionary-english-heading">英文释义与例句</div>{result.meanings.slice(0, 4).map((meaning, meaningIndex) => <section key={`${meaning.partOfSpeech}-${meaningIndex}`}><b>{meaning.partOfSpeech}</b><ol>{meaning.definitions.slice(0, 3).map((definition, definitionIndex) => <li key={definitionIndex}><p>{definition.definition}</p>{definition.example && <blockquote>{definition.example}</blockquote>}</li>)}</ol></section>)}</div>
+          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isInWordbook ? "is-in-wordbook" : ""} disabled={isInWordbook} onClick={() => { updateProgress((current) => addDictionaryResultToWordbook(current, result)); setResults([]); }}>{isInWordbook ? "✓ 已在单词本" : "+ 加入单词本"}</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}\n${contextExample.text}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+          <div>{chineseMeaning ? <section className="dictionary-chinese-meaning"><b>中文意思</b><p>{chineseMeaning}</p></section> : <section className="dictionary-chinese-meaning is-unavailable"><b>中文意思</b><p>中文翻译暂时不可用，请稍后重试。</p></section>}<section className="dictionary-example-card"><b>语境例句</b><div><blockquote>{contextExample.text}</blockquote><small>{contextExample.isFallback ? "开放词典未提供原例句，当前为辅助理解句。" : "来自开放英语词典"}</small></div></section><div className="dictionary-english-heading">英文释义与更多例句</div>{result.meanings.slice(0, 4).map((meaning, meaningIndex) => <section key={`${meaning.partOfSpeech}-${meaningIndex}`}><b>{meaning.partOfSpeech}</b><ol>{meaning.definitions.slice(0, 3).map((definition, definitionIndex) => <li key={definitionIndex}><p>{definition.definition}</p>{definition.example && <blockquote>{definition.example}</blockquote>}</li>)}</ol></section>)}</div>
         </article>;
       })}
     </section>

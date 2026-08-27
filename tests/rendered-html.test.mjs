@@ -192,6 +192,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(state, /personalWordbook: \[\]/);
   assert.match(state, /Array\.isArray\(stored\.personalWordbook\)/);
   assert.match(app, /addDictionaryResultToWordbook/);
+  assert.match(app, /dictionaryContextExample/);
+  assert.match(app, /语境例句/);
+  assert.match(app, /开放词典未提供原例句，当前为辅助理解句/);
+  assert.match(app, /英文释义与更多例句/);
   assert.match(app, /\+ 加入单词本/);
   assert.match(app, /✓ 已在单词本/);
   assert.match(app, /我的添加 \{personalEntries\.length\}/);
@@ -203,6 +207,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /api\.mymemory\.translated\.net\/get/);
   assert.match(styles, /\.wordbook-global-results/);
   assert.match(styles, /button\.is-in-wordbook/);
+  assert.match(styles, /\.dictionary-example-card/);
+  assert.match(styles, /\.wordbook-global-example/);
   assert.match(app, /DictionarySearchDialog/);
   assert.match(app, /开放英语词典/);
   assert.match(app, /findLocalDictionaryEntries/);
