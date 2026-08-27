@@ -3181,6 +3181,11 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number, fullyAnsw
     setActiveReviewId(firstIncorrectId ?? Object.keys(answerKey)[0]);
     onComplete(nextScore, answeredCount === totalQuestions);
   };
+  const redoReading = () => {
+    setAnswers({});
+    setScore(null);
+    setActiveReviewId(null);
+  };
   const answerClass = (id: string) => score === null ? "" : answers[id] === answerKey[id] ? "is-correct" : "is-incorrect";
   const activeEvidence = activeReviewId ? readingReviewEvidence[activeReviewId as keyof typeof readingReviewEvidence] : null;
   const evidencePhrasesForParagraph = (paragraph: string) => activeEvidence?.quotes.filter((quote) => quote.paragraph === paragraph).map((quote) => quote.text) ?? [];
@@ -3284,8 +3289,8 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number, fullyAnsw
           {renderAnalysis("s2", 11)}
         </section>
 
-        {score !== null && <div className={`answer-feedback ${score >= 9 && answeredCount === totalQuestions ? "success" : "neutral"}`}>得分 {score} / {totalQuestions}。{answeredCount < totalQuestions ? `${totalQuestions - answeredCount} 题未答并按错误处理；全部答案和解析已经显示，但本项尚未计为完成。` : score < 9 ? "检查段落主旨与细节定位；红色项目可以重新选择后再提交。" : "主旨和细节定位都很准确。"}</div>}
-        <button className="secondary-action reading-submit" onClick={submit}>{answeredCount < totalQuestions ? `提交当前答案（${answeredCount}/${totalQuestions}）` : `提交 ${totalQuestions} 道答案`} →</button>
+        {score !== null && <div className={`answer-feedback ${score >= 9 && answeredCount === totalQuestions ? "success" : "neutral"}`}>得分 {score} / {totalQuestions}。{answeredCount < totalQuestions ? `${totalQuestions - answeredCount} 题未答并按错误处理；全部答案和解析已经显示，但本项尚未计为完成。` : score < 9 ? "检查段落主旨与细节定位；红色项目可以重新选择后再提交。" : "主旨和细节定位都很准确。"} 可以先查看解析，也可以选择“再写一遍”。</div>}
+        {score === null ? <button className="secondary-action reading-submit" onClick={submit}>{answeredCount < totalQuestions ? `提交当前答案（${answeredCount}/${totalQuestions}）` : `提交 ${totalQuestions} 道答案`} →</button> : <button className="secondary-action reading-submit" onClick={redoReading}>↺ 再写一遍</button>}
       </section>
     </div>
   );

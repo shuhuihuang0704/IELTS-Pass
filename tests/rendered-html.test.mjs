@@ -333,6 +333,10 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /setMatchingAnswers\(\{\}\)/);
   assert.match(app, /setChoiceAnswers\(\{\}\)/);
   assert.match(app, /↺ 再写一遍/);
+  assert.match(app, /const redoReading = \(\) =>/);
+  assert.match(app, /setAnswers\(\{\}\)/);
+  assert.match(app, /setActiveReviewId\(null\)/);
+  assert.match(app, /onClick=\{redoReading\}>↺ 再写一遍/);
   assert.match(app, /正确答案：\{question\.answers\[0\]\}/);
   assert.match(app, /disabled=\{score === null\}/);
   assert.match(app, /提交后解锁原文/);
