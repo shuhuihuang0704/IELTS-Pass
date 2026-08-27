@@ -40,6 +40,8 @@ test("ships all four learning modes and persistent progress", async () => {
   for (const feature of ["VocabularyPractice", "ListeningPractice", "SpeakingPractice", "ReadingPractice", "ReviewView"]) {
     assert.match(app, new RegExp(feature));
   }
+  assert.doesNotMatch(app, /先补做昨天的词汇/);
+  assert.match(app, /今天已完成 \$\{completedCount\} \/ 4 项，今天下一项是/);
   assert.match(app, /localStorage\.setItem/);
   assert.match(app, /document\.visibilityState === "visible"/);
   assert.match(app, /visibilitychange/);

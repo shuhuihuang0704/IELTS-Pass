@@ -1057,7 +1057,7 @@ function TodayView({
           <div className="progress-intro">
             <span>今日完成度</span><strong>{percent}<small>%</small></strong>
             <div className="progress-track"><i style={{ width: `${percent}%` }} /></div>
-            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.id === "vocabulary" ? `${vocabularyTarget} 词` : nextSkill.label}。`}</p>
+            <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : `今天已完成 ${completedCount} / 4 项，今天下一项是${nextSkill.id === "vocabulary" ? `${vocabularyTarget} 词` : nextSkill.label}。`}</p>
           </div>
           <button className="streak-row" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <button className="memory-row" onClick={() => onNavigate("review")}>
