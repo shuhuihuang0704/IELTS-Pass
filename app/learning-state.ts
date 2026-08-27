@@ -19,6 +19,14 @@ export type NotebookEntry = {
   createdAt: string;
 };
 
+export type PersonalWordbookEntry = {
+  word: string;
+  meaning: string;
+  partOfSpeech: string;
+  example: string;
+  addedAt: string;
+};
+
 export type OfficialTaskResult = {
   score: number | null;
   total: number;
@@ -49,6 +57,7 @@ export type LearningProgress = {
   reviewWords: string[];
   reviewSchedule: Record<string, ReviewScheduleItem>;
   notebook: NotebookEntry[];
+  personalWordbook: PersonalWordbookEntry[];
   dailyVocabularyDate: string;
   dailyVocabularySeen: string[];
   dailyVocabularyKnown: string[];
@@ -252,6 +261,7 @@ export const defaultProgress: LearningProgress = {
   reviewWords: [],
   reviewSchedule: {},
   notebook: [],
+  personalWordbook: [],
   dailyVocabularyDate: localDayKey(),
   dailyVocabularySeen: [],
   dailyVocabularyKnown: [],
@@ -448,6 +458,17 @@ export function mergeStoredProgress(value: unknown): LearningProgress {
         && typeof entry === "object"
         && typeof (entry as NotebookEntry).id === "string"
         && ((entry as NotebookEntry).kind === "word" || (entry as NotebookEntry).kind === "question"),
+      ))
+      : [],
+    personalWordbook: Array.isArray(stored.personalWordbook)
+      ? stored.personalWordbook.filter((entry): entry is PersonalWordbookEntry => Boolean(
+        entry
+        && typeof entry === "object"
+        && typeof (entry as PersonalWordbookEntry).word === "string"
+        && typeof (entry as PersonalWordbookEntry).meaning === "string"
+        && typeof (entry as PersonalWordbookEntry).partOfSpeech === "string"
+        && typeof (entry as PersonalWordbookEntry).example === "string"
+        && typeof (entry as PersonalWordbookEntry).addedAt === "string",
       ))
       : [],
     dailyVocabularyDate: today,

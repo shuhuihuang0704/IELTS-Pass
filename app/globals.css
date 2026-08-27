@@ -1102,9 +1102,10 @@ button { cursor: pointer; }
 .wordbook-global-results>article>header { display:flex; align-items:center; justify-content:space-between; gap:14px; }
 .wordbook-global-results>article>header h3 { margin:0; display:inline; font-size:24px; letter-spacing:-.7px; }
 .wordbook-global-results>article>header span { margin-left:8px; color:var(--violet); font-size:9px; }
-.wordbook-global-results>article>header>div:last-child { display:flex; gap:6px; }
+.wordbook-global-results>article>header>div:last-child { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:6px; }
 .wordbook-global-results>article button { min-height:31px; padding:0 9px; border:0; border-radius:9px; color:#554ab8; background:#ece9f8; font-size:8px; font-weight:700; }
 .wordbook-global-results>article button.is-saved { color:#287154; background:#dff1e8; }
+.wordbook-global-results>article button.is-in-wordbook { color:#287154; background:#dff1e8; cursor:default; opacity:1; }
 .wordbook-global-meaning { margin-top:13px; padding:11px 12px; display:grid; grid-template-columns:76px 1fr; gap:10px; border-radius:12px; background:#f1effb; }
 .wordbook-global-meaning span { color:var(--violet); font-size:8px; font-weight:750; }
 .wordbook-global-meaning strong { font-size:14px; }
@@ -1178,9 +1179,10 @@ button { cursor: pointer; }
 .dictionary-result>header { display:flex; align-items:center; justify-content:space-between; gap:14px; }
 .dictionary-result>header h3 { margin:0; display:inline; font-size:25px; letter-spacing:-.7px; }
 .dictionary-result>header span { margin-left:9px; color:var(--violet); font-size:10px; }
-.dictionary-result>header>div:last-child { display:flex; gap:6px; }
+.dictionary-result>header>div:last-child { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:6px; }
 .dictionary-result>header button { min-height:32px; padding:0 10px; border:0; border-radius:9px; color:#554ab8; background:#ece9f8; font-size:8px; font-weight:700; }
 .dictionary-result>header button.is-saved { color:#287154; background:#dff1e8; }
+.dictionary-result>header button.is-in-wordbook { color:#287154; background:#dff1e8; cursor:default; opacity:1; }
 .dictionary-result>div>.dictionary-chinese-meaning { margin-top:13px; padding:12px 13px; display:grid; grid-template-columns:80px 1fr; gap:12px; border:1px solid #dcd6f0; border-radius:13px; background:#f8f6ff; }
 .dictionary-result>div>.dictionary-chinese-meaning>b { color:var(--violet); font-size:9px; }
 .dictionary-result>div>.dictionary-chinese-meaning>p { margin:0; color:#211d28; font-size:15px; font-weight:680; line-height:1.45; }

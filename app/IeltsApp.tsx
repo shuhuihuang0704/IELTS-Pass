@@ -3263,7 +3263,7 @@ type WordbookEntry = {
   partOfSpeech: string;
   example: string;
   category: string;
-  collection: "core" | "listening";
+  collection: "core" | "listening" | "personal";
 };
 
 type DictionaryResult = {
@@ -3424,33 +3424,64 @@ const wordbookEntries: WordbookEntry[] = Array.from(new Map([
   })),
 ].map((entry) => [entry.word.toLowerCase(), entry])).values()).sort((a, b) => a.word.localeCompare(b.word));
 
-function findLocalDictionaryEntries(query: string) {
+function personalWordbookEntries(entries: LearningProgress["personalWordbook"]): WordbookEntry[] {
+  return entries.map((entry) => ({
+    word: entry.word,
+    meaning: entry.meaning,
+    partOfSpeech: entry.partOfSpeech,
+    example: entry.example,
+    category: "自行添加 · 全英语词典",
+    collection: "personal",
+  }));
+}
+
+function findLocalDictionaryEntries(query: string, personalEntries: WordbookEntry[] = []) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return [];
-  const exact = wordbookEntries.find((entry) => entry.word.toLowerCase() === normalized);
+  const entries = Array.from(new Map([...personalEntries, ...wordbookEntries].map((entry) => [entry.word.toLowerCase(), entry])).values());
+  const exact = entries.find((entry) => entry.word.toLowerCase() === normalized);
   if (exact) return [exact];
-  return wordbookEntries.filter((entry) => entry.word.toLowerCase().startsWith(normalized) || entry.meaning.includes(query.trim())).slice(0, 8);
+  return entries.filter((entry) => entry.word.toLowerCase().startsWith(normalized) || entry.meaning.includes(query.trim())).slice(0, 8);
+}
+
+function addDictionaryResultToWordbook(progress: LearningProgress, result: DictionaryResult) {
+  const normalized = result.word.trim().toLowerCase();
+  if (!normalized || wordbookEntries.some((entry) => entry.word.toLowerCase() === normalized) || progress.personalWordbook.some((entry) => entry.word.toLowerCase() === normalized)) return progress;
+  const firstMeaning = result.meanings[0];
+  const firstDefinition = firstMeaning?.definitions[0];
+  return {
+    ...progress,
+    personalWordbook: [...progress.personalWordbook, {
+      word: result.word.trim(),
+      meaning: result.chineseMeaning?.trim() || firstDefinition?.definition || "释义待补充",
+      partOfSpeech: firstMeaning?.partOfSpeech || "word",
+      example: firstDefinition?.example || "暂未提供例句。",
+      addedAt: new Date().toISOString(),
+    }],
+  };
 }
 
 function WordbookView({ progress, onBack, updateProgress }: { progress: LearningProgress; onBack: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [query, setQuery] = useState("");
-  const [collection, setCollection] = useState<"all" | "core" | "listening">("all");
+  const [collection, setCollection] = useState<"all" | "core" | "listening" | "personal">("all");
   const [visibleCount, setVisibleCount] = useState(60);
   const [externalResults, setExternalResults] = useState<DictionaryResult[]>([]);
   const [externalQuery, setExternalQuery] = useState("");
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState("");
+  const personalEntries = useMemo(() => personalWordbookEntries(progress.personalWordbook), [progress.personalWordbook]);
+  const allWordbookEntries = useMemo(() => Array.from(new Map([...personalEntries, ...wordbookEntries].map((entry) => [entry.word.toLowerCase(), entry])).values()), [personalEntries]);
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredWords = useMemo(() => wordbookEntries.filter((entry) => {
+  const filteredWords = useMemo(() => allWordbookEntries.filter((entry) => {
     const matchesCollection = collection === "all" || entry.collection === collection;
     const matchesQuery = !normalizedQuery || `${entry.word} ${entry.meaning} ${entry.category}`.toLowerCase().includes(normalizedQuery);
     return matchesCollection && matchesQuery;
-  }), [collection, normalizedQuery]);
+  }), [allWordbookEntries, collection, normalizedQuery]);
   const visibleWords = filteredWords.slice(0, visibleCount);
   const coreCount = wordbookEntries.filter((entry) => entry.collection === "core").length;
   const listeningCount = wordbookEntries.filter((entry) => entry.collection === "listening").length;
 
-  const selectCollection = (next: "all" | "core" | "listening") => {
+  const selectCollection = (next: "all" | "core" | "listening" | "personal") => {
     setCollection(next);
     setVisibleCount(60);
   };
@@ -3478,7 +3509,7 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
       <button className="wordbook-back" onClick={onBack}>← 返回“我的”</button>
       <PageHeader eyebrow="MY WORDBOOK" title="把全部词汇，装进" accent="一本单词本。" />
       <section className="wordbook-hero">
-        <div><span>IELTS LEARNING LIBRARY</span><strong>{wordbookEntries.length}<small> 个待学习词汇</small></strong><p>包含 {coreCount} 个高频核心词与 {listeningCount} 个来自已导入语料库的场景听写词。</p></div>
+        <div><span>IELTS LEARNING LIBRARY</span><strong>{allWordbookEntries.length}<small> 个学习词汇</small></strong><p>包含 {coreCount} 个高频核心词、{listeningCount} 个场景听写词与 {personalEntries.length} 个自行添加词。</p></div>
         <div className="wordbook-hero-stats"><span><b>{progress.reviewWords.length}</b>待复习</span><span><b>{progress.masteredWords.length}</b>已掌握</span></div>
       </section>
       <section className="wordbook-toolbar" aria-label="单词本筛选与全词典搜索">
@@ -3487,9 +3518,10 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
           <button type="submit" disabled={!query.trim() || externalLoading}>{externalLoading ? "正在查询…" : "查询全部英语单词"}</button>
         </form>
         <div className="wordbook-filters" role="tablist" aria-label="词库分类">
-          <button role="tab" aria-selected={collection === "all"} className={collection === "all" ? "is-active" : ""} onClick={() => selectCollection("all")}>全部 {wordbookEntries.length}</button>
+          <button role="tab" aria-selected={collection === "all"} className={collection === "all" ? "is-active" : ""} onClick={() => selectCollection("all")}>全部 {allWordbookEntries.length}</button>
           <button role="tab" aria-selected={collection === "core"} className={collection === "core" ? "is-active" : ""} onClick={() => selectCollection("core")}>高频核心 {coreCount}</button>
           <button role="tab" aria-selected={collection === "listening"} className={collection === "listening" ? "is-active" : ""} onClick={() => selectCollection("listening")}>场景听写 {listeningCount}</button>
+          <button role="tab" aria-selected={collection === "personal"} className={collection === "personal" ? "is-active" : ""} onClick={() => selectCollection("personal")}>我的添加 {personalEntries.length}</button>
         </div>
       </section>
       {(externalLoading || externalError || externalResults.length > 0) && <section className="wordbook-global-results" aria-live="polite">
@@ -3502,8 +3534,9 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
           const chineseMeaning = result.chineseMeaning?.trim();
           const noteId = `word:${result.word.toLowerCase()}`;
           const isSaved = progress.notebook.some((item) => item.id === noteId);
+          const isInWordbook = allWordbookEntries.some((entry) => entry.word.toLowerCase() === result.word.toLowerCase());
           return <article key={`${result.word}-${resultIndex}`}>
-            <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "全英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+            <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isInWordbook ? "is-in-wordbook" : ""} disabled={isInWordbook} onClick={() => updateProgress((current) => addDictionaryResultToWordbook(current, result))}>{isInWordbook ? "✓ 已在单词本" : "+ 加入单词本"}</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "全英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
             <div className="wordbook-global-meaning"><span>中文意思</span><strong className={chineseMeaning ? "" : "is-unavailable"}>{chineseMeaning || "中文翻译暂时不可用"}</strong></div>
             {firstDefinition && <div className="wordbook-global-definition"><span>{firstMeaning?.partOfSpeech ?? "word"}</span><p>{firstDefinition.definition}</p>{firstDefinition.example && <blockquote>{firstDefinition.example}</blockquote>}</div>}
           </article>;
@@ -3531,18 +3564,19 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
 }
 
 function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClose }: { initialQuery: string; progress: LearningProgress; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onClose: () => void }) {
+  const personalEntries = useMemo(() => personalWordbookEntries(progress.personalWordbook), [progress.personalWordbook]);
   const [query, setQuery] = useState(initialQuery);
   const [requestedQuery, setRequestedQuery] = useState(initialQuery);
   const [requestId, setRequestId] = useState(0);
   const [results, setResults] = useState<DictionaryResult[]>([]);
-  const [loading, setLoading] = useState(Boolean(initialQuery.trim()) && findLocalDictionaryEntries(initialQuery).length === 0);
+  const [loading, setLoading] = useState(Boolean(initialQuery.trim()) && findLocalDictionaryEntries(initialQuery, personalEntries).length === 0);
   const [error, setError] = useState("");
-  const localResults = useMemo(() => findLocalDictionaryEntries(requestedQuery), [requestedQuery]);
+  const localResults = useMemo(() => findLocalDictionaryEntries(requestedQuery, personalEntries), [personalEntries, requestedQuery]);
 
   useEffect(() => {
     const term = requestedQuery.trim();
     if (!term) return;
-    if (findLocalDictionaryEntries(term).length > 0) return;
+    if (findLocalDictionaryEntries(term, personalEntries).length > 0) return;
     let active = true;
     lookupDictionaryWord(term).then((entries) => {
       if (!active) return;
@@ -3554,7 +3588,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
       setError("词库外查询暂时超时。你仍然可以搜索本地 3,600 词的中文释义，稍后再试这个词。");
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [requestedQuery, requestId]);
+  }, [personalEntries, requestedQuery, requestId]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
@@ -3565,7 +3599,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
   return <div className="dictionary-search-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <section className="dictionary-search-dialog" role="dialog" aria-modal="true" aria-label="全英语词典搜索">
       <header><div><span>GLOBAL ENGLISH DICTIONARY</span><h2>查单词与中文释义</h2><p>输入英文即可先看中文意思，再查看词性、音标、英文释义和例句。</p></div><button onClick={onClose} aria-label="关闭词典">×</button></header>
-      <form onSubmit={(event) => { event.preventDefault(); const term = query.trim(); if (!term) return; const hasLocalResult = findLocalDictionaryEntries(term).length > 0; setLoading(!hasLocalResult); setError(""); setResults([]); setRequestedQuery(term); setRequestId((current) => current + 1); }}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入英语单词或中文意思" aria-label="输入英语单词" /><button type="submit" disabled={loading}>{loading ? "查询中…" : "查词"}</button></form>
+      <form onSubmit={(event) => { event.preventDefault(); const term = query.trim(); if (!term) return; const hasLocalResult = findLocalDictionaryEntries(term, personalEntries).length > 0; setLoading(!hasLocalResult); setError(""); setResults([]); setRequestedQuery(term); setRequestId((current) => current + 1); }}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入英语单词或中文意思" aria-label="输入英语单词" /><button type="submit" disabled={loading}>{loading ? "查询中…" : "查词"}</button></form>
       <p className="dictionary-search-source">本地 3,600 词使用现有中文词库；词库外结果由开放英语词典与中文翻译服务实时提供。</p>
       {localResults.length > 0 && <section className="dictionary-local-results" aria-label="本地词库释义">
         <header><strong>{localResults.length === 1 ? "中文释义" : `找到 ${localResults.length} 个本地词条`}</strong><span>IELTS PASS CORE LIBRARY</span></header>
@@ -3573,7 +3607,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
           const noteId = `word:${entry.word.toLowerCase()}`;
           const isSaved = progress.notebook.some((item) => item.id === noteId);
           return <article className="dictionary-result is-local" key={entry.word}>
-            <header><div><h3>{entry.word}</h3><span>{entry.partOfSpeech}</span></div><div><button onClick={() => speak(entry.word, .9)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `核心词库 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+            <header><div><h3>{entry.word}</h3><span>{entry.partOfSpeech}</span></div><div><button onClick={() => speak(entry.word, .9)}>▶ 发音</button><button className="is-in-wordbook" disabled>✓ 已在单词本</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `${entry.collection === "personal" ? "我的单词本" : "核心词库"} · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
             <div><section><b>中文意思</b><div><p className="dictionary-local-meaning">{entry.meaning}</p><blockquote>{entry.example}</blockquote><ConfusingWords word={entry.word} /><small>{entry.category}</small></div></section></div>
           </article>;
         })}
@@ -3585,8 +3619,9 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
         const chineseMeaning = result.chineseMeaning?.trim();
         const noteId = `word:${result.word.toLowerCase()}`;
         const isSaved = progress.notebook.some((item) => item.id === noteId);
+        const isInWordbook = wordbookEntries.some((entry) => entry.word.toLowerCase() === result.word.toLowerCase()) || progress.personalWordbook.some((entry) => entry.word.toLowerCase() === result.word.toLowerCase());
         return <article className="dictionary-result" key={`${result.word}-${resultIndex}`}>
-          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isInWordbook ? "is-in-wordbook" : ""} disabled={isInWordbook} onClick={() => { updateProgress((current) => addDictionaryResultToWordbook(current, result)); setResults([]); }}>{isInWordbook ? "✓ 已在单词本" : "+ 加入单词本"}</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
           <div>{chineseMeaning ? <section className="dictionary-chinese-meaning"><b>中文意思</b><p>{chineseMeaning}</p></section> : <section className="dictionary-chinese-meaning is-unavailable"><b>中文意思</b><p>中文翻译暂时不可用，请稍后重试。</p></section>}<div className="dictionary-english-heading">英文释义与例句</div>{result.meanings.slice(0, 4).map((meaning, meaningIndex) => <section key={`${meaning.partOfSpeech}-${meaningIndex}`}><b>{meaning.partOfSpeech}</b><ol>{meaning.definitions.slice(0, 3).map((definition, definitionIndex) => <li key={definitionIndex}><p>{definition.definition}</p>{definition.example && <blockquote>{definition.example}</blockquote>}</li>)}</ol></section>)}</div>
         </article>;
       })}
@@ -3683,7 +3718,7 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
       </section>
       <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
         <span className="profile-wordbook-mark">Aa</span>
-        <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length} 个学习词汇 · 紧凑浏览、全英语查词与一键笔记</p></span>
+        <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length + progress.personalWordbook.length} 个学习词汇 · 可从全英语查词结果自行添加</p></span>
         <b>进入单词本 →</b>
       </button>
       <section className="profile-settings"><div><strong>本机测试数据</strong><p>当前版本把进度保存在这个浏览器中。登录和跨设备云同步会在后续接入。</p></div><button onClick={onReset}>重置学习进度</button></section>
