@@ -248,6 +248,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /buildOfficialQuestionNote/);
   assert.match(app, /enrichLegacyOfficialNotebookEntry/);
   assert.match(app, /readingNotebookReview/);
+  assert.match(app, /readingSource\.includes\("reading"\)/);
+  assert.match(app, /专项训练 · 阅读/);
   assert.match(app, /listeningNotebookReview/);
   assert.match(app, /officialAnswerAudioMedia/);
   assert.match(app, /答案对应音频/);

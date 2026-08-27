@@ -485,7 +485,12 @@ type ReadingNotebookReview = {
 };
 
 function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | undefined {
-  if (entry.kind !== "question" || (!entry.source.includes("阅读") && !entry.detail.includes("原文定位："))) return undefined;
+  const readingSource = entry.source.toLowerCase();
+  const isReadingEntry = entry.id.includes(":reading:")
+    || entry.source.includes("阅读")
+    || readingSource.includes("reading")
+    || entry.detail.includes("原文定位：");
+  if (entry.kind !== "question" || !isReadingEntry) return undefined;
   const field = (label: string) => entry.detail.split("\n").find((line) => line.startsWith(`${label}：`))?.slice(label.length + 1).trim() ?? "";
   let options = field("选项").split("｜").map((option) => option.trim()).filter(Boolean);
   const dailyMatch = entry.id.match(/^question:reading:([^:]+):([^:]+):([^:]+)$/);
@@ -3746,7 +3751,7 @@ function ReadingPractice({
         kind: "question",
         title: `Q${number} · ${readingExercise.title}`,
         detail: `题目：${prompt}\n选项：${options.join("｜")}\n我的答案：${answers[id] || "未作答"}\n正确答案：${answerKey[id]}\n原文定位：${evidence.location}\n原文：${evidence.quotes.map((quote) => quote.text).join(" ")}\n解析：${evidence.explanation}`,
-        source: `阅读套题 · ${exerciseDate} · ${readingSet.code}`,
+        source: `专项训练 · 阅读 · ${exerciseDate} · ${readingSet.code}`,
       }))}>{saved ? "★ 已加入笔记" : "☆ 加入笔记（含原文定位）"}</button>
     </aside>;
   };
