@@ -2171,14 +2171,40 @@ function AiTutorView({ progress }: { progress: LearningProgress }) {
   ]);
   const [draft, setDraft] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+  const [voiceLanguage, setVoiceLanguage] = useState<"en-GB" | "zh-CN">("en-GB");
+  const [voiceState, setVoiceState] = useState<"idle" | "listening">("idle");
+  const [voiceStatus, setVoiceStatus] = useState("点击语音输入后开始说话；识别文字不会自动发送。");
   const nextId = useRef(1);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  type TutorRecognitionResultEvent = { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> };
+  type TutorRecognitionErrorEvent = { error?: string };
+  type TutorRecognition = {
+    lang: string;
+    continuous: boolean;
+    interimResults: boolean;
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+    onresult: ((event: TutorRecognitionResultEvent) => void) | null;
+    onerror: ((event: TutorRecognitionErrorEvent) => void) | null;
+    onend: (() => void) | null;
+  };
+  type TutorRecognitionConstructor = new () => TutorRecognition;
+  const tutorRecognition = useRef<TutorRecognition | null>(null);
 
   useEffect(() => { messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" }); }, [messages, isThinking]);
+  useEffect(() => () => {
+    if (tutorRecognition.current) {
+      tutorRecognition.current.onend = null;
+      tutorRecognition.current.abort();
+      tutorRecognition.current = null;
+    }
+  }, []);
 
   const sendQuestion = async (question: string) => {
     const text = question.trim();
     if (!text || isThinking) return;
+    if (tutorRecognition.current) tutorRecognition.current.stop();
     const previousQuestion = [...messages].reverse().find((message) => message.role === "user")?.text ?? "";
     setMessages((current) => [...current, { id: nextId.current++, role: "user", text }]);
     setDraft("");
@@ -2193,6 +2219,59 @@ function AiTutorView({ progress }: { progress: LearningProgress }) {
     }
   };
   const submitQuestion = (event: FormEvent) => { event.preventDefault(); sendQuestion(draft); };
+  const toggleVoiceInput = () => {
+    if (tutorRecognition.current) {
+      tutorRecognition.current.stop();
+      setVoiceStatus("已停止听写，可以检查文字后发送。");
+      return;
+    }
+    const speechWindow = window as typeof window & { SpeechRecognition?: TutorRecognitionConstructor; webkitSpeechRecognition?: TutorRecognitionConstructor };
+    const Constructor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Constructor) {
+      setVoiceStatus("当前浏览器不支持语音识别。请使用 Chrome、Edge 或 Safari，也可以继续打字提问。");
+      return;
+    }
+    const recognition = new Constructor();
+    const originalDraft = draft.trim();
+    let heardText = false;
+    let recognitionFailed = false;
+    recognition.lang = voiceLanguage;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      let transcript = "";
+      let hasFinalResult = false;
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0].transcript;
+        hasFinalResult ||= event.results[index].isFinal;
+      }
+      const cleanedTranscript = transcript.trim();
+      if (!cleanedTranscript) return;
+      heardText = true;
+      setDraft([originalDraft, cleanedTranscript].filter(Boolean).join(originalDraft && cleanedTranscript ? " " : ""));
+      setVoiceStatus(hasFinalResult ? "识别完成，请检查文字后发送。" : "正在识别…可以继续说。");
+    };
+    recognition.onerror = (event) => {
+      recognitionFailed = true;
+      const permissionDenied = event.error === "not-allowed" || event.error === "service-not-allowed";
+      setVoiceStatus(permissionDenied ? "没有获得麦克风权限，请在浏览器设置中允许后重试。" : "没有识别成功，请靠近麦克风重试或直接打字。");
+    };
+    recognition.onend = () => {
+      if (tutorRecognition.current === recognition) tutorRecognition.current = null;
+      setVoiceState("idle");
+      if (!recognitionFailed) setVoiceStatus(heardText ? "识别完成，请检查文字后发送。" : "没有听清内容，请点击语音输入重试。");
+    };
+    tutorRecognition.current = recognition;
+    setVoiceState("listening");
+    setVoiceStatus(voiceLanguage === "en-GB" ? "正在听英语，请开始说话…" : "正在听中文，请开始说话…");
+    try {
+      recognition.start();
+    } catch {
+      tutorRecognition.current = null;
+      setVoiceState("idle");
+      setVoiceStatus("语音输入没有启动，请稍后重试。");
+    }
+  };
   const prompts = ["Listening 填空题总是漏词怎么办？", "Part 2 一分钟怎么准备？", "Writing Task 2 怎么展开观点？", "根据今天进度安排下一步"];
 
   return (
@@ -2212,7 +2291,8 @@ function AiTutorView({ progress }: { progress: LearningProgress }) {
           <div className="ai-suggested-prompts">{prompts.map((prompt) => <button type="button" disabled={isThinking} onClick={() => sendQuestion(prompt)} key={prompt}>{prompt}</button>)}</div>
           <form className="ai-tutor-composer" onSubmit={submitQuestion}>
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(draft); } }} placeholder="例如：为什么这道阅读题是 Not Given？" aria-label="向 IELTS AI 提问" />
-            <footer><small>Enter 发送 · Shift + Enter 换行</small><button type="submit" disabled={!draft.trim() || isThinking}>发送问题 <span>↑</span></button></footer>
+            <footer><small>Enter 发送 · Shift + Enter 换行</small><div className="ai-composer-actions"><button type="button" className="ai-voice-language" disabled={voiceState === "listening"} onClick={() => setVoiceLanguage((current) => current === "en-GB" ? "zh-CN" : "en-GB")} aria-label={`切换语音识别语言，当前为${voiceLanguage === "en-GB" ? "英语" : "中文"}`}>{voiceLanguage === "en-GB" ? "EN" : "中"}</button><button type="button" className={`ai-voice-input ${voiceState === "listening" ? "is-listening" : ""}`} onClick={toggleVoiceInput} aria-pressed={voiceState === "listening"} aria-label={voiceState === "listening" ? "停止语音输入" : "开始语音输入"}><span aria-hidden="true">●</span>{voiceState === "listening" ? "停止" : "语音"}</button><button type="submit" disabled={!draft.trim() || isThinking}>发送问题 <span>↑</span></button></div></footer>
+            <p className={`ai-voice-status ${voiceState === "listening" ? "is-listening" : ""}`} aria-live="polite">{voiceStatus}</p>
           </form>
         </div>
       </section>
