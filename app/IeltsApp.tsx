@@ -1447,7 +1447,7 @@ function OfficialTestRunner({
               })}</div>
             </section>
           )}
-          <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : "official-standard-paper-body"}>
+          <div className={material.passagePdfUrl && paperMode === "questions" ? "official-full-reading-body" : `official-standard-paper-body${material.audioTracks && !speakingTaskMode ? " is-listening-workspace" : ""}${writingTaskMode ? " is-writing-workspace" : ""}`}>
           {taskAnswers.length > 0 ? (
             <form className="official-answer-sheet" onSubmit={(event) => {
               event.preventDefault();
@@ -1542,6 +1542,7 @@ function OfficialTestRunner({
           ) : (
             <div className="official-open-response-note"><b>开放作答题</b><span>Speaking / Writing 没有唯一官方答案，因此不显示虚假的对错判定；可通过官方示范录音或范文复盘。</span></div>
           )}
+          <div className="official-material-column">
           {material.audioTracks && audioTrack && (!speakingTaskMode || taskSubmitted) && (
             <div className="official-audio-dock">
               <label>{speakingTaskMode ? "当前 Part 的官方示范录音" : "当前独立 Task 的官方录音"}<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
@@ -1599,6 +1600,7 @@ function OfficialTestRunner({
               <div className="official-task-page-stack">{(task.transcriptPages ?? [task.transcriptPage]).map((page) => <div className="official-pdf-page-lock" key={`transcript-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 听力原文 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
             </section>
           )}
+          </div>
           </div>
         </section>
       </div>

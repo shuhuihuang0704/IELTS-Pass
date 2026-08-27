@@ -451,6 +451,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /workspace is-official-test/);
   assert.match(styles, /\.workspace\.is-official-test/);
   assert.match(styles, /grid-template-columns:minmax\(0,1\.5fr\) minmax\(300px,\.72fr\)/);
+  assert.match(app, /is-listening-workspace/);
+  assert.match(app, /is-writing-workspace/);
+  assert.match(app, /official-material-column/);
+  assert.match(styles, /\.official-standard-paper-body\.is-listening-workspace,\.official-standard-paper-body\.is-writing-workspace \{ grid-template-columns:minmax\(0,1\.5fr\) minmax\(300px,\.72fr\)/);
+  assert.match(styles, /\.official-standard-paper-body\.is-listening-workspace>\.official-material-column,\.official-standard-paper-body\.is-writing-workspace>\.official-material-column \{ max-height:calc\(100vh - 24px\)/);
   assert.match(app, /#page=\$\{displayPage\}/);
   assert.match(app, /questionPage/);
   assert.match(app, /answerPage/);
