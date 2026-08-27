@@ -431,12 +431,48 @@ function plannedOfficialSessionsForWeek(sessionsPerWeek: number, weekKey = local
   return officialTestSchedule.filter((session) => selectedIds.has(session.id));
 }
 
-function speak(text: string, rate = 0.9) {
+const preferredIeltsVoiceNames = [
+  "Google UK English Female",
+  "Google UK English Male",
+  "Microsoft Sonia Online (Natural)",
+  "Microsoft Ryan Online (Natural)",
+  "Serena",
+  "Daniel",
+  "Kate",
+  "Oliver",
+];
+
+function preferredIeltsVoice() {
+  if (!("speechSynthesis" in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const britishVoices = voices.filter((voice) => /^en-GB$/i.test(voice.lang));
+  const nearbyIeltsVoices = voices.filter((voice) => /^en-(AU|IE|NZ)$/i.test(voice.lang));
+  const candidates = [...britishVoices, ...nearbyIeltsVoices];
+  const namedVoice = preferredIeltsVoiceNames
+    .map((name) => candidates.find((voice) => voice.name.includes(name)))
+    .find((voice) => voice !== undefined);
+  return namedVoice
+    ?? candidates.find((voice) => voice.localService)
+    ?? candidates[0]
+    ?? voices.find((voice) => /^en-/i.test(voice.lang))
+    ?? null;
+}
+
+function createIeltsUtterance(text: string, rate = 0.94, pitch = 0.98) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = preferredIeltsVoice();
+  utterance.lang = voice?.lang ?? "en-GB";
+  if (voice) utterance.voice = voice;
+  utterance.rate = rate;
+  utterance.pitch = pitch;
+  utterance.volume = 1;
+  return utterance;
+}
+
+function speak(text: string, rate = 0.94) {
   if (!("speechSynthesis" in window)) return false;
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-GB";
-  utterance.rate = rate;
+  const utterance = createIeltsUtterance(text, rate);
   window.speechSynthesis.speak(utterance);
   return true;
 }
@@ -1790,9 +1826,7 @@ function OfficialSpeakingResponse({
       examinerUtteranceRef.current.onerror = null;
     }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(question);
-    utterance.lang = "en-GB";
-    utterance.rate = .86;
+    const utterance = createIeltsUtterance(question, .94, .97);
     examinerUtteranceRef.current = utterance;
     setExaminerAudioState("playing");
     utterance.onend = beginPreparation;
@@ -2299,7 +2333,7 @@ function VocabularyPractice({
       setActiveDictationItem(itemIndex);
       if (dictationLastSpokenRef.current !== itemIndex) {
         dictationInputRefs.current[itemIndex]?.focus();
-        if (slotOffset <= dictationSpeechWindowSeconds) speak(dictationWords[itemIndex].word, .72);
+        if (slotOffset <= dictationSpeechWindowSeconds) speak(dictationWords[itemIndex].word, .9);
         dictationLastSpokenRef.current = itemIndex;
       }
     };
@@ -2407,7 +2441,7 @@ function VocabularyPractice({
             <h2>一段音频，连续听写 10 个词</h2><p>每个词后预留约 4 秒书写时间；可以随时暂停、继续或拖动进度，整组提交前不显示答案和中文。</p>
             <section className="dictation-sequence-player" aria-label={`第 ${dictationGroup + 1} 组连续听写播放器；语料来源 ${listeningCorpusMeta.source}`}>
               <button type="button" className="dictation-sequence-toggle" onClick={toggleDictationSequence} aria-label={dictationPlayback === "playing" ? "暂停本组听写" : "播放本组听写"}>{dictationPlayback === "playing" ? "Ⅱ" : "▶"}</button>
-              <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 个词` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 个词` : dictationPlayback === "ended" ? "本组音频播放完毕" : "播放本组 10 词录音"}</strong><small>10 个词 · 每词约 1 秒 · 间隔约 4 秒</small></div>
+              <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 个词` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 个词` : dictationPlayback === "ended" ? "本组音频播放完毕" : "播放本组 10 词录音"}</strong><small>10 个词 · IELTS 英式标准发音 · 间隔约 4 秒</small></div>
               <input type="range" min="0" max={dictationAudioDuration} step="0.1" value={dictationAudioTime} onChange={(event) => seekDictationSequence(Number(event.target.value))} aria-label="拖动场景听写进度" />
               <span className="dictation-sequence-time">{Math.floor(dictationAudioTime / 60)}:{String(Math.floor(dictationAudioTime % 60)).padStart(2, "0")} / 0:{String(dictationAudioDuration).padStart(2, "0")}</span>
               <div className="dictation-sequence-markers" aria-hidden="true">{dictationWords.map((item, itemIndex) => <i className={activeDictationItem === itemIndex ? "is-active" : ""} key={item.word}><span>{itemIndex + 1}</span></i>)}</div>
@@ -2488,7 +2522,7 @@ function ConnectedSpeechPractice({
       setActiveItem(itemIndex);
       if (lastSpokenRef.current !== itemIndex) {
         inputRefs.current[itemIndex]?.focus();
-        if (slotOffset <= speechWindowSeconds) speak(groupPhrases[itemIndex].phrase, .86);
+        if (slotOffset <= speechWindowSeconds) speak(groupPhrases[itemIndex].phrase, .96);
         lastSpokenRef.current = itemIndex;
       }
     };
@@ -2587,7 +2621,7 @@ function ConnectedSpeechPractice({
         <h2>一段音频，连续听写 {groupPhrases.length} 个词组</h2><p>每个词组后预留约 4 秒书写；可以暂停、继续或拖动进度，整组提交前不显示原词组和中文。</p>
         <section className="dictation-sequence-player" aria-label={`第 ${group + 1} 组连续吞音词组播放器`}>
           <button type="button" className="dictation-sequence-toggle" onClick={toggleSequence} aria-label={playback === "playing" ? "暂停本组词组听写" : "播放本组词组听写"}>{playback === "playing" ? "Ⅱ" : "▶"}</button>
-          <div className="dictation-sequence-copy"><strong>{playback === "playing" ? `正在播放第 ${activeItem + 1} 个词组` : playback === "paused" ? `已暂停在第 ${activeItem + 1} 个词组` : playback === "ended" ? "本组音频播放完毕" : `播放本组 ${groupPhrases.length} 个词组`}</strong><small>{groupPhrases.length} 个词组 · 自然语速 · 间隔约 4 秒</small></div>
+          <div className="dictation-sequence-copy"><strong>{playback === "playing" ? `正在播放第 ${activeItem + 1} 个词组` : playback === "paused" ? `已暂停在第 ${activeItem + 1} 个词组` : playback === "ended" ? "本组音频播放完毕" : `播放本组 ${groupPhrases.length} 个词组`}</strong><small>{groupPhrases.length} 个词组 · IELTS 英式自然语速 · 间隔约 4 秒</small></div>
           <input type="range" min="0" max={audioDuration} step="0.1" value={audioTime} onChange={(event) => seekSequence(Number(event.target.value))} aria-label="拖动吞音词组听写进度" />
           <span className="dictation-sequence-time">{Math.floor(audioTime / 60)}:{String(Math.floor(audioTime % 60)).padStart(2, "0")} / {Math.floor(audioDuration / 60)}:{String(audioDuration % 60).padStart(2, "0")}</span>
           <div className="dictation-sequence-markers" style={{ gridTemplateColumns: `repeat(${groupPhrases.length},1fr)` }} aria-hidden="true">{groupPhrases.map((item, itemIndex) => <i className={activeItem === itemIndex ? "is-active" : ""} key={item.phrase}><span>{itemIndex + 1}</span></i>)}</div>
@@ -2697,7 +2731,7 @@ function DailyVocabularySprint({
           })}
         </div>
         <section className={`daily-word-card ${pendingRating ? "is-revealed" : ""}`}>
-          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => speak(word.word, .76)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
+          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => speak(word.word, .9)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
           <h2>{word.word}</h2>
           <p className="word-collocation">{pendingRating ? word.collocation : "看到单词后，凭第一反应选择熟悉程度"}</p>
           <div className="daily-word-answer" aria-live="polite">
@@ -2900,9 +2934,7 @@ function SpeakingPractice({
       examinerUtterance.current.onerror = null;
     }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-GB";
-    utterance.rate = .88;
+    const utterance = createIeltsUtterance(text, .94, .97);
     examinerUtterance.current = utterance;
     setExaminerAudioState("playing");
     utterance.onend = () => {
@@ -3168,7 +3200,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
             ) : progress.notebook.map((entry) => (
               <article className="notebook-entry" key={entry.id}>
                 <header><span className={`notebook-kind ${entry.kind}`}>{entry.kind === "word" ? "词汇" : "错题"}</span><small>{entry.source}</small><button onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
-                <div className="notebook-entry-body"><div><h2>{entry.title}</h2><p>{entry.detail}</p></div>{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .78)} aria-label={`播放 ${entry.title}`}>▶</button>}</div>
+                <div className="notebook-entry-body"><div><h2>{entry.title}</h2><p>{entry.detail}</p></div>{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}</div>
                 <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
                   const note = event.target.value;
                   updateProgress((current) => ({ ...current, notebook: current.notebook.map((item) => item.id === entry.id ? { ...item, note } : item) }));
@@ -3188,7 +3220,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
           const interval = reviewIntervals[Math.min(schedule?.stage ?? 0, reviewIntervals.length - 1)];
           return <article className="review-item" key={item}>
             <div className="review-word"><span>当前间隔 {interval} 天 · 遗忘 {schedule?.lapses ?? 0} 次</span><strong>{item}</strong><details><summary>查看释义</summary><small>{word?.meaning ?? phrase?.meaning ?? "场景词汇"}</small></details></div>
-            <button className="review-audio" onClick={() => speak(item, phrase ? .95 : .75)} aria-label={`播放 ${item}`}>▶</button>
+            <button className="review-audio" onClick={() => speak(item, phrase ? .96 : .9)} aria-label={`播放 ${item}`}>▶</button>
             <div className="review-rating-actions"><button onClick={() => rateItem(item, "known")}>认识</button><button onClick={() => rateItem(item, "fuzzy")}>模糊</button><button onClick={() => rateItem(item, "unfamiliar")}>不熟悉</button></div>
           </article>;
         })}
@@ -3445,7 +3477,7 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
           const noteId = `word:${result.word.toLowerCase()}`;
           const isSaved = progress.notebook.some((item) => item.id === noteId);
           return <article key={`${result.word}-${resultIndex}`}>
-            <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "全英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+            <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "全英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
             <div className="wordbook-global-meaning"><span>中文意思</span><strong className={chineseMeaning ? "" : "is-unavailable"}>{chineseMeaning || "中文翻译暂时不可用"}</strong></div>
             {firstDefinition && <div className="wordbook-global-definition"><span>{firstMeaning?.partOfSpeech ?? "word"}</span><p>{firstDefinition.definition}</p>{firstDefinition.example && <blockquote>{firstDefinition.example}</blockquote>}</div>}
           </article>;
@@ -3463,7 +3495,7 @@ function WordbookView({ progress, onBack, updateProgress }: { progress: Learning
             <div className="wordbook-word"><div><h2>{entry.word}</h2><em>{entry.partOfSpeech}</em></div><ConfusingWords word={entry.word} /></div>
             <p className="wordbook-meaning">{entry.meaning}</p>
             <div className="wordbook-example"><span>语境例句</span><p>{entry.example}</p></div>
-            <footer className="wordbook-entry-actions"><button onClick={() => speak(entry.word, .76)} aria-label={`播放 ${entry.word}`}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `单词本 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></footer>
+            <footer className="wordbook-entry-actions"><button onClick={() => speak(entry.word, .9)} aria-label={`播放 ${entry.word}`}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `单词本 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></footer>
           </article>;
         })}
       </section>
@@ -3515,7 +3547,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
           const noteId = `word:${entry.word.toLowerCase()}`;
           const isSaved = progress.notebook.some((item) => item.id === noteId);
           return <article className="dictionary-result is-local" key={entry.word}>
-            <header><div><h3>{entry.word}</h3><span>{entry.partOfSpeech}</span></div><div><button onClick={() => speak(entry.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `核心词库 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+            <header><div><h3>{entry.word}</h3><span>{entry.partOfSpeech}</span></div><div><button onClick={() => speak(entry.word, .9)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: entry.word, detail: `${entry.partOfSpeech} ${entry.meaning}\n${entry.example}`, source: `核心词库 · ${entry.category}` }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
             <div><section><b>中文意思</b><div><p className="dictionary-local-meaning">{entry.meaning}</p><blockquote>{entry.example}</blockquote><ConfusingWords word={entry.word} /><small>{entry.category}</small></div></section></div>
           </article>;
         })}
@@ -3528,7 +3560,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
         const noteId = `word:${result.word.toLowerCase()}`;
         const isSaved = progress.notebook.some((item) => item.id === noteId);
         return <article className="dictionary-result" key={`${result.word}-${resultIndex}`}>
-          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+          <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .9)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "开放英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
           <div>{chineseMeaning ? <section className="dictionary-chinese-meaning"><b>中文意思</b><p>{chineseMeaning}</p></section> : <section className="dictionary-chinese-meaning is-unavailable"><b>中文意思</b><p>中文翻译暂时不可用，请稍后重试。</p></section>}<div className="dictionary-english-heading">英文释义与例句</div>{result.meanings.slice(0, 4).map((meaning, meaningIndex) => <section key={`${meaning.partOfSpeech}-${meaningIndex}`}><b>{meaning.partOfSpeech}</b><ol>{meaning.definitions.slice(0, 3).map((definition, definitionIndex) => <li key={definitionIndex}><p>{definition.definition}</p>{definition.example && <blockquote>{definition.example}</blockquote>}</li>)}</ol></section>)}</div>
         </article>;
       })}

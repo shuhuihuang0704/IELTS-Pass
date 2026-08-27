@@ -46,6 +46,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /unsavedSeconds >= 10/);
   assert.match(app, /页面在前台可见时累计学习时间/);
   assert.match(app, /SpeechSynthesisUtterance/);
+  assert.match(app, /preferredIeltsVoiceNames/);
+  assert.match(app, /createIeltsUtterance/);
+  assert.match(app, /utterance\.pitch/);
+  assert.match(app, /IELTS 英式标准发音/);
+  assert.match(app, /IELTS 英式自然语速/);
   assert.match(app, /DailyVocabularySprint/);
   assert.match(app, /SCENE DICTATION|每天.*个听写词|听清再写准/);
   assert.match(app, /CONNECTED SPEECH|每天.*个词组|听懂自然语流/);
