@@ -28,7 +28,7 @@ import {
   type WordRating,
 } from "./learning-state";
 
-type View = "today" | "practice" | "official-test" | "scene" | "review" | "profile";
+type View = "today" | "practice" | "official-test" | "scene" | "skill" | "review" | "profile";
 type Feedback = { tone: "success" | "error" | "neutral"; text: string } | null;
 type NotebookDraft = Omit<NotebookEntry, "createdAt" | "note">;
 
@@ -776,7 +776,7 @@ export default function IeltsApp() {
 
   const openSkill = (skill: Skill) => {
     setActiveSkill(skill);
-    setView("scene");
+    setView("skill");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -808,15 +808,15 @@ export default function IeltsApp() {
             completedCount={completedCount}
             progress={progress}
             onStart={() => openSkill(progress.carryoverTasks.find((skill) => !progress.completed[skill]) ?? skills.find((skill) => !progress.completed[skill.id])?.id ?? "vocabulary")}
-            onVocabulary={() => openSkill("vocabulary")}
             onOpenSkill={openSkill}
             onNavigate={setView}
             onDictionarySearch={openDictionarySearch}
           />
         )}
-        {view === "practice" && <PracticeView progress={progress} onOpen={openSkill} onOpenOfficialTest={openOfficialTest} />}
+        {view === "practice" && <PracticeView progress={progress} onOpenOfficialTest={openOfficialTest} />}
         {view === "official-test" && <OfficialTestRunner session={officialTestSchedule.find((session) => session.id === activeOfficialSessionId) ?? officialTestSchedule[0]} progress={progress} onBack={() => setView("practice")} updateProgress={updateProgress} />}
-        {view === "scene" && (
+        {view === "scene" && <AiTutorView progress={progress} />}
+        {view === "skill" && (
           <SceneView
             activeSkill={activeSkill}
             progress={progress}
@@ -859,7 +859,7 @@ function Sidebar({
       </button>
       <nav className="desktop-nav" aria-label="主导航">
         {nav.map((item, index) => (
-          <button className={view === item.id ? "is-active" : ""} key={item.id} onClick={() => onNavigate(item.id)}>
+          <button className={view === item.id || (view === "skill" && item.id === "today") ? "is-active" : ""} key={item.id} onClick={() => onNavigate(item.id)}>
             <span>{String(index + 1).padStart(2, "0")}</span>{item.label}
           </button>
         ))}
@@ -884,7 +884,7 @@ function MobileNavigation({ view, onNavigate }: { view: View; onNavigate: (view:
     <nav className="mobile-nav" aria-label="移动端主导航">
       {nav.map((item) => (
         <button
-          className={`${view === item.id ? "is-active " : ""}${item.id === "scene" ? "mobile-ai" : ""}`}
+          className={`${view === item.id || (view === "skill" && item.id === "today") ? "is-active " : ""}${item.id === "scene" ? "mobile-ai" : ""}`}
           key={item.id}
           onClick={() => onNavigate(item.id)}
         >{item.label}</button>
@@ -912,7 +912,6 @@ function TodayView({
   completedCount,
   progress,
   onStart,
-  onVocabulary,
   onOpenSkill,
   onNavigate,
   onDictionarySearch,
@@ -921,7 +920,6 @@ function TodayView({
   completedCount: number;
   progress: LearningProgress;
   onStart: () => void;
-  onVocabulary: () => void;
   onOpenSkill: (skill: Skill) => void;
   onNavigate: (view: View) => void;
   onDictionarySearch: (query?: string) => void;
@@ -932,8 +930,6 @@ function TodayView({
   const nextSkill = skills.find((skill) => skill.id === carryoverSkill)
     ?? skills.find((skill) => !progress.completed[skill.id])
     ?? skills[0];
-  const todayWordSet = new Set(getDailyVocabulary(progress.dailyVocabularyDate).map((word) => word.word));
-  const todaySeenCount = progress.dailyVocabularyKnown.filter((word) => todayWordSet.has(word)).length;
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
   const weekKey = localWeekKey();
   const completedOfficialSessions = officialTestSchedule.filter((session) => progress.officialPracticeCompleted.includes(officialPracticeRecordId(session, weekKey)));
@@ -980,11 +976,6 @@ function TodayView({
             <div className="progress-track"><i style={{ width: `${percent}%` }} /></div>
             <p>{completedCount === 4 ? "今日场景已完成，复习会让记忆更稳定。" : progress.carryoverTasks.includes(nextSkill.id) ? `已完成 ${completedCount} / 4 项，先补做昨天的${nextSkill.label}。` : `已完成 ${completedCount} / 4 项，下一项是${nextSkill.label}。`}</p>
           </div>
-          <button className="daily-word-row" onClick={onVocabulary}>
-            <span><small>TODAY&apos;S WORDS</small><strong>{todaySeenCount}<b>/100</b></strong></span>
-            <span className="daily-word-copy"><strong>每日高频词</strong><small>3,600 词核心库轮换 · 每天 5 × 20</small></span>
-            <b>→</b>
-          </button>
           <button className="streak-row" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
           <button className="memory-row" onClick={() => onNavigate("review")}>
             <span><strong>笔记与复习</strong><small>{progress.notebook.length} 条笔记 · {dueReviewCount} 个今日到期</small></span><b>→</b>
@@ -1112,27 +1103,14 @@ function StudyHistoryDialog({ progress, onClose }: { progress: LearningProgress;
 
 function PracticeView({
   progress,
-  onOpen,
   onOpenOfficialTest,
 }: {
   progress: LearningProgress;
-  onOpen: (skill: Skill) => void;
   onOpenOfficialTest: (sessionId: string) => void;
 }) {
   return (
     <>
-      <PageHeader eyebrow="FOCUSED PRACTICE" title="选择一项，进行" accent="专项练习。" />
-      <div className="practice-grid">
-        {skills.map((skill, index) => (
-          <button className="practice-card" key={skill.id} onClick={() => onOpen(skill.id)}>
-            <span className="practice-number">0{index + 1}</span><span className="practice-glyph">{skill.short}</span>
-            <strong>{skill.label}</strong><p>{skill.description}</p>
-            <span className={progress.completed[skill.id] ? "skill-status is-complete" : "skill-status"}>
-              {progress.completed[skill.id] ? "今日已完成" : progress.carryoverTasks.includes(skill.id) ? `昨日未完成 · ${skill.duration}` : skill.duration}
-            </span>
-          </button>
-        ))}
-      </div>
+      <PageHeader eyebrow="OFFICIAL TEST TRAINING" title="按计划，完成" accent="官方套题训练。" />
       <OfficialPracticePlan progress={progress} onOpenOfficialTest={onOpenOfficialTest} />
     </>
   );
@@ -2021,6 +1999,76 @@ function OfficialSpeakingResponse({
       {submitted && <section className="official-speaking-feedback"><header><div><span>PERSONALISED SPEAKING REVIEW</span><strong>回答完成后生成的语音不足与改进建议</strong></div><button type="button" onClick={restartPractice}>再做一次</button></header><div className="speaking-feedback-metrics">{feedback.metrics.map((metric) => <article key={metric.label}><span>{metric.label}</span><b>{metric.value}</b></article>)}</div><div className="speaking-feedback-columns"><article><strong>这次做得好</strong><ul>{feedback.strengths.map((item) => <li key={item}>{item}</li>)}</ul></article><article><strong>语音不足与下一轮改进</strong><ul>{feedback.priorities.map((item) => <li key={item}>{item}</li>)}</ul></article></div><section className="speaking-improvement-drills"><header><span>TARGETED VOICE PRACTICE</span><strong>根据本次回答安排的 3 个改进练习</strong></header><div>{improvementDrills.map((drill) => <article key={drill.title}><b>{drill.title}</b><p>{drill.reason}</p><strong>怎么练</strong><p>{drill.action}</p><blockquote>{drill.example}</blockquote></article>)}</div></section><div className="speaking-transcript-highlight"><header><b>识别稿荧光复盘</b><small><i className="good" /> 展开词 · <i className="watch" /> 填充词</small></header><SpeakingTranscriptHighlight transcript={transcript} /></div><p className="speaking-feedback-limit">本地分析会检查时长、语速、停顿区间、音量和语言结构，但不能可靠判断单个音素是否准确，也不冒充 IELTS 官方分数。请结合录音回听和官方示范录音复盘发音。</p></section>}
       {submitted && <section className="speaking-topic-template"><header><div><span>TOPIC TEMPLATE · UNLOCKED</span><strong>{prompt.topicTemplate.title}</strong></div><small>整组问题完成后解锁；用于重做时组织观点</small></header><div>{prompt.topicTemplate.steps.map((step) => <article key={step.label}><b>{step.label}</b><p>{step.prompt}</p><blockquote>{step.example}</blockquote></article>)}</div><aside><b>可替换表达</b><p>{prompt.topicTemplate.usefulPhrases.join(" · ")}</p></aside><div className="speaking-follow-up"><b>本轮考官实际提出的问题</b>{askedQuestions.map((question, index) => <p key={`${question}-${index}`}>{index + 1}. “{question}”{index > 0 ? <small>根据上一轮回答生成</small> : null}</p>)}</div><p className="speaking-exam-note">{prompt.examNote}</p></section>}
     </section>
+  );
+}
+
+type TutorMessage = { id: number; role: "assistant" | "user"; text: string };
+
+function buildTutorReply(question: string, progress: LearningProgress): string {
+  const input = question.toLowerCase();
+  if (/听力|listening|填空|多选/.test(input)) return "听力题先不要追着每个词听。填空题先圈出字数限制和空格前后的词性；播放时抓转折词、数字和同义替换。多选题先把选项差异压缩成关键词，听到完整意思后再选。你可以把具体题目或错因发给我，我会逐步帮你定位。";
+  if (/口语|speaking|part\s*[123]|一分钟|1分钟/.test(input)) return "口语回答可以用“立场—原因—例子—回扣”四步。Part 2 的一分钟准备只写人物、地点、转折和感受四组关键词，不写完整句；Part 3 要先直接回答，再解释原因和影响。把你的回答文字贴过来，我可以按流利度、词汇、语法和展开程度逐句改进。";
+  if (/写作|writing|task\s*[12]|作文|观点/.test(input)) return "写作先确认任务类型和立场。Task 2 每个主体段建议保持一个中心观点，并用“主题句—解释—具体例子—结果”展开；Task 1 则先写概述，再按最明显的特征分组比较。你可以粘贴作文，我会标出表达亮点、逻辑缺口，并给出可替换例句。";
+  if (/阅读|reading|判断|匹配|定位/.test(input)) return "阅读先读题干并提取定位词，再回原文寻找同义改写。判断题要区分 False（原文明确相反）和 Not Given（原文没有足够信息）；匹配题先看段落主旨，不要只匹配重复单词。把题干和相关段落发给我，我可以帮你标出定位依据。";
+  if (/单词|词汇|vocabulary|拼写|遗忘/.test(input)) return `你目前有 ${progress.reviewWords.length} 个词进入复习队列。新词先判断“认识 / 模糊 / 不熟悉”，模糊和不熟悉的词在本轮重复；复习时优先做主动回忆，再看中文和例句。拼写错误要单独进行听写，并按遗忘曲线在后续日期再次出现。`;
+  if (/计划|进度|今天|下一步|怎么学|安排/.test(input)) {
+    const done = Object.values(progress.completed).filter(Boolean).length;
+    return `你今天完成了 ${done}/4 项，当前完成度 ${completionPercent(progress)}%。建议先完成尚未打勾的今日任务，再进入官方套题；若四项都已完成，就复习今日错词或加练一组听力。学习时间会按你在 App 中的实际停留时间继续累计。`;
+  }
+  return "可以。请把具体的 IELTS 问题、题干、你的答案或不理解的句子发给我。我会先判断它属于词汇、听力、口语、阅读还是写作，再给出可直接执行的解法、示例和下一步练习。";
+}
+
+function AiTutorView({ progress }: { progress: LearningProgress }) {
+  const [messages, setMessages] = useState<TutorMessage[]>([
+    { id: 0, role: "assistant", text: "你好，我是你的 IELTS AI 助教。你可以问我一道题、一个单词、一段表达，也可以让我根据今天的进度安排下一步。" },
+  ]);
+  const [draft, setDraft] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  const nextId = useRef(1);
+  const timerRef = useRef<number | null>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => () => { if (timerRef.current !== null) window.clearTimeout(timerRef.current); }, []);
+  useEffect(() => { messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" }); }, [messages, isThinking]);
+
+  const sendQuestion = (question: string) => {
+    const text = question.trim();
+    if (!text || isThinking) return;
+    setMessages((current) => [...current, { id: nextId.current++, role: "user", text }]);
+    setDraft("");
+    setIsThinking(true);
+    timerRef.current = window.setTimeout(() => {
+      setMessages((current) => [...current, { id: nextId.current++, role: "assistant", text: buildTutorReply(text, progress) }]);
+      setIsThinking(false);
+      timerRef.current = null;
+    }, 420);
+  };
+  const submitQuestion = (event: FormEvent) => { event.preventDefault(); sendQuestion(draft); };
+  const prompts = ["Listening 填空题总是漏词怎么办？", "Part 2 一分钟怎么准备？", "Writing Task 2 怎么展开观点？", "根据今天进度安排下一步"];
+
+  return (
+    <>
+      <PageHeader eyebrow="IELTS AI TUTOR" title="有问题，直接问" accent="你的 IELTS 助教。" />
+      <section className="ai-tutor-shell">
+        <aside className="ai-tutor-sidebar">
+          <span className="ai-tutor-mark">AI</span>
+          <div><small>YOUR STUDY COPILOT</small><h2>问得具体，答案会更有用。</h2><p>可以粘贴题干、你的答案或句子。我会围绕雅思备考给出步骤、例句和改进方向。</p></div>
+          <div className="ai-tutor-progress"><span>今日进度</span><strong>{completionPercent(progress)}%</strong><i><b style={{ width: `${completionPercent(progress)}%` }} /></i></div>
+        </aside>
+        <div className="ai-tutor-chat">
+          <header><div><i /><span><strong>IELTS AI 助教</strong><small>基于内置备考知识与当前学习进度</small></span></div><b>在线</b></header>
+          <div className="ai-tutor-messages" ref={messagesRef} aria-live="polite">
+            {messages.map((message) => <article className={`ai-message is-${message.role}`} key={message.id}><span>{message.role === "assistant" ? "AI" : "你"}</span><p>{message.text}</p></article>)}
+            {isThinking && <article className="ai-message is-assistant is-thinking"><span>AI</span><p><i /><i /><i /></p></article>}
+          </div>
+          <div className="ai-suggested-prompts">{prompts.map((prompt) => <button type="button" disabled={isThinking} onClick={() => sendQuestion(prompt)} key={prompt}>{prompt}</button>)}</div>
+          <form className="ai-tutor-composer" onSubmit={submitQuestion}>
+            <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(draft); } }} placeholder="例如：为什么这道阅读题是 Not Given？" aria-label="向 IELTS AI 提问" />
+            <footer><small>Enter 发送 · Shift + Enter 换行</small><button type="submit" disabled={!draft.trim() || isThinking}>发送问题 <span>↑</span></button></footer>
+          </form>
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -3158,25 +3206,32 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
 
 function ProfileView({ progress, percent, onReset, updateProgress, onDictionarySearch }: { progress: LearningProgress; percent: number; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onDictionarySearch: (query?: string) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
-  const stats = useMemo(() => [
-    ["今日完成度", `${percent}%`],
-    ["今日词汇", `${progress.dailyVocabularyKnown.length} / 100`],
+  const [showStudyHistory, setShowStudyHistory] = useState(false);
+  const stats = [
     ["累计学习", `${progress.minutes} 分钟`],
-    ["待强化词汇", `${progress.reviewWords.length}`],
     ["我的笔记", `${progress.notebook.length}`],
-    ["连续学习", `${progress.streak} 天`],
-  ], [percent, progress]);
+  ];
   if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} onDictionarySearch={onDictionarySearch} />;
   return (
     <>
       <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent="雅思 7.0。" />
-      <div className="profile-grid">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+      <section className="profile-progress-dashboard">
+        <div className="profile-water-card">
+          <div className="profile-water-gauge" role="img" aria-label={`今日学习完成度 ${percent}%`}><div className="profile-water-fill" style={{ height: `${percent}%` }} /></div>
+          <div className="profile-water-copy"><span>DAILY LEARNING LEVEL</span><strong>{percent}<small>%</small></strong><p>{percent === 100 ? "今天的四项学习已经完成，水位已满。" : "每完成一项今日任务，水位会上升 25%。"}</p></div>
+        </div>
+        <div className="profile-overview-column">
+          <button className="profile-streak-card" onClick={() => setShowStudyHistory(true)} aria-expanded={showStudyHistory} aria-haspopup="dialog"><span className="streak-mark">{progress.streak}</span><span><strong>连续学习 {progress.streak} 天</strong><small>本周已学习 {progress.minutes} 分钟 · 查看每日记录</small></span><b>→</b></button>
+          <div className="profile-grid">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+        </div>
+      </section>
       <button className="profile-wordbook" onClick={() => setShowWordbook(true)}>
         <span className="profile-wordbook-mark">Aa</span>
         <span><small>MY WORDBOOK</small><strong>我的单词本</strong><p>{wordbookEntries.length} 个学习词汇 · 紧凑浏览、全英语查词与一键笔记</p></span>
         <b>进入单词本 →</b>
       </button>
       <section className="profile-settings"><div><strong>本机测试数据</strong><p>当前版本把进度保存在这个浏览器中。登录和跨设备云同步会在后续接入。</p></div><button onClick={onReset}>重置学习进度</button></section>
+      {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>
   );
 }
