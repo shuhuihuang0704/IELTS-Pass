@@ -150,11 +150,16 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /PERSONAL KNOWLEDGE BASE/);
   assert.match(app, /我的单词本/);
   assert.match(app, /IELTS LEARNING LIBRARY/);
-  assert.match(app, /搜索本单词本，或提交到全英语词典/);
+  assert.match(app, /搜索单词本，也可以查询词库外单词/);
   assert.match(app, /语境例句/);
   assert.match(app, /inferPartOfSpeech/);
   assert.match(app, /wordbookEntries/);
-  assert.match(app, /搜索全部英语词典/);
+  assert.match(app, /查询全部英语单词/);
+  assert.match(app, /searchAllEnglishWords/);
+  assert.match(app, /wordbook-global-results/);
+  assert.match(app, /输入词库外英文后，按 Enter 即可在本页查看结果/);
+  assert.match(app, /api\.mymemory\.translated\.net\/get/);
+  assert.match(styles, /\.wordbook-global-results/);
   assert.match(app, /DictionarySearchDialog/);
   assert.match(app, /开放英语词典/);
   assert.match(app, /findLocalDictionaryEntries/);

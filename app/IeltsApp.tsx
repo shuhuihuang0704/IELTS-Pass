@@ -830,7 +830,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView progress={progress} percent={percent} onReset={resetProgress} updateProgress={updateProgress} onDictionarySearch={openDictionarySearch} />}
+        {view === "profile" && <ProfileView progress={progress} percent={percent} onReset={resetProgress} updateProgress={updateProgress} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
       {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
@@ -2979,13 +2979,49 @@ type ConfusingWord = {
 async function lookupDictionaryWord(word: string): Promise<DictionaryResult[]> {
   const normalized = word.trim().toLowerCase();
   if (!normalized) return [];
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 8000);
-  const response = await fetch(`/api/dictionary?word=${encodeURIComponent(normalized)}`, { signal: controller.signal }).finally(() => window.clearTimeout(timeout));
-  if (response.status === 404) return [];
-  if (!response.ok) throw new Error("dictionary unavailable");
-  const entries = await response.json() as DictionaryResult[];
-  return Array.isArray(entries) ? entries.slice(0, 3) : [];
+  let entries: DictionaryResult[] = [];
+  try {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 7000);
+    const response = await fetch(`/api/dictionary?word=${encodeURIComponent(normalized)}`, { signal: controller.signal }).finally(() => window.clearTimeout(timeout));
+    if (response.status === 404) return [];
+    if (!response.ok) throw new Error("dictionary unavailable");
+    entries = await response.json() as DictionaryResult[];
+  } catch {
+    const fallbackController = new AbortController();
+    const fallbackTimeout = window.setTimeout(() => fallbackController.abort(), 6000);
+    try {
+      const fallbackResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(normalized)}`, { signal: fallbackController.signal });
+      if (fallbackResponse.status === 404) return [];
+      if (!fallbackResponse.ok) throw new Error("public dictionary unavailable");
+      entries = await fallbackResponse.json() as DictionaryResult[];
+    } finally {
+      window.clearTimeout(fallbackTimeout);
+    }
+  }
+  if (!Array.isArray(entries)) return [];
+  const limitedEntries = entries.slice(0, 3);
+  if (limitedEntries.some((entry) => entry.chineseMeaning?.trim())) return limitedEntries;
+  const translate = async (text: string) => {
+    const translationController = new AbortController();
+    const translationTimeout = window.setTimeout(() => translationController.abort(), 6000);
+    try {
+      const translationResponse = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 450))}&langpair=en%7Czh-CN`, { signal: translationController.signal });
+      if (!translationResponse.ok) return "";
+      const translation = await translationResponse.json() as { responseData?: { translatedText?: string } };
+      return (translation.responseData?.translatedText ?? "").trim();
+    } catch {
+      return "";
+    } finally {
+      window.clearTimeout(translationTimeout);
+    }
+  };
+  let chineseMeaning = await translate(normalized);
+  if (!chineseMeaning || chineseMeaning.toLowerCase() === normalized) {
+    const definition = limitedEntries[0]?.meanings?.[0]?.definitions?.[0]?.definition;
+    if (definition) chineseMeaning = await translate(definition);
+  }
+  return limitedEntries.map((entry) => ({ ...entry, chineseMeaning: chineseMeaning || null }));
 }
 
 const mixedWordParts: Record<string, string> = {
@@ -3090,10 +3126,14 @@ function findLocalDictionaryEntries(query: string) {
   return wordbookEntries.filter((entry) => entry.word.toLowerCase().startsWith(normalized) || entry.meaning.includes(query.trim())).slice(0, 8);
 }
 
-function WordbookView({ progress, onBack, updateProgress, onDictionarySearch }: { progress: LearningProgress; onBack: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onDictionarySearch: (query?: string) => void }) {
+function WordbookView({ progress, onBack, updateProgress }: { progress: LearningProgress; onBack: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [query, setQuery] = useState("");
   const [collection, setCollection] = useState<"all" | "core" | "listening">("all");
   const [visibleCount, setVisibleCount] = useState(60);
+  const [externalResults, setExternalResults] = useState<DictionaryResult[]>([]);
+  const [externalQuery, setExternalQuery] = useState("");
+  const [externalLoading, setExternalLoading] = useState(false);
+  const [externalError, setExternalError] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredWords = useMemo(() => wordbookEntries.filter((entry) => {
     const matchesCollection = collection === "all" || entry.collection === collection;
@@ -3108,6 +3148,24 @@ function WordbookView({ progress, onBack, updateProgress, onDictionarySearch }: 
     setCollection(next);
     setVisibleCount(60);
   };
+  const searchAllEnglishWords = async (event: FormEvent) => {
+    event.preventDefault();
+    const term = query.trim();
+    if (!term || externalLoading) return;
+    setExternalQuery(term);
+    setExternalLoading(true);
+    setExternalError("");
+    setExternalResults([]);
+    try {
+      const entries = await lookupDictionaryWord(term);
+      setExternalResults(entries);
+      if (entries.length === 0) setExternalError("没有找到这个单词，请检查英文拼写后再试一次。");
+    } catch {
+      setExternalError("全英语词典暂时没有返回结果，请稍后重试。");
+    } finally {
+      setExternalLoading(false);
+    }
+  };
 
   return (
     <>
@@ -3118,9 +3176,9 @@ function WordbookView({ progress, onBack, updateProgress, onDictionarySearch }: 
         <div className="wordbook-hero-stats"><span><b>{progress.reviewWords.length}</b>待复习</span><span><b>{progress.masteredWords.length}</b>已掌握</span></div>
       </section>
       <section className="wordbook-toolbar" aria-label="单词本筛选与全词典搜索">
-        <form className="wordbook-search" onSubmit={(event) => { event.preventDefault(); onDictionarySearch(query); }}>
-          <label><span>搜索本单词本，或提交到全英语词典</span><input value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(60); }} placeholder="例如：environment / 环境" /></label>
-          <button type="submit">搜索全部英语词典</button>
+        <form className="wordbook-search" onSubmit={searchAllEnglishWords}>
+          <label><span>搜索单词本，也可以查询词库外单词</span><input value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(60); setExternalResults([]); setExternalQuery(""); setExternalError(""); }} placeholder="输入任意英语单词，例如：serendipity" /></label>
+          <button type="submit" disabled={!query.trim() || externalLoading}>{externalLoading ? "正在查询…" : "查询全部英语单词"}</button>
         </form>
         <div className="wordbook-filters" role="tablist" aria-label="词库分类">
           <button role="tab" aria-selected={collection === "all"} className={collection === "all" ? "is-active" : ""} onClick={() => selectCollection("all")}>全部 {wordbookEntries.length}</button>
@@ -3128,7 +3186,24 @@ function WordbookView({ progress, onBack, updateProgress, onDictionarySearch }: 
           <button role="tab" aria-selected={collection === "listening"} className={collection === "listening" ? "is-active" : ""} onClick={() => selectCollection("listening")}>场景听写 {listeningCount}</button>
         </div>
       </section>
-      <div className="wordbook-result-line"><span>本单词本找到 {filteredWords.length} 个词</span><small>词库外单词请按 Enter 或点“搜索全部英语词典”</small></div>
+      {(externalLoading || externalError || externalResults.length > 0) && <section className="wordbook-global-results" aria-live="polite">
+        <header><div><span>GLOBAL DICTIONARY RESULT</span><strong>“{externalQuery}”的全词典结果</strong></div>{externalResults.length > 0 && <small>{externalResults.length} 个词条</small>}</header>
+        {externalLoading && <div className="wordbook-global-loading"><i /><span>正在查询英文释义与中文意思…</span></div>}
+        {externalError && <div className="wordbook-global-error"><strong>暂时没有查到</strong><p>{externalError}</p></div>}
+        {externalResults.map((result, resultIndex) => {
+          const firstMeaning = result.meanings[0];
+          const firstDefinition = firstMeaning?.definitions[0];
+          const chineseMeaning = result.chineseMeaning?.trim();
+          const noteId = `word:${result.word.toLowerCase()}`;
+          const isSaved = progress.notebook.some((item) => item.id === noteId);
+          return <article key={`${result.word}-${resultIndex}`}>
+            <header><div><h3>{result.word}</h3>{result.phonetic && <span>/{result.phonetic.replaceAll("/", "")}/</span>}</div><div><button onClick={() => speak(result.word, .76)}>▶ 发音</button><button className={isSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: noteId, kind: "word", title: result.word, detail: `${firstMeaning?.partOfSpeech ?? "word"} ${chineseMeaning ? `${chineseMeaning}\n` : ""}${firstDefinition?.definition ?? "Open dictionary entry"}${firstDefinition?.example ? `\n${firstDefinition.example}` : ""}`, source: "全英语词典" }))}>{isSaved ? "✓ 已在笔记" : "+ 加入笔记"}</button></div></header>
+            <div className="wordbook-global-meaning"><span>中文意思</span><strong className={chineseMeaning ? "" : "is-unavailable"}>{chineseMeaning || "中文翻译暂时不可用"}</strong></div>
+            {firstDefinition && <div className="wordbook-global-definition"><span>{firstMeaning?.partOfSpeech ?? "word"}</span><p>{firstDefinition.definition}</p>{firstDefinition.example && <blockquote>{firstDefinition.example}</blockquote>}</div>}
+          </article>;
+        })}
+      </section>}
+      <div className="wordbook-result-line"><span>本单词本找到 {filteredWords.length} 个词</span><small>输入词库外英文后，按 Enter 即可在本页查看结果</small></div>
       <section className="wordbook-list" aria-label="全部学习词汇">
         {visibleWords.length === 0 ? <div className="empty-state"><strong>没有找到对应单词</strong><p>试试英文、中文意思或主题名称。</p></div> : visibleWords.map((entry) => {
           const isReview = progress.reviewWords.includes(entry.word);
@@ -3213,7 +3288,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
   </div>;
 }
 
-function ProfileView({ progress, percent, onReset, updateProgress, onDictionarySearch }: { progress: LearningProgress; percent: number; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void; onDictionarySearch: (query?: string) => void }) {
+function ProfileView({ progress, percent, onReset, updateProgress }: { progress: LearningProgress; percent: number; onReset: () => void; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [customPlanDays, setCustomPlanDays] = useState(String(progress.studyPlanDays));
@@ -3242,7 +3317,7 @@ function ProfileView({ progress, percent, onReset, updateProgress, onDictionaryS
       };
     });
   };
-  if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} onDictionarySearch={onDictionarySearch} />;
+  if (showWordbook) return <WordbookView progress={progress} onBack={() => setShowWordbook(false)} updateProgress={updateProgress} />;
   return (
     <>
       <PageHeader eyebrow="LEARNING PROFILE" title="你的目标是" accent="雅思 7.0。" />
