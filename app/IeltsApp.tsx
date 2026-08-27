@@ -1244,16 +1244,12 @@ function OfficialTestRunner({
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
     .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords) || Boolean(sessionTask.speakingPrompt))
     .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: (sessionTask.answers?.length ?? 0) || 1 })));
-  const requiredQuestionCount = requiredTasks.reduce((total, requiredTask) => total + requiredTask.questionCount, 0);
-  const submittedRequiredTaskCount = requiredTasks.filter((requiredTask) => submittedTasks[requiredTask.key]).length;
   const materialRequiredTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0 || Boolean(materialTask.minimumWords) || Boolean(materialTask.speakingPrompt));
   const writingTaskMode = materialRequiredTasks.some((materialTask) => Boolean(materialTask.minimumWords));
   const speakingTaskMode = materialRequiredTasks.some((materialTask) => Boolean(materialTask.speakingPrompt));
-  const requiredCompletionLabel = speakingTaskMode ? `${requiredTasks.length} 个 Speaking Part` : writingTaskMode ? `${requiredTasks.length} 个 Writing Task` : `${requiredQuestionCount} 题`;
   const materialQuestionCount = materialRequiredTasks.reduce((total, materialTask) => total + ((materialTask.answers?.length ?? 0) || 1), 0);
   const submittedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => submittedTasks[`${material.id}:${materialTask.id}`]).length;
   const recordId = officialPracticeRecordId(session);
-  const completed = progress.officialPracticeCompleted.includes(recordId);
 
   useEffect(() => {
     if (timerState !== "running") return;
@@ -1372,8 +1368,6 @@ function OfficialTestRunner({
           <span>套题计时</span><strong className={timerState === "paused" ? "is-paused" : ""}>{minutes}:{seconds}</strong><small>{timerState === "running" ? "计时进行中" : timerState === "paused" ? "计时已暂停" : timerState === "finished" ? "本套计时结束" : `建议用时 ${session.duration}`}</small>
           <button className="runner-timer-primary" disabled={timerState === "finished"} onClick={toggleTimer}>{timerState === "running" ? "Ⅱ 暂停计时" : timerState === "paused" ? "▶ 继续计时" : "▶ 开始计时"}</button>
           <button className="runner-timer-reset" onClick={resetTimer}>重新计时</button>
-          <div className="official-runner-rights"><b>IELTS 官方公开样题</b><p>题目与录音由 IELTS.org 提供。本 App 仅在学习界面中加载原始官方文件并保存你的进度。</p></div>
-          <div className={completed ? "runner-completion-status is-complete" : "runner-completion-status"}><b>{completed ? "✓ 本套已完成" : "等待完整提交"}</b><p>{completed ? `全部 ${requiredCompletionLabel} 已提交，系统已自动记录。` : requiredTasks.length > 0 ? `${submittedRequiredTaskCount}/${requiredTasks.length} 个必做 ${taskUnitLabel} 已提交；完成全部 ${requiredCompletionLabel} 后自动记录。` : "本套没有可自动判定的客观题，当前不会记录为完成。"}</p></div>
         </aside>
         <section className="official-paper-panel">
           <header><div><strong>{task.questionLabel}</strong></div><small>{task.electronicModel && paperMode === "answers" ? "电子参考范文 · 清晰排版" : `官方原始题号 · 当前显示 P${displayPage}`}</small></header>

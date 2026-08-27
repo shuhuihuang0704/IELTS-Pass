@@ -290,7 +290,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /setShowTranscript\(false\)/);
   assert.match(app, /answeredCount < totalQuestions/);
   assert.match(app, /官方套题训练计划/);
-  assert.match(app, /IELTS 官方公开样题/);
+  assert.doesNotMatch(app, /IELTS 官方公开样题|题目与录音由 IELTS\.org 提供|等待完整提交|个必做 Passage 已提交/);
   assert.match(app, /不等同于已正式考过的 Cambridge 历年原卷/);
   assert.match(app, /开始本套/);
   assert.match(app, /OfficialTestRunner/);
@@ -434,8 +434,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /3 INDEPENDENT READING PASSAGES/);
   assert.match(app, /每个 Passage 独立保存答案、得分和完成状态/);
   assert.match(app, /officialPracticeRecordId/);
-  assert.match(app, /requiredCompletionLabel/);
-  assert.match(app, /完成全部 \$\{requiredCompletionLabel\} 后自动记录/);
+  assert.match(app, /allRequiredSubmitted/);
+  assert.match(app, /requiredTasks\.every/);
   assert.doesNotMatch(app, /markComplete|完成整套后记录/);
   assert.match(app, /COMPUTER-DELIVERED ANSWER SHEET/);
   assert.match(app, /提交全部答案/);

@@ -322,13 +322,6 @@ button { cursor: pointer; }
 .runner-timer-primary { color:white; background:var(--violet); }
 .runner-timer-primary:disabled { opacity:.4; cursor:not-allowed; }
 .runner-timer-reset { margin-top:7px; color:#605963; background:#f1eeea; }
-.official-runner-rights { margin-top:18px; padding:12px; border-radius:12px; color:#5b5273; background:#f0edf9; }
-.official-runner-rights b { font-size:9px; }
-.official-runner-rights p { margin:5px 0 0; font-size:8px; line-height:1.5; }
-.runner-completion-status { margin-top:13px; padding:12px; border-radius:12px; color:#6c5b31; background:#f7edd5; }
-.runner-completion-status.is-complete { color:#176c4f; background:#e4f2ec; }
-.runner-completion-status b { font-size:9px; }
-.runner-completion-status p { margin:5px 0 0; font-size:8px; line-height:1.5; }
 .official-paper-panel { min-width:0; padding:18px; }
 .official-paper-panel>header { display:flex; align-items:center; justify-content:space-between; gap:15px; }
 .official-paper-panel>header span,.official-paper-panel>header strong { display:block; }
