@@ -66,9 +66,15 @@ type SpeakingScenario = {
   goals: string[];
 };
 
+export type DailyPracticeBand = 6 | 7 | 8;
+
 function dailyRotationIndex(dayKey: string, length: number) {
   const dayNumber = Math.floor(new Date(`${dayKey}T00:00:00Z`).getTime() / 86_400_000);
   return ((dayNumber % length) + length) % length;
+}
+
+function difficultyRotationIndex(dayKey: string, length: number, band: DailyPracticeBand) {
+  return (dailyRotationIndex(dayKey, length) + band - 6) % length;
 }
 
 const artsCentreListening: DailyListeningSet = {
@@ -304,14 +310,16 @@ const speakingSets: SpeakingScenario[] = [
   },
 ];
 
-export function getDailyListeningExercise(dayKey: string) {
-  return listeningSets[dailyRotationIndex(dayKey, listeningSets.length)];
+export function getDailyListeningExercise(dayKey: string, band: DailyPracticeBand = 7) {
+  const set = listeningSets[difficultyRotationIndex(dayKey, listeningSets.length, band)];
+  return { ...set, code: `${set.code} · Band ${band}.0` };
 }
 
-export function getDailyReadingExercise(dayKey: string) {
-  return readingSets[dailyRotationIndex(dayKey, readingSets.length)];
+export function getDailyReadingExercise(dayKey: string, band: DailyPracticeBand = 7) {
+  const set = readingSets[difficultyRotationIndex(dayKey, readingSets.length, band)];
+  return { ...set, code: `${set.code} · Band ${band}.0` };
 }
 
-export function getDailySpeakingScenario(dayKey: string) {
-  return speakingSets[dailyRotationIndex(dayKey, speakingSets.length)];
+export function getDailySpeakingScenario(dayKey: string, band: DailyPracticeBand = 7) {
+  return speakingSets[difficultyRotationIndex(dayKey, speakingSets.length, band)];
 }

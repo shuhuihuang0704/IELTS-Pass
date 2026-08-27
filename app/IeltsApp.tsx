@@ -21,7 +21,7 @@ import {
 import {
   completionPercent,
   dailyConnectedSpeechTarget,
-  dailyDifficultyBandForDate,
+  dailyDifficultyProfileForDate,
   dailyDifficultyProfiles,
   dailyDictationTarget,
   dailyReviewTarget,
@@ -502,8 +502,12 @@ function readingNotebookReview(entry: NotebookEntry): ReadingNotebookReview | un
   const dailyMatch = entry.id.match(/^question:reading:([^:]+):([^:]+):([^:]+)$/);
   if (dailyMatch) {
     const [, exerciseDate, setCode, questionId] = dailyMatch;
-    const dailySet = getDailyReadingExercise(exerciseDate);
-    if (dailySet.code === setCode) {
+    const storedBand = Number(entry.source.match(/Band ([678])(?:\.0)?/)?.[1] ?? 7) as 6 | 7 | 8;
+    const dailySet = [storedBand, 6, 7, 8]
+      .filter((band, index, bands) => bands.indexOf(band) === index)
+      .map((band) => getDailyReadingExercise(exerciseDate, band as 6 | 7 | 8))
+      .find((set) => set.code === setCode || set.code.startsWith(`${setCode} · Band`));
+    if (dailySet) {
       const exercise = dailySet.exercise;
       const headingQuestion = exercise.matchingHeadings.find((question) => question.id === questionId);
       const informationQuestion = exercise.matchingInformation.find((question) => question.id === questionId);
@@ -565,8 +569,12 @@ function listeningNotebookReview(entry: NotebookEntry): ListeningNotebookReview 
   const dailyMatch = entry.id.match(/^question:listening:([^:]+):([^:]+):(.+)$/);
   if (dailyMatch) {
     const [, exerciseDate, setCode, questionNumber] = dailyMatch;
-    const dailySet = getDailyListeningExercise(exerciseDate);
-    if (dailySet.code === setCode) {
+    const storedBand = Number(entry.source.match(/Band ([678])(?:\.0)?/)?.[1] ?? 7) as 6 | 7 | 8;
+    const dailySet = [storedBand, 6, 7, 8]
+      .filter((band, index, bands) => bands.indexOf(band) === index)
+      .map((band) => getDailyListeningExercise(exerciseDate, band as 6 | 7 | 8))
+      .find((set) => set.code === setCode || set.code.startsWith(`${setCode} · Band`));
+    if (dailySet) {
       if (questionNumber === "5–6") {
         options = options.length > 0 ? options : dailySet.exercise.multipleSelect.options;
         allowsMultiple = true;
@@ -1225,7 +1233,8 @@ function TodayView({
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
   const dailyMinutes = targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore);
   const planDay = Math.min(progress.studyPlanDays, Math.max(1, Math.floor((new Date(`${localDayKey()}T12:00:00`).getTime() - new Date(`${progress.studyPlanStartedAt}T12:00:00`).getTime()) / 86_400_000) + 1));
-  const todayDifficultyBand = dailyDifficultyBandForDate(progress.studyPlanStartedAt, localDayKey(), progress.studyPlanDays, progress.targetBandScore);
+  const todayDifficultyProfile = dailyDifficultyProfileForDate(progress.studyPlanStartedAt, localDayKey(), progress.studyPlanDays, progress.targetBandScore);
+  const todayDifficultyBand = todayDifficultyProfile.band;
   const nextSkill = skills.find((skill) => !progress.completed[skill.id])
     ?? skills[0];
   const dueReviewCount = progress.reviewWords.filter((word) => (progress.reviewSchedule[word]?.dueDate ?? localDayKey()) <= localDayKey()).length;
@@ -1249,7 +1258,7 @@ function TodayView({
         <section className="scene-stage">
           <div className="scene-watermark" aria-hidden="true">TEST<br />FLOW</div>
           <div className="scene-heading"><span>PLAN DAY {planDay} / {progress.studyPlanDays} · BAND {todayDifficultyBand}.0</span><span>约 {dailyMinutes} 分钟</span></div>
-          <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · {dictationTarget} 听写 · {phraseTarget} 连读 · 今日难度 {todayDifficultyBand}.0</p>
+          <h2>完成今天的<br />雅思训练</h2><p>{vocabularyTarget} 词 · {dictationTarget} 听写 · {phraseTarget} 连读 · Band {todayDifficultyBand}.0 {todayDifficultyProfile.stageLabel}</p>
           <button className="voice-orb" aria-label="打开 IELTS AI 助教" onClick={() => onNavigate("scene")}><i /><b>AI</b></button>
           <div className="learning-path" aria-label="今日场景学习路径">
             {skills.map((skill, index) => (
@@ -2587,9 +2596,9 @@ function SceneView({
   const vocabularyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
   const dictationTarget = dailyDictationTarget(progress.studyPlanDays, progress.targetBandScore);
   const phraseTarget = dailyConnectedSpeechTarget(progress.studyPlanDays, progress.targetBandScore);
-  const difficultyBand = dailyDifficultyBandForDate(progress.studyPlanStartedAt, contentDate, progress.studyPlanDays, progress.targetBandScore);
-  const difficultyProfile = dailyDifficultyProfiles[difficultyBand];
-  const difficultyPath = progress.targetBandScore < 6.5 ? "6.0 巩固" : progress.targetBandScore < 7.5 ? "6.0 → 7.0" : "6.0 → 7.0 → 8.0";
+  const difficultyProfile = dailyDifficultyProfileForDate(progress.studyPlanStartedAt, contentDate, progress.studyPlanDays, progress.targetBandScore);
+  const difficultyBand = difficultyProfile.band;
+  const difficultyPath = `目标 ${progress.targetBandScore.toFixed(1)} → Band ${difficultyBand}.0 专属路线`;
   const isCarryoverContent = contentDate !== localDayKey() && progress.carryoverTasks.includes(activeSkill);
   const [vocabularyMode, setVocabularyMode] = useState<"daily" | "typing" | "phrases">("daily");
   const vocabularyHeader = vocabularyMode === "typing"
@@ -2634,8 +2643,8 @@ function SceneView({
       <PageHeader eyebrow={header.eyebrow} title={header.title} accent={header.accent} />
       {isCarryoverContent && <section className="carryover-context-banner"><div><span>YESTERDAY&apos;S TASK</span><strong>正在补做 {contentDate} 的{activeSkill === "vocabulary" ? "词汇与听写" : skills.find((skill) => skill.id === activeSkill)?.label}</strong></div><small>本页题目按原任务日期加载；完成后才会从昨日未完成列表移除。</small></section>}
       {activeSkill !== "vocabulary" && <section className="daily-difficulty-panel" aria-label={`今日训练难度 Band ${difficultyBand}.0`}>
-        <div><span>DAILY DIFFICULTY</span><strong>今日 Band {difficultyBand}.0 · {difficultyProfile.label}</strong><p>{difficultyProfile.summary} 本计划路线：{difficultyPath}。</p></div>
-        <div className="daily-difficulty-ladder">{([6, 7, 8] as const).map((band) => <span className={band === difficultyBand ? "is-active" : band < difficultyBand ? "is-passed" : ""} key={band}><b>{band}.0</b><small>{dailyDifficultyProfiles[band].label}</small></span>)}</div>
+        <div className="daily-difficulty-copy"><span>PERSONALISED DAILY DIFFICULTY</span><strong>Band {difficultyBand}.0 · {difficultyProfile.stageLabel} · 第 {difficultyProfile.planDay}/{difficultyProfile.planDays} 天</strong><p>{difficultyProfile.summary} {difficultyPath}。</p><div className="daily-difficulty-progress"><i style={{ width: `${difficultyProfile.progressPercent}%` }} /><small>本路线难度进度 {difficultyProfile.progressPercent}%</small></div></div>
+        <div><div className="daily-difficulty-ladder">{([6, 7, 8] as const).map((band) => <span className={band === difficultyBand ? "is-active" : ""} key={band}><b>{band}.0</b><small>{dailyDifficultyProfiles[band].label}</small></span>)}</div><ul className="daily-exam-format"><li><b>听</b>{difficultyProfile.listening.format}</li><li><b>读</b>{difficultyProfile.reading.format}</li><li><b>说</b>{difficultyProfile.speaking.format}</li></ul></div>
       </section>}
       <div className="scene-tabs" role="tablist" aria-label="场景训练步骤">
         {skills.map((skill, index) => (
@@ -3178,7 +3187,7 @@ function ListeningPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: (score: number, fullyAnswered: boolean) => void;
 }) {
-  const listeningSet = getDailyListeningExercise(exerciseDate);
+  const listeningSet = getDailyListeningExercise(exerciseDate, difficulty.band);
   const listeningExercise = listeningSet.exercise;
   const listeningReviewEvidence = listeningSet.evidence;
   const [formAnswers, setFormAnswers] = useState<Record<string, string>>({});
@@ -3389,6 +3398,7 @@ function ListeningPractice({
       <div className="exercise-main listening-exam-main">
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>{exerciseDate} · Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>Band {difficulty.band}.0 · {difficulty.listening.focus} · 达标 {difficulty.listening.passScore}/10</p>
+        <div className="exam-format-strip"><b>IELTS LISTENING FORMAT</b><span>{difficulty.listening.format}</span><small>训练模式保留暂停与拖动；作答顺序和题目指令按 IELTS 方式呈现。</small></div>
         <div className="listening-controls">
           <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${playerState}`}>
@@ -3470,7 +3480,7 @@ function SpeakingPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: () => void;
 }) {
-  const speakingScenario = getDailySpeakingScenario(exerciseDate);
+  const speakingScenario = getDailySpeakingScenario(exerciseDate, difficulty.band);
   type PracticeRecognitionEvent = { results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> };
   type PracticeRecognitionErrorEvent = { error?: string };
   type PracticeRecognition = {
@@ -3485,7 +3495,8 @@ function SpeakingPractice({
     onend: (() => void) | null;
   };
   type PracticeRecognitionConstructor = new () => PracticeRecognition;
-  const completedTurns = progress.speakingTurnsByDate[exerciseDate] ?? 0;
+  const speakingProgressKey = `${exerciseDate}:band-${difficulty.band}`;
+  const completedTurns = progress.speakingTurnsByDate[speakingProgressKey] ?? 0;
   const questionIndex = Math.min(completedTurns, speakingScenario.questions.length - 1);
   const [draft, setDraft] = useState("");
   const [micStatus, setMicStatus] = useState("");
@@ -3502,11 +3513,7 @@ function SpeakingPractice({
   const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
   const examinerUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const practiceRecognition = useRef<PracticeRecognition | null>(null);
-  const questionForDifficulty = (question: string) => difficulty.band === 8
-    ? `${question} Please consider both sides and the wider long-term consequences.`
-    : difficulty.band === 7
-      ? `${question} Please explain your reason and give an example.`
-      : question;
+  const questionForDifficulty = (question: string) => question;
   const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => questionForDifficulty(speakingScenario.questions[questionIndex]));
 
   useEffect(() => () => {
@@ -3619,7 +3626,7 @@ function SpeakingPractice({
     updateProgress((current) => ({
       ...current,
       speakingPart3Turns: nextTurns,
-      speakingTurnsByDate: { ...current.speakingTurnsByDate, [exerciseDate]: nextTurns },
+      speakingTurnsByDate: { ...current.speakingTurnsByDate, [speakingProgressKey]: nextTurns },
     }));
     setActiveExaminerPrompt(reply);
     setShowExaminerSubtitles(false);
@@ -3691,6 +3698,7 @@ function SpeakingPractice({
     <div className="exercise-layout speaking-layout is-single-column">
       <div className="exercise-main conversation-panel">
         <div className="exercise-kicker"><span>{speakingScenario.part}</span><span>Band {difficulty.band}.0 · {Math.min(completedTurns, speakingScenario.questions.length)} / {speakingScenario.questions.length} 问</span></div>
+        <div className="exam-format-strip"><b>IELTS SPEAKING FORMAT</b><span>{difficulty.speaking.format}</span><small>考官问题保持自然，不在题目里提示答题结构；提交后才按目标档给反馈并继续追问。</small></div>
         <div className="speaking-difficulty-brief"><strong>本层要求</strong><span>每题约 {difficulty.speaking.minimumWords}+ 词 · {difficulty.speaking.focus}</span></div>
         <div className="speaking-audio-controls">
           <button className={!speakingStarted ? "speaking-start" : ""} onClick={speakingStarted ? () => playExaminerPrompt(activeExaminerPrompt) : startSpeaking}>{speakingStarted ? "↺ 重听当前问题" : "▶ 开始口语模拟"}</button>
@@ -3729,7 +3737,7 @@ function ReadingPractice({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
   onComplete: (score: number, fullyAnswered: boolean) => void;
 }) {
-  const readingSet = getDailyReadingExercise(exerciseDate);
+  const readingSet = getDailyReadingExercise(exerciseDate, difficulty.band);
   const readingExercise = readingSet.exercise;
   const readingReviewEvidence = readingSet.evidence;
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -3862,6 +3870,7 @@ function ReadingPractice({
       </article>
       <section className="reading-questions">
         <div className="exercise-kicker"><span>Questions 1–{totalQuestions} · 达标 {difficulty.reading.passScore}/{totalQuestions}</span><span>建议 {difficulty.reading.minutes} 分钟</span></div>
+        <div className="exam-format-strip"><b>IELTS ACADEMIC READING FORMAT</b><span>{difficulty.reading.format}</span><small>题号连续、题型指令和提交后定位解析均按考试型训练流程呈现。</small></div>
         <div className={`daily-reading-timer is-${readingTimerState}`}><div><span>BAND {difficulty.band}.0 TIMER</span><strong>{readingClock}</strong></div><button type="button" disabled={readingTimerState === "finished"} onClick={toggleReadingTimer}>{readingTimerState === "running" ? "Ⅱ 暂停" : readingTimerState === "paused" ? "▶ 继续" : readingTimerState === "finished" ? "时间到" : "▶ 开始计时"}</button><button type="button" onClick={() => { setReadingSeconds(difficulty.reading.minutes * 60); setReadingTimerState("idle"); }}>重置</button></div>
         <div className="reading-difficulty-brief"><strong>Band {difficulty.band}.0 重点</strong><span>{difficulty.reading.focus}</span></div>
         <div className="reading-progress-line"><i style={{ width: `${Math.round(answeredCount / totalQuestions * 100)}%` }} /><span>{answeredCount}/{totalQuestions}</span></div>
@@ -4506,6 +4515,7 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
   const planReviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
   const planSessions = targetOfficialSessionsPerWeek(progress.studyPlanDays, progress.targetBandScore);
   const planFocus = targetPlanFocus(progress.targetBandScore);
+  const planDifficulty = dailyDifficultyProfileForDate(progress.studyPlanStartedAt, localDayKey(), progress.studyPlanDays, progress.targetBandScore);
   const planProgress = overallPlanProgress(progress);
   const planDay = planProgress.planDay;
   const planEndDate = new Date(`${progress.studyPlanStartedAt}T12:00:00`);
@@ -4568,9 +4578,10 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
         </div>
       </section>
       <section className="study-plan-card">
-        <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>当前为“{planFocus.label}”计划；目标分数会同时改变每天的训练量、复习量、训练重点与套题频率。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
+        <header><div><span>PERSONALISED STUDY PLAN</span><h2>设置目标分数与备考周期</h2><p>当前为“{planFocus.label}”计划；目标分数会切换听、读、说的专属难度题库，路线内部再按学习天数逐日递升。</p></div><strong>第 {planDay}<small> / {progress.studyPlanDays} 天</small></strong></header>
         <div className="study-plan-summary">
           <article><span>目标分数</span><strong>{progress.targetBandScore.toFixed(1)}</strong></article>
+          <article><span>听读说路线</span><strong>Band {planDifficulty.band}.0<small> · {planDifficulty.stageLabel}</small></strong></article>
           <article><span>每日核心词</span><strong>{planVocabularyTarget}<small> 词</small></strong></article>
           <article><span>场景听写</span><strong>{planDictationTarget}<small> 词</small></strong></article>
           <article><span>连读词组</span><strong>{planPhraseTarget}<small> 组</small></strong></article>
@@ -4579,7 +4590,7 @@ function ProfileView({ progress, onReset, updateProgress }: { progress: Learning
           <article><span>每日预计</span><strong>{targetEstimatedDailyMinutes(progress.studyPlanDays, progress.targetBandScore)}<small> 分钟</small></strong></article>
           <article><span>预计结束</span><strong>{planEndDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}</strong></article>
         </div>
-        <div className="target-band-selector"><div><strong>目标分数 · {planFocus.label}</strong><small>切换后立即重算词汇、听写、连读、复习和套题安排</small></div><div>{[5.5, 6, 6.5, 7, 7.5, 8, 8.5].map((score) => <button className={progress.targetBandScore === score ? "is-active" : ""} onClick={() => selectTargetBand(score)} key={score}>{score.toFixed(1)}</button>)}</div></div>
+        <div className="target-band-selector"><div><strong>目标分数 · {planFocus.label}</strong><small>5.5–6.0 使用 Band 6 路线；6.5–7.0 使用 Band 7 路线；7.5–8.5 使用 Band 8 路线。切换后听、读、说题目与每日要求一起改变。</small></div><div>{[5.5, 6, 6.5, 7, 7.5, 8, 8.5].map((score) => <button className={progress.targetBandScore === score ? "is-active" : ""} onClick={() => selectTargetBand(score)} key={score}>{score.toFixed(1)}</button>)}</div></div>
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 30–180 天</small></label><div><input id="custom-plan-days" type="number" min="30" max="180" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>

@@ -180,55 +180,113 @@ export function normalizeTargetBandScore(value: unknown) {
 }
 
 export type DailyDifficultyBand = 6 | 7 | 8;
+export type DailyDifficultyStage = 1 | 2 | 3 | 4;
 
 export type DailyDifficultyProfile = {
   band: DailyDifficultyBand;
+  targetScore: number;
   label: string;
   summary: string;
-  listening: { rate: number; passScore: number; focus: string };
-  reading: { minutes: number; passScore: number; focus: string };
-  speaking: { minimumWords: number; requireDevelopment: boolean; requireCounterpoint: boolean; focus: string };
+  stage: DailyDifficultyStage;
+  stageLabel: string;
+  planDay: number;
+  planDays: number;
+  progressPercent: number;
+  listening: { rate: number; passScore: number; focus: string; format: string };
+  reading: { minutes: number; passScore: number; focus: string; format: string };
+  speaking: { minimumWords: number; requireDevelopment: boolean; requireCounterpoint: boolean; focus: string; format: string };
 };
 
-export const dailyDifficultyProfiles: Record<DailyDifficultyBand, DailyDifficultyProfile> = {
+type DailyDifficultyBaseProfile = Omit<DailyDifficultyProfile, "targetScore" | "stage" | "stageLabel" | "planDay" | "planDays" | "progressPercent">;
+
+export const dailyDifficultyProfiles: Record<DailyDifficultyBand, DailyDifficultyBaseProfile> = {
   6: {
     band: 6,
     label: "基础准确",
-    summary: "先建立稳定正确率，再逐步增加同义替换和时间压力。",
-    listening: { rate: .92, passScore: 7, focus: "数字、拼写与明确转折" },
-    reading: { minutes: 22, passScore: 7, focus: "关键词定位与事实判断" },
-    speaking: { minimumWords: 14, requireDevelopment: false, requireCounterpoint: false, focus: "直接回答并说明一个原因" },
+    summary: "使用清晰定位信号建立正确率，再逐日增加同义替换和时间压力。",
+    listening: { rate: .9, passScore: 6, focus: "数字、拼写与明确转折", format: "10 题连续作答 · 填空、多选、匹配、单选 · 答案按录音顺序出现" },
+    reading: { minutes: 24, passScore: 7, focus: "关键词定位与事实判断", format: "Academic Passage 模式 · 匹配、选择、判断、摘要填空 · 原文与答题区并列" },
+    speaking: { minimumWords: 10, requireDevelopment: false, requireCounterpoint: false, focus: "直接回答并说明一个原因", format: "Speaking Part 3 模式 · 无准备时间 · 考官逐题提问并根据回答追问" },
   },
   7: {
     band: 7,
     label: "考试节奏",
     summary: "使用自然语速、标准限时和更密集的同义替换完成训练。",
-    listening: { rate: 1, passScore: 8, focus: "同义替换、连读与干扰项" },
-    reading: { minutes: 18, passScore: 9, focus: "段落匹配、判断与快速定位" },
-    speaking: { minimumWords: 25, requireDevelopment: true, requireCounterpoint: false, focus: "观点、原因和例子完整展开" },
+    listening: { rate: .96, passScore: 7, focus: "同义替换、连读与干扰项", format: "10 题连续作答 · 填空、多选、匹配、单选 · 含修正信息和干扰项" },
+    reading: { minutes: 21, passScore: 8, focus: "段落匹配、判断与快速定位", format: "Academic Passage 模式 · 11 题混合题型 · 按 IELTS 题目指令限时作答" },
+    speaking: { minimumWords: 18, requireDevelopment: true, requireCounterpoint: false, focus: "观点、原因和例子完整展开", format: "Speaking Part 3 模式 · 4–5 分钟 · 考官连续追问理由和例证" },
   },
   8: {
     band: 8,
     label: "高分压力",
-    summary: "在更快语流和更短限时下处理隐含信息，并完成有让步的抽象论证。",
-    listening: { rate: 1.08, passScore: 9, focus: "弱读、快速修正与多重干扰" },
-    reading: { minutes: 15, passScore: 10, focus: "隐含观点、复杂匹配与高压定位" },
-    speaking: { minimumWords: 40, requireDevelopment: true, requireCounterpoint: true, focus: "抽象论证、例证、让步与进一步追问" },
+    summary: "从自然考试语速起步，逐日提升对隐含信息、多重干扰和抽象论证的处理压力。",
+    listening: { rate: 1, passScore: 8, focus: "弱读、快速修正与多重干扰", format: "10 题连续作答 · 高密度同义替换 · 重点处理限定词和说话者修正" },
+    reading: { minutes: 18, passScore: 9, focus: "隐含观点、复杂匹配与高压定位", format: "Academic Passage 模式 · 复杂匹配与 NOT GIVEN 核验 · 严格限时" },
+    speaking: { minimumWords: 28, requireDevelopment: true, requireCounterpoint: true, focus: "抽象论证、例证、让步与进一步追问", format: "Speaking Part 3 模式 · 抽象社会议题 · 考官基于回答动态追问" },
   },
 };
 
-export function dailyDifficultyBandForDate(planStartedAt: string, contentDate: string, planDays: number, targetBandScore: number): DailyDifficultyBand {
+export function targetDailyDifficultyBand(targetBandScore: number): DailyDifficultyBand {
+  const target = normalizeTargetBandScore(targetBandScore);
+  if (target <= 6) return 6;
+  if (target <= 7) return 7;
+  return 8;
+}
+
+export function dailyDifficultyProfileForDate(planStartedAt: string, contentDate: string, planDays: number, targetBandScore: number): DailyDifficultyProfile {
   const normalizedDays = normalizeStudyPlanDays(planDays);
   const startedAt = /^\d{4}-\d{2}-\d{2}$/.test(planStartedAt) ? planStartedAt : contentDate;
   const trainingDate = /^\d{4}-\d{2}-\d{2}$/.test(contentDate) ? contentDate : startedAt;
   const elapsedDays = Math.max(0, Math.floor((new Date(`${trainingDate}T12:00:00`).getTime() - new Date(`${startedAt}T12:00:00`).getTime()) / 86_400_000));
+  const planDay = Math.min(normalizedDays, elapsedDays + 1);
   const progressRatio = Math.min(1, elapsedDays / Math.max(1, normalizedDays - 1));
-  const target = normalizeTargetBandScore(targetBandScore);
-  if (target < 6.5) return 6;
-  if (target < 7.5) return progressRatio < .35 ? 6 : 7;
-  if (progressRatio < .2) return 6;
-  if (progressRatio < .55) return 7;
-  return 8;
+  const progressPercent = Math.round(progressRatio * 100);
+  const stage = Math.min(4, Math.floor(progressRatio * 4) + 1) as DailyDifficultyStage;
+  const stageLabels: Record<DailyDifficultyStage, string> = { 1: "题型校准", 2: "稳定提升", 3: "考试强化", 4: "目标冲刺" };
+  const stageFocus: Record<DailyDifficultyStage, string> = {
+    1: "先熟悉本档题型与作答节奏",
+    2: "增加同义替换并减少反应时间",
+    3: "加强干扰信息、限时定位与连续表达",
+    4: "按目标分数要求完成高压模拟",
+  };
+  const band = targetDailyDifficultyBand(targetBandScore);
+  const base = dailyDifficultyProfiles[band];
+  const rateIncrease = band === 8 ? .1 : .08;
+  const readingTimeReduction = 4;
+  const speakingWordIncrease = band === 6 ? 8 : band === 7 ? 12 : 17;
+  return {
+    ...base,
+    targetScore: normalizeTargetBandScore(targetBandScore),
+    stage,
+    stageLabel: stageLabels[stage],
+    planDay,
+    planDays: normalizedDays,
+    progressPercent,
+    summary: `${base.summary} 今日阶段：${stageFocus[stage]}。`,
+    listening: {
+      ...base.listening,
+      rate: Math.round((base.listening.rate + progressRatio * rateIncrease) * 100) / 100,
+      passScore: Math.min(10, base.listening.passScore + Math.round(progressRatio * 2)),
+      focus: `${base.listening.focus}；${stageFocus[stage]}`,
+    },
+    reading: {
+      ...base.reading,
+      minutes: Math.max(14, Math.round(base.reading.minutes - progressRatio * readingTimeReduction)),
+      passScore: Math.min(10, base.reading.passScore + Math.round(progressRatio)),
+      focus: `${base.reading.focus}；${stageFocus[stage]}`,
+    },
+    speaking: {
+      ...base.speaking,
+      minimumWords: Math.round(base.speaking.minimumWords + progressRatio * speakingWordIncrease),
+      requireDevelopment: base.speaking.requireDevelopment || (band === 6 && stage >= 3),
+      requireCounterpoint: band === 8 && stage >= 3,
+      focus: `${base.speaking.focus}；${stageFocus[stage]}`,
+    },
+  };
+}
+
+export function dailyDifficultyBandForDate(planStartedAt: string, contentDate: string, planDays: number, targetBandScore: number): DailyDifficultyBand {
+  return dailyDifficultyProfileForDate(planStartedAt, contentDate, planDays, targetBandScore).band;
 }
 
 export function targetOfficialSessionsPerWeek(planDays: number, targetBandScore: number) {
