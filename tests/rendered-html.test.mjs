@@ -406,6 +406,9 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.ok(skillOrderBlock.indexOf('id: "reading"') < skillOrderBlock.indexOf('id: "speaking"'));
   assert.match(app, /开始本套/);
   assert.match(app, /OfficialTestRunner/);
+  assert.match(app, /⌂ 返回首页/);
+  assert.match(app, /onHome=\{\(\) => setView\("today"\)\}/);
+  assert.match(styles, /\.official-runner-nav button\.is-home/);
   assert.match(app, /IELTS-OFFICIAL-AR-MLP-01/);
   assert.match(app, /Passage 1 · Questions 1–13/);
   assert.match(app, /Passage 2 · Questions 14–26/);

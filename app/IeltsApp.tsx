@@ -911,7 +911,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "practice" && <PracticeView progress={progress} onOpenOfficialTest={openOfficialTest} />}
-        {view === "official-test" && <OfficialTestRunner key={`${activeOfficialSessionId}:${activeOfficialTaskId ?? "start"}`} session={officialTestSchedule.find((session) => session.id === activeOfficialSessionId) ?? officialTestSchedule[0]} initialTaskId={activeOfficialTaskId} progress={progress} onBack={() => setView("practice")} updateProgress={updateProgress} />}
+        {view === "official-test" && <OfficialTestRunner key={`${activeOfficialSessionId}:${activeOfficialTaskId ?? "start"}`} session={officialTestSchedule.find((session) => session.id === activeOfficialSessionId) ?? officialTestSchedule[0]} initialTaskId={activeOfficialTaskId} progress={progress} onBack={() => setView("practice")} onHome={() => setView("today")} updateProgress={updateProgress} />}
         {view === "scene" && <AiTutorView progress={progress} />}
         {view === "skill" && (
           <SceneView
@@ -1295,12 +1295,14 @@ function OfficialTestRunner({
   initialTaskId,
   progress,
   onBack,
+  onHome,
   updateProgress,
 }: {
   session: OfficialTestSession;
   initialTaskId?: string;
   progress: LearningProgress;
   onBack: () => void;
+  onHome: () => void;
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const material = session.materials[0];
@@ -1482,7 +1484,7 @@ function OfficialTestRunner({
   return (
     <>
       <div className="official-runner-bar">
-        <button onClick={onBack}>← 返回官方套题计划</button>
+        <nav className="official-runner-nav" aria-label="训练页面导航"><button className="is-home" onClick={onHome}>⌂ 返回首页</button><button onClick={onBack}>← 套题计划</button></nav>
         <div><span>当前套题</span><strong>{session.title}</strong><small>{session.source}</small></div>
         <span className="official-set-badge">{session.setCode}</span>
       </div>

@@ -336,7 +336,9 @@ button { cursor: pointer; }
 .official-session.is-complete .official-session-date { color:#176c4f; background:#e4f2ec; }
 .official-session.is-complete .official-session-actions button { color:#176c4f; background:#e4f2ec; }
 .official-runner-bar { margin-top:28px; padding:15px 17px; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px; border-radius:18px; background:white; }
-.official-runner-bar>button { min-height:38px; padding:0 13px; border:0; border-radius:11px; color:#4d4494; background:#ece8f8; font-size:10px; }
+.official-runner-nav { display:flex; gap:7px; }
+.official-runner-nav button { min-height:38px; padding:0 11px; border:0; border-radius:11px; color:#4d4494; background:#ece8f8; font-size:9px; white-space:nowrap; }
+.official-runner-nav button.is-home { color:white; background:var(--ink); }
 .official-runner-bar>div span,.official-runner-bar>div strong,.official-runner-bar>div small { display:block; }
 .official-runner-bar>div span { color:var(--muted); font-size:8px; letter-spacing:.5px; }
 .official-runner-bar>div strong { margin-top:4px; font-size:13px; }
@@ -1294,7 +1296,7 @@ button { cursor: pointer; }
   .official-session-date { min-height:54px; }
   .official-session-actions { grid-column:1 / -1; }
   .official-runner-bar { grid-template-columns:1fr auto; }
-  .official-runner-bar>button { grid-column:1 / -1; grid-row:2; }
+  .official-runner-nav { grid-column:1 / -1; grid-row:2; display:grid; grid-template-columns:1fr 1fr; }
   .official-set-badge { align-self:start; }
   .official-paper-panel { padding:12px; border-radius:19px; }
   .official-runner-sidebar { grid-template-columns:1fr auto; gap:8px 10px; position:static; }
