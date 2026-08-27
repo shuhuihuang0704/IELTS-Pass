@@ -372,6 +372,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /new Set\(groupResponses\)/);
   assert.match(app, /ROLLED OVER FROM YESTERDAY/);
   assert.match(app, /昨日未完成/);
+  assert.match(app, /progress\.carryoverTasks\.length > 0 &&/);
+  assert.doesNotMatch(app, /TASK ROLLOVER|目前没有昨日待补做任务|carryover-strip is-empty/);
   assert.match(app, /carryoverTasks\.filter/);
   assert.match(data, /vocabulary|listening|speaking|reading/);
   assert.match(state, /completionPercent/);

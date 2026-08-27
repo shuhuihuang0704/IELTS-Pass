@@ -944,15 +944,10 @@ function TodayView({
   return (
     <>
       <PageHeader eyebrow="TODAY · IELTS ACADEMIC" title="今天，只做好" accent="下一步。" onDictionarySearch={onDictionarySearch} />
-      {progress.carryoverTasks.length > 0 ? (
+      {progress.carryoverTasks.length > 0 && (
         <section className="carryover-strip">
           <div><span>ROLLED OVER FROM YESTERDAY</span><strong>先补完昨天没有完成的任务</strong><p>补做任务不会自动打勾；完成完整专项后才会从这里移除。</p></div>
           <div className="carryover-task-list">{progress.carryoverTasks.map((skillId) => { const skill = skills.find((item) => item.id === skillId); return skill ? <button onClick={() => onOpenSkill(skill.id)} key={skill.id}><span>{skill.short}</span><strong>{skill.label}</strong><small>{progress.completed[skill.id] ? "✓ 已补完" : "昨日未完成 →"}</small></button> : null; })}</div>
-        </section>
-      ) : (
-        <section className="carryover-strip is-empty">
-          <div><span>TASK ROLLOVER</span><strong>今天没完成的任务，会自动进入明天</strong><p>目前没有昨日待补做任务；完成度不会因为任务顺延而自动增加。</p></div>
-          <div className="carryover-empty-count"><strong>0</strong><span>待补做</span></div>
         </section>
       )}
       <div className="dashboard-grid">
