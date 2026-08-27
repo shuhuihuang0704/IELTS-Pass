@@ -500,8 +500,15 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /荧光笔标注原文/);
   assert.match(app, /reading-answer-analysis/);
   assert.match(styles, /\.reading-paragraphs mark/);
-  assert.match(app, /原文荧光定位/);
   assert.match(app, /荧光笔定位原文/);
+  assert.doesNotMatch(app, /official-reading-evidence/);
+  assert.doesNotMatch(app, /HIGHLIGHTED SOURCE|原文荧光定位/);
+  assert.match(app, /official-reading-passage-page-/);
+  assert.match(app, /scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/);
+  assert.match(app, /&search=\$\{encodeURIComponent\(activeReadingSearchText\)\}/);
+  assert.match(app, /✓ 已在原文标出/);
+  assert.doesNotMatch(styles, /\.official-reading-evidence/);
+  assert.match(styles, /\.official-pdf-page-lock\.is-evidence-page/);
   assert.match(app, /NOT GIVEN 核验范围/);
   assert.match(app, /readingAnalysisMethod/);
   assert.match(app, /fullyCompleted/);

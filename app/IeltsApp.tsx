@@ -1533,8 +1533,10 @@ function OfficialTestRunner({
   const taskRecordKey = officialTaskRecordId(session, material, task);
   const taskAttemptHistory = progress.officialTaskAttemptHistory[taskRecordKey] ?? [];
   const taskAnswers = task.answers ?? [];
-  const activeReadingAnswer = taskAnswers.find((answer) => answer.number === (activeReadingQuestion ?? taskAnswers[0]?.number));
+  const activeReadingAnswer = activeReadingQuestion ? taskAnswers.find((answer) => answer.number === activeReadingQuestion) : undefined;
   const activeReadingEvidence = activeReadingAnswer ? readingSourceEvidence[`${task.id}:${activeReadingAnswer.number}`] : undefined;
+  const activeReadingEvidencePage = Number(activeReadingEvidence?.location.match(/P(\d+)/)?.[1] ?? 0);
+  const activeReadingSearchText = activeReadingEvidence?.excerpt.split("...")[0].trim().split(/\s+/).slice(0, 10).join(" ") ?? "";
   const openResponseKey = `${taskKey}:open-response`;
   const openResponse = officialResponses[openResponseKey] ?? "";
   const openResponseWordCount = openResponse.trim() ? openResponse.trim().split(/\s+/).length : 0;
@@ -1611,7 +1613,6 @@ function OfficialTestRunner({
       ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length
       : null;
     setSubmittedTasks(nextSubmittedTasks);
-    if (material.passagePdfUrl && taskAnswers[0]) setActiveReadingQuestion(taskAnswers[0].number);
     updateProgress((current) => {
       const notebook = current.notebook.map((entry) => {
         const answer = taskAnswers.find((item) => entry.id === `question:${session.setCode}:${task.id}:${item.number}`);
@@ -1669,7 +1670,13 @@ function OfficialTestRunner({
   };
   const showReadingEvidence = (questionNumber: string) => {
     setActiveReadingQuestion(questionNumber);
-    window.setTimeout(() => readingBookletRef.current?.scrollTo({ top: 0, behavior: "smooth" }), 0);
+    const evidence = readingSourceEvidence[`${task.id}:${questionNumber}`];
+    const page = Number(evidence?.location.match(/P(\d+)/)?.[1] ?? 0);
+    window.setTimeout(() => {
+      const targetPage = document.getElementById(`official-reading-passage-page-${page}`);
+      if (targetPage) targetPage.scrollIntoView({ behavior: "smooth", block: "center" });
+      else readingBookletRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
   };
   const continueEditingCurrentTask = () => {
     setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
@@ -1754,7 +1761,7 @@ function OfficialTestRunner({
                       ) : (
                         <input aria-label={`Question ${answer.number}`} autoComplete="off" disabled={taskSubmitted} placeholder="输入答案" value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))} />
                       )}
-                      {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <div className="official-reading-analysis"><div><strong>原文定位</strong><span>{sourceEvidence?.location ?? "当前题暂无精确定位"}</span></div><p><strong>判断依据</strong><span>{answer.explanation}</span></p><p><strong>解题方法</strong><span>{readingAnalysisMethod(answer)}</span></p>{sourceEvidence && <button type="button" onClick={() => showReadingEvidence(answer.number)}>荧光笔定位原文 →</button>}</div>}</small>}
+                      {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <div className="official-reading-analysis"><div><strong>原文定位</strong><span>{sourceEvidence?.location ?? "当前题暂无精确定位"}</span></div><p><strong>判断依据</strong><span>{answer.explanation}</span></p><p><strong>解题方法</strong><span>{readingAnalysisMethod(answer)}</span></p>{sourceEvidence && <button type="button" className={activeReadingQuestion === answer.number ? "is-active" : ""} onClick={() => showReadingEvidence(answer.number)}>{activeReadingQuestion === answer.number ? "✓ 已在原文标出" : "荧光笔定位原文 →"}</button>}</div>}</small>}
                     </div>
                   );
                 })}
@@ -1824,17 +1831,9 @@ function OfficialTestRunner({
                 <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? allAnswersFilled ? "✓ 本 Passage 已完成" : "已提交查看答案 · 尚未完成" : "独立作答 · 不影响其他 Passage"}</small></div>
                 <span>{task.questionLabel}</span>
               </header>
-              {taskSubmitted && activeReadingAnswer && activeReadingEvidence && (
-                <section className="official-reading-evidence" id="official-reading-evidence" aria-live="polite">
-                  <header><div><span>HIGHLIGHTED SOURCE</span><strong>Q{activeReadingAnswer.number} · 原文荧光定位</strong></div><button type="button" onClick={() => setActiveReadingQuestion(null)} aria-label="关闭原文荧光定位">×</button></header>
-                  <div className="official-reading-location"><span>定位</span><b>{activeReadingEvidence.location}</b></div>
-                  <blockquote><mark>{activeReadingEvidence.excerpt}</mark></blockquote>
-                  <div className="official-reading-reasoning"><strong>为什么是这个答案</strong><p>{activeReadingAnswer.explanation}</p><small>{readingAnalysisMethod(activeReadingAnswer)}</small></div>
-                </section>
-              )}
               <section className="official-reading-pair" key={task.id}>
                 <header><b>{task.label} · 阅读文章</b><small>仅显示当前 Passage</small></header>
-                <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => <div className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
+                <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingSearchText); const sourceHash = `page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit${isEvidencePage ? `&search=${encodeURIComponent(activeReadingSearchText)}` : ""}`; return <div id={`official-reading-passage-page-${page}`} className={`official-pdf-page-lock${isEvidencePage ? " is-evidence-page" : ""}`} key={`passage-${page}-${isEvidencePage ? activeReadingQuestion : "plain"}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#${sourceHash}`} /></div>; })}</div>
                 <div className="official-reading-continue"><span>接着完成</span><b>{task.questionLabel}</b></div>
                 <header><b>{task.label} · 对应题目</b><small>只包含本 Passage 的题目页</small></header>
                 <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
