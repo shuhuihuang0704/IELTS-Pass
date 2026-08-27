@@ -839,6 +839,10 @@ button { cursor: pointer; }
 .listening-form-card input:focus { border-color:#7166da; box-shadow:0 0 0 3px rgba(98,87,220,.11); }
 .listening-form-card label.is-correct input { border-color:#54ad89; background:#eef8f4; }
 .listening-form-card label.is-incorrect input { border-color:#d87b72; background:#fff2f0; }
+.submitted-correct-answer { display:block; margin-top:7px; color:#236d50; font-size:9px; font-weight:700; line-height:1.45; }
+.listening-form-card .submitted-correct-answer { grid-column:2; margin-top:-5px; }
+.matching-answer-row { margin-top:8px; }
+.matching-answer-row .matching-row { margin-top:0; }
 .listening-checkboxes { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:14px; }
 .listening-checkboxes label { min-height:42px; padding:8px 10px; display:flex; align-items:center; gap:8px; border:1px solid #e3dee5; border-radius:11px; background:white; font-size:10px; }
 .listening-checkboxes label.is-selected { border-color:#8a80df; background:#f0edf9; }
@@ -1273,6 +1277,7 @@ button { cursor: pointer; }
   .listening-player-copy { grid-column:2; }
   .listening-player-copy strong,.listening-player-copy small { text-align:left; }
   .listening-form-card label { grid-template-columns:1fr; }
+  .listening-form-card .submitted-correct-answer { grid-column:1; margin-top:0; }
   .listening-checkboxes { grid-template-columns:1fr; }
   .conversation { height:300px; }
   .speaking-audio-controls { flex-direction:column; }

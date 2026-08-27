@@ -501,6 +501,16 @@ function officialAnswerIsCorrect(answer: OfficialAnswer, taskAnswers: OfficialAn
     && new Set(groupResponses).size === groupResponses.length;
 }
 
+function officialTaskResultIsComplete(task: OfficialTaskSegment, result?: { responses: Record<string, string> }) {
+  if (!result) return false;
+  if (task.answers?.length) return task.answers.every((answer) => (result.responses[answer.number] ?? "").trim());
+  if (task.minimumWords) {
+    const response = result.responses["open-response"] ?? "";
+    return response.trim().split(/\s+/).filter(Boolean).length >= task.minimumWords;
+  }
+  return Boolean(task.speakingPrompt);
+}
+
 function readingAnalysisMethod(answer: OfficialAnswer) {
   const accepted = answer.accepted.map((item) => item.toUpperCase());
   if (accepted.includes("NOT GIVEN")) return "先在定位范围内寻找题干的比较对象与判断关系；原文没有提供该项比较，不能凭常识补全，所以选 NOT GIVEN。";
@@ -1283,12 +1293,12 @@ function OfficialTestRunner({
   const correctAnswerCount = taskSubmitted ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length : 0;
   const requiredTasks = session.materials.flatMap((sessionMaterial) => sessionMaterial.tasks
     .filter((sessionTask) => (sessionTask.answers?.length ?? 0) > 0 || Boolean(sessionTask.minimumWords) || Boolean(sessionTask.speakingPrompt))
-    .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, questionCount: (sessionTask.answers?.length ?? 0) || 1 })));
+    .map((sessionTask) => ({ key: `${sessionMaterial.id}:${sessionTask.id}`, recordKey: officialTaskRecordId(session, sessionMaterial, sessionTask), task: sessionTask })));
   const materialRequiredTasks = material.tasks.filter((materialTask) => (materialTask.answers?.length ?? 0) > 0 || Boolean(materialTask.minimumWords) || Boolean(materialTask.speakingPrompt));
   const writingTaskMode = materialRequiredTasks.some((materialTask) => Boolean(materialTask.minimumWords));
   const speakingTaskMode = materialRequiredTasks.some((materialTask) => Boolean(materialTask.speakingPrompt));
   const materialQuestionCount = materialRequiredTasks.reduce((total, materialTask) => total + ((materialTask.answers?.length ?? 0) || 1), 0);
-  const submittedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => submittedTasks[`${material.id}:${materialTask.id}`]).length;
+  const completedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => officialTaskResultIsComplete(materialTask, progress.officialTaskResults[officialTaskRecordId(session, material, materialTask)])).length;
   const recordId = officialPracticeRecordId(session);
 
   useEffect(() => {
@@ -1333,8 +1343,15 @@ function OfficialTestRunner({
         const response = officialResponses[`${taskKey}:${answer.number}`] || "未作答";
         return { ...entry, detail: `我的答案：${response}\n正确答案：${answer.displayAnswer}` };
       });
-      const allRequiredSubmitted = requiredTasks.length > 0 && requiredTasks.every((requiredTask) => nextSubmittedTasks[requiredTask.key]);
-      const isFirstSessionCompletion = allRequiredSubmitted && !current.officialPracticeCompleted.includes(recordId);
+      const currentTaskComplete = taskAnswers.length > 0
+        ? allAnswersFilled
+        : task.minimumWords
+          ? openResponseWordCount >= task.minimumWords
+          : Boolean(task.speakingPrompt);
+      const allRequiredCompleted = requiredTasks.length > 0 && requiredTasks.every((requiredTask) => requiredTask.key === taskKey
+        ? currentTaskComplete
+        : officialTaskResultIsComplete(requiredTask.task, current.officialTaskResults[requiredTask.recordKey]));
+      const isFirstSessionCompletion = allRequiredCompleted && !current.officialPracticeCompleted.includes(recordId);
       const next = {
         ...current,
         notebook,
@@ -1420,12 +1437,13 @@ function OfficialTestRunner({
           </div>
           {material.tasks.length > 1 && (
             <section className="official-task-map" aria-label="官方练习任务导航">
-              <header><div><span>{speakingTaskMode ? "3 INDEPENDENT SPEAKING PARTS" : material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {speakingTaskMode ? "Speaking Part" : material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{speakingTaskMode ? "每个 Part 独立完成考官提问、60 秒准备、录音提交与反馈；提交一个不会完成另外两个。" : material.audioTracks ? "每个 Task 独立保存答案、得分、完成状态和原文解锁；题号重复也不会串联。" : material.passagePdfUrl ? "每个 Passage 独立保存答案、得分和完成状态；提交一篇不会显示另外两篇的答案。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${submittedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
+              <header><div><span>{speakingTaskMode ? "3 INDEPENDENT SPEAKING PARTS" : material.audioTracks ? "8 INDEPENDENT LISTENING TASKS" : material.passagePdfUrl ? "3 INDEPENDENT READING PASSAGES" : writingTaskMode ? "2 INDEPENDENT WRITING TASKS" : "PRACTICE TASK MAP"}</span><b>{material.tasks.length} 个相互独立的 {speakingTaskMode ? "Speaking Part" : material.passagePdfUrl ? "Passage" : "Task"}{materialQuestionCount > 0 ? ` · 共 ${materialQuestionCount} 个练习项` : ""}</b><small>{speakingTaskMode ? "每个 Part 独立完成考官提问、60 秒准备、录音提交与反馈；提交一个不会完成另外两个。" : material.audioTracks ? "可以提前提交查看当前 Task 的答案和原文；空题按未答处理，答完全部题目才计为完成。" : material.passagePdfUrl ? "可以提前提交查看当前 Passage 的答案与解析；答完全部题目才计为完成。" : writingTaskMode ? "每个 Writing Task 独立保存作文与完成状态；提交一个不会显示另一个的题目或范文。" : "所有科目沿用与第一份阅读一致的材料区 + 答题区模板。"}</small></div><strong>{materialRequiredTasks.length > 0 ? `${completedMaterialTaskCount}/${materialRequiredTasks.length}` : `${taskIndex + 1}/${material.tasks.length}`}</strong></header>
               <div>{material.tasks.map((materialTask, index) => {
                 const materialTaskKey = `${material.id}:${materialTask.id}`;
                 const materialTaskSubmitted = submittedTasks[materialTaskKey] ?? false;
+                const materialTaskComplete = officialTaskResultIsComplete(materialTask, progress.officialTaskResults[officialTaskRecordId(session, material, materialTask)]);
                 const materialTaskSize = (materialTask.answers?.length ?? 0) > 0 ? `${materialTask.answers?.length} 题` : materialTask.minimumWords ? `至少 ${materialTask.minimumWords} 词` : materialTask.speakingPrompt ? `目标 ${materialTask.speakingPrompt.targetSeconds} 秒` : "开放练习";
-                return <button className={`${taskIndex === index ? "is-active " : ""}${materialTaskSubmitted ? "is-complete" : ""}`} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>{materialTask.speakingPrompt ? "独立 Part" : material.passagePdfUrl ? "独立 Passage" : material.audioTracks ? "独立 Task" : "Task"} {index + 1}</span><b>{materialTask.label}</b><small>{materialTaskSize} {materialTaskSubmitted ? "· ✓ 已单独提交" : "· 未完成"}</small></button>;
+                return <button className={`${taskIndex === index ? "is-active " : ""}${materialTaskComplete ? "is-complete" : ""}`} onClick={() => changeTask(index)} type="button" key={materialTask.id}><span>{materialTask.speakingPrompt ? "独立 Part" : material.passagePdfUrl ? "独立 Passage" : material.audioTracks ? "独立 Task" : "Task"} {index + 1}</span><b>{materialTask.label}</b><small>{materialTaskSize} {materialTaskComplete ? "· ✓ 已完成" : materialTaskSubmitted ? "· 已提交查看答案，未完成" : "· 未完成"}</small></button>;
               })}</div>
             </section>
           )}
@@ -1433,7 +1451,6 @@ function OfficialTestRunner({
           {taskAnswers.length > 0 ? (
             <form className="official-answer-sheet" onSubmit={(event) => {
               event.preventDefault();
-              if (!allAnswersFilled) return;
               submitCurrentTask();
             }}>
               <header>
@@ -1475,8 +1492,8 @@ function OfficialTestRunner({
                 })}
               </div>
               <footer>
-                <span>{taskSubmitted ? `本 ${taskUnitLabel} 得分 ${correctAnswerCount}/${taskAnswers.length}；每题旁已显示官方答案。` : allAnswersFilled ? "答案已全部填写，可以提交判分。" : `还需完成 ${taskAnswers.length - answeredCount} 题后才能提交。`}</span>
-                {taskSubmitted ? <button type="button" onClick={redoCurrentTask}>再做一次</button> : <button type="submit" disabled={!allAnswersFilled}>提交全部答案</button>}
+                <span>{taskSubmitted ? allAnswersFilled ? `本 ${taskUnitLabel} 得分 ${correctAnswerCount}/${taskAnswers.length}；已答完并计为完成。` : `得分 ${correctAnswerCount}/${taskAnswers.length}；${taskAnswers.length - answeredCount} 题未答，本次不计为完成，但全部答案已经显示。` : allAnswersFilled ? "答案已全部填写，可以提交判分。" : answeredCount > 0 ? `已答 ${answeredCount}/${taskAnswers.length}；现在也可以提交，空题按未答处理。` : "尚未作答；仍可提交查看答案，空题按未答处理。"}</span>
+                {taskSubmitted ? <button type="button" onClick={redoCurrentTask}>再做一次</button> : <button type="submit">提交当前答案</button>}
               </footer>
               {taskAttemptHistory.length > 0 && (
                 <section className="official-attempt-history">
@@ -1535,7 +1552,7 @@ function OfficialTestRunner({
           {material.passagePdfUrl && paperMode === "questions" ? (
             <div className="official-reading-booklet" ref={readingBookletRef}>
               <header>
-                <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? "✓ 本 Passage 已单独提交" : "独立作答 · 不影响其他 Passage"}</small></div>
+                <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? allAnswersFilled ? "✓ 本 Passage 已完成" : "已提交查看答案 · 尚未完成" : "独立作答 · 不影响其他 Passage"}</small></div>
                 <span>{task.questionLabel}</span>
               </header>
               {taskSubmitted && activeReadingAnswer && activeReadingEvidence && (
@@ -1575,7 +1592,7 @@ function OfficialTestRunner({
               )}
             </section>
           )}
-          {task.transcriptPage && !taskSubmitted && <div className="official-transcript-lock-note"><b>🔒 听力原文尚未开放</b><span>请先填写当前 Task 的全部答案并提交判分。</span></div>}
+          {task.transcriptPage && !taskSubmitted && <div className="official-transcript-lock-note"><b>🔒 听力原文尚未开放</b><span>提交当前答案后即可查看；不要求先答完全部题目。</span></div>}
           {task.transcriptPage && taskSubmitted && (
             <section className="official-listening-transcript is-unlocked">
               <header><div><span>OFFICIAL TAPESCRIPT</span><b>{task.label} · 听力原文</b></div><small>仅解锁当前 Task · P{(task.transcriptPages ?? [task.transcriptPage]).join("–")}</small></header>
@@ -2260,14 +2277,14 @@ function SceneView({
       </div>
       <section className="exercise-surface">
         {activeSkill === "vocabulary" && <VocabularyPractice mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
-        {activeSkill === "listening" && <ListeningPractice onComplete={(score) => {
+        {activeSkill === "listening" && <ListeningPractice onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
-          onComplete("listening", 12);
+          if (fullyAnswered) onComplete("listening", 12);
         }} />}
         {activeSkill === "speaking" && <SpeakingPractice progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
-        {activeSkill === "reading" && <ReadingPractice onComplete={(score) => {
+        {activeSkill === "reading" && <ReadingPractice onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, readingScore: score }));
-          onComplete("reading", 18);
+          if (fullyAnswered) onComplete("reading", 18);
         }} />}
       </section>
     </>
@@ -2771,7 +2788,7 @@ function DailyVocabularySprint({
   );
 }
 
-function ListeningPractice({ onComplete }: { onComplete: (score: number) => void }) {
+function ListeningPractice({ onComplete }: { onComplete: (score: number, fullyAnswered: boolean) => void }) {
   const [formAnswers, setFormAnswers] = useState<Record<string, string>>({});
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
@@ -2828,7 +2845,6 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
   };
 
   const submit = () => {
-    if (answeredCount < 10) return;
     const formScore = listeningExercise.formCompletion.filter((question) => formCorrect(question.id)).length;
     const facilityScore = selectedFacilities.filter((answer) => listeningExercise.multipleSelect.answers.includes(answer)).length;
     const matchingScore = listeningExercise.matching.questions.filter((question) => matchingAnswers[question.id] === question.answer).length;
@@ -2836,7 +2852,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
     const nextScore = formScore + facilityScore + matchingScore + choiceScore;
     setScore(nextScore);
     setShowTranscript(false);
-    onComplete(nextScore);
+    onComplete(nextScore, answeredCount === 10);
   };
 
   return (
@@ -2863,6 +2879,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
               <label className={score === null ? "" : formCorrect(question.id) ? "is-correct" : "is-incorrect"} key={question.id}>
                 <span>{index + 1}. {question.label}</span>
                 <input value={formAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setFormAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 1}, ${question.label}`} />
+                {score !== null && <small className="submitted-correct-answer">正确答案：{question.answers[0]}</small>}
               </label>
             ))}
           </div>
@@ -2877,7 +2894,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
               return <label className={`${selected ? "is-selected " : ""}${resultClass}`} key={option}><input type="checkbox" checked={selected} disabled={!selected && selectedFacilities.length >= 2} onChange={() => toggleFacility(option)} /><b>{String.fromCharCode(65 + index)}</b>{option}</label>;
             })}
           </div>
-          <small className="selection-count">已选择 {selectedFacilities.length} / 2 项</small>
+          <small className="selection-count">{score === null ? `已选择 ${selectedFacilities.length} / 2 项` : `正确答案：${listeningExercise.multipleSelect.answers.join("、")}`}</small>
         </section>
 
         <section className="listening-question-group">
@@ -2885,7 +2902,7 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
           <div className="matching-option-bank">{listeningExercise.matching.options.map((option) => <span key={option.id}><b>{option.id}</b>{option.label}</span>)}</div>
           {listeningExercise.matching.questions.map((question, index) => {
             const resultClass = score === null ? "" : matchingAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <label className={`matching-row ${resultClass}`} key={question.id}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>;
+            return <div className="matching-answer-row" key={question.id}><label className={`matching-row ${resultClass}`}><span>{index + 7}. {question.label}</span><select value={matchingAnswers[question.id] ?? ""} onChange={(event) => { invalidateSubmission(); setMatchingAnswers((current) => ({ ...current, [question.id]: event.target.value })); }} aria-label={`Question ${index + 7}`}><option value="">Select</option>{listeningExercise.matching.options.map((option) => <option value={option.id} key={option.id}>{option.id}</option>)}</select></label>{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</div>;
           })}
         </section>
 
@@ -2893,14 +2910,14 @@ function ListeningPractice({ onComplete }: { onComplete: (score: number) => void
           <div className="question-type"><span>Questions 9–10</span><strong>Multiple Choice · Choose ONE</strong><p>Choose the correct letter, A, B or C.</p></div>
           {listeningExercise.multipleChoice.map((question, index) => {
             const resultClass = score === null ? "" : choiceAnswers[question.id] === question.answer ? "is-correct" : "is-incorrect";
-            return <fieldset className={`question-block ${resultClass}`} key={question.id}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}</fieldset>;
+            return <fieldset className={`question-block ${resultClass}`} key={question.id}><legend>{index + 9}. {question.prompt}</legend>{question.options.map((option, optionIndex) => <label className={choiceAnswers[question.id] === option ? "is-selected" : ""} key={option}><input type="radio" name={question.id} value={option} checked={choiceAnswers[question.id] === option} onChange={() => { invalidateSubmission(); setChoiceAnswers((current) => ({ ...current, [question.id]: option })); }} /><b>{String.fromCharCode(65 + optionIndex)}</b><span>{option}</span></label>)}{score !== null && <small className="submitted-correct-answer">正确答案：{question.answer}</small>}</fieldset>;
           })}
         </section>
 
-        {score !== null && <div className={`answer-feedback ${score >= 8 ? "success" : "neutral"}`}>得分 {score} / 10。{score < 8 ? "建议打开原文，重点检查拼写、同义替换和转折后的信息。" : "细节定位和拼写表现良好。"}</div>}
-        <div className="exercise-actions"><button className="text-action" disabled={score === null} onClick={() => setShowTranscript((current) => !current)}>{score === null ? "提交后解锁原文" : showTranscript ? "隐藏原文" : "查看原文复盘"}</button><button className="secondary-action" disabled={answeredCount < 10} onClick={submit}>提交 10 道答案 →</button></div>
+        {score !== null && <div className={`answer-feedback ${score >= 8 && answeredCount === 10 ? "success" : "neutral"}`}>得分 {score} / 10。{answeredCount < 10 ? `${10 - answeredCount} 题未答并按错误处理；答案与原文已经解锁，但本项尚未计为完成。` : score < 8 ? "建议打开原文，重点检查拼写、同义替换和转折后的信息。" : "细节定位和拼写表现良好。"}</div>}
+        <div className="exercise-actions"><button className="text-action" disabled={score === null} onClick={() => setShowTranscript((current) => !current)}>{score === null ? "提交后解锁原文" : showTranscript ? "隐藏原文" : "查看原文复盘"}</button><button className="secondary-action" onClick={submit}>{answeredCount < 10 ? `提交当前答案（${answeredCount}/10）` : "提交 10 道答案"} →</button></div>
       </div>
-      <aside className={`exercise-context transcript-panel listening-transcript ${score === null ? "is-locked" : "is-unlocked"}`}><span>{score === null ? "听力原文 · 未解锁" : "听力原文 · 已解锁"}</span><p>{score === null ? "请先完成全部 10 道题并提交。判分前不会显示原文，避免提前看到答案线索。" : showTranscript ? listeningExercise.script : "已经完成提交。点击“查看原文复盘”，标记没有听到的拼写、连读和同义替换。"}</p></aside>
+      <aside className={`exercise-context transcript-panel listening-transcript ${score === null ? "is-locked" : "is-unlocked"}`}><span>{score === null ? "听力原文 · 未解锁" : "听力原文 · 已解锁"}</span><p>{score === null ? "提交当前答案后即可解锁原文；不要求先答完全部 10 题。" : showTranscript ? listeningExercise.script : "已经完成本次提交。点击“查看原文复盘”，标记没有听到的拼写、连读和同义替换。"}</p></aside>
     </div>
   );
 }
@@ -3036,7 +3053,7 @@ function SpeakingPractice({
   );
 }
 
-function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }) {
+function ReadingPractice({ onComplete }: { onComplete: (score: number, fullyAnswered: boolean) => void }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
@@ -3057,12 +3074,11 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
   };
 
   const submit = () => {
-    if (answeredCount < totalQuestions) return;
     const nextScore = Object.entries(answerKey).filter(([id, answer]) => answers[id] === answer).length;
     const firstIncorrectId = Object.keys(answerKey).find((id) => answers[id] !== answerKey[id]);
     setScore(nextScore);
     setActiveReviewId(firstIncorrectId ?? Object.keys(answerKey)[0]);
-    onComplete(nextScore);
+    onComplete(nextScore, answeredCount === totalQuestions);
   };
   const answerClass = (id: string) => score === null ? "" : answers[id] === answerKey[id] ? "is-correct" : "is-incorrect";
   const activeEvidence = activeReviewId ? readingReviewEvidence[activeReviewId as keyof typeof readingReviewEvidence] : null;
@@ -3086,7 +3102,7 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
     const evidence = readingReviewEvidence[id as keyof typeof readingReviewEvidence];
     const correct = answers[id] === answerKey[id];
     return <aside className={`reading-answer-analysis ${correct ? "is-correct" : "is-incorrect"}`}>
-      <header><strong>Q{number} · {correct ? "回答正确" : "需要复盘"}</strong><span>你的答案：{answers[id]} · 正确答案：{answerKey[id]}</span></header>
+      <header><strong>Q{number} · {correct ? "回答正确" : answers[id] ? "需要复盘" : "未作答"}</strong><span>你的答案：{answers[id] || "未作答"} · 正确答案：{answerKey[id]}</span></header>
       <div><b>原文定位</b><p>{evidence.location}</p></div>
       <div><b>答案解析</b><p>{evidence.explanation}</p></div>
       <div><b>解题方法</b><p>{evidence.method}</p></div>
@@ -3167,8 +3183,8 @@ function ReadingPractice({ onComplete }: { onComplete: (score: number) => void }
           {renderAnalysis("s2", 11)}
         </section>
 
-        {score !== null && <div className={`answer-feedback ${score >= 9 ? "success" : "neutral"}`}>得分 {score} / {totalQuestions}。{score < 9 ? "检查段落主旨与细节定位；红色项目可以重新选择后再提交。" : "主旨和细节定位都很准确。"}</div>}
-        <button className="secondary-action reading-submit" disabled={answeredCount < totalQuestions} onClick={submit}>提交 {totalQuestions} 道答案 →</button>
+        {score !== null && <div className={`answer-feedback ${score >= 9 && answeredCount === totalQuestions ? "success" : "neutral"}`}>得分 {score} / {totalQuestions}。{answeredCount < totalQuestions ? `${totalQuestions - answeredCount} 题未答并按错误处理；全部答案和解析已经显示，但本项尚未计为完成。` : score < 9 ? "检查段落主旨与细节定位；红色项目可以重新选择后再提交。" : "主旨和细节定位都很准确。"}</div>}
+        <button className="secondary-action reading-submit" onClick={submit}>{answeredCount < totalQuestions ? `提交当前答案（${answeredCount}/${totalQuestions}）` : `提交 ${totalQuestions} 道答案`} →</button>
       </section>
     </div>
   );
