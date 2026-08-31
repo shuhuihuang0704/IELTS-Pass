@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the bundled IELTS-style Section 1 dialogue with two UK voices."""
+"""Generate the bundled IELTS-style Section 1 dialogue with natural UK voices."""
 
 from __future__ import annotations
 
@@ -15,27 +15,27 @@ OUTPUT = ROOT / "public" / "listening-section-1-v2.wav"
 CAPTIONS = ROOT / "public" / "listening-section-1.vtt"
 SAMPLE_RATE = 44_100
 
-FEMALE_VOICE = "Karen"
-MALE_VOICE = "Daniel"
+FEMALE_VOICE = "Flo (English (UK))"
+MALE_VOICE = "Reed (English (UK))"
 
 TURNS = [
-    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Good morning, Westbridge University Residence. How can I help?", 460),
-    ("Student (British male)", MALE_VOICE, 172, "Hello. I'm calling to complete my accommodation application.", 520),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Certainly. First, can I take your family name?", 340),
-    ("Student (British male)", MALE_VOICE, 170, "It's Chen. C, H, E, N.", 520),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Thank you. And when will you arrive?", 320),
-    ("Student (British male)", MALE_VOICE, 170, "On the fourteenth of October. I originally wrote the twelfth, but my flight changed.", 420),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "Right, the fourteenth of October. Do you want a shared room?", 320),
-    ("Student (British male)", MALE_VOICE, 172, "No, a single room, please. I need somewhere quiet to study.", 420),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Any dietary requirement?", 300),
-    ("Student (British male)", MALE_VOICE, 172, "Yes, vegetarian. I eat dairy products, but no meat or fish.", 560),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 162, "Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building.", 540),
-    ("Student (British male)", MALE_VOICE, 174, "That's fine. What documents do you need?", 300),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Please send a copy of your passport by email. You can show the original at reception when you arrive. The deposit must be paid by bank transfer. We cannot accept cash for that.", 460),
-    ("Student (British male)", MALE_VOICE, 174, "I understand. What time can I collect my key?", 300),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable.", 460),
-    ("Student (British male)", MALE_VOICE, 172, "Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.", 360),
-    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "That makes sense. I'll email your confirmation today.", 650),
+    ("Receptionist (British female)", FEMALE_VOICE, 167, "Good morning, Westbridge University Residence. How can I help?", 340),
+    ("Student (British male)", MALE_VOICE, 173, "Hello. I'm calling to complete my accommodation application.", 300),
+    ("Receptionist (British female)", FEMALE_VOICE, 170, "Certainly. First, can I take your family name?", 220),
+    ("Student (British male)", MALE_VOICE, 171, "It's Chen. C, H, E, N.", 280),
+    ("Receptionist (British female)", FEMALE_VOICE, 168, "Thank you. And when will you arrive?", 210),
+    ("Student (British male)", MALE_VOICE, 174, "On the fourteenth of October. I originally wrote the twelfth, but my flight changed.", 290),
+    ("Receptionist (British female)", FEMALE_VOICE, 166, "Right, the fourteenth of October. Do you want a shared room?", 210),
+    ("Student (British male)", MALE_VOICE, 176, "No, a single room, please. I need somewhere quiet to study.", 290),
+    ("Receptionist (British female)", FEMALE_VOICE, 171, "Any dietary requirement?", 210),
+    ("Student (British male)", MALE_VOICE, 173, "Yes, vegetarian. I eat dairy products, but no meat or fish.", 360),
+    ("Receptionist (British female)", FEMALE_VOICE, 169, "Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building.", 390),
+    ("Student (British male)", MALE_VOICE, 176, "That's fine. What documents do you need?", 210),
+    ("Receptionist (British female)", FEMALE_VOICE, 168, "Please send a copy of your passport by email. You can show the original at reception when you arrive. The deposit must be paid by bank transfer. We cannot accept cash for that.", 330),
+    ("Student (British male)", MALE_VOICE, 175, "I understand. What time can I collect my key?", 210),
+    ("Receptionist (British female)", FEMALE_VOICE, 166, "Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable.", 320),
+    ("Student (British male)", MALE_VOICE, 173, "Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.", 280),
+    ("Receptionist (British female)", FEMALE_VOICE, 168, "That makes sense. I'll email your confirmation today.", 430),
 ]
 
 
@@ -43,7 +43,7 @@ def spelled_name_chunks(text: str) -> list[str]:
     match = re.fullmatch(r"(.+?\.) ([A-Z](?:, [A-Z])+)[.]", text)
     if not match:
         return [text]
-    return [match.group(1), *match.group(2).split(", ")]
+    return [match.group(1), f"{match.group(2)}."]
 
 
 def synthesize_turn(
@@ -57,7 +57,7 @@ def synthesize_turn(
     chunk_paths: list[Path] = []
     for chunk_index, chunk in enumerate(chunks):
         chunk_path = temporary_path / f"{index:02d}-{chunk_index:02d}.wav"
-        chunk_rate = 158 if len(chunks) > 1 and chunk_index > 0 else rate
+        chunk_rate = 148 if len(chunks) > 1 and chunk_index > 0 else rate
         subprocess.run(
             [
                 "say",
@@ -84,7 +84,7 @@ def synthesize_turn(
             with wave.open(str(chunk_path), "rb") as source:
                 destination.writeframes(source.readframes(source.getnframes()))
             if chunk_index < len(chunk_paths) - 1:
-                pause_ms = 240 if chunk_index == 0 else 130
+                pause_ms = 200
                 destination.writeframes(b"\x00\x00" * round(SAMPLE_RATE * pause_ms / 1000))
     return segment_path
 

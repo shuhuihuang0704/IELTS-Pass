@@ -7,7 +7,7 @@ const conversations = [
   {
     output: "public/listening-arts-centre.wav",
     captions: "public/listening-arts-centre.vtt",
-    speakers: { female: "Coordinator (Australian female)", male: "Caller (British male)" },
+    speakers: { female: "Coordinator (British female)", male: "Caller (British male)" },
     lines: [
       ["female", "Good afternoon, Riverside Arts Centre."],
       ["male", "Hello. I'd like to book an evening course."],
@@ -31,7 +31,7 @@ const conversations = [
   {
     output: "public/listening-wildlife-volunteer.wav",
     captions: "public/listening-wildlife-volunteer.vtt",
-    speakers: { female: "Supervisor (Australian female)", male: "Applicant (British male)" },
+    speakers: { female: "Supervisor (British female)", male: "Applicant (British male)" },
     lines: [
       ["female", "Good morning, Northwood Wildlife Park."],
       ["male", "Hello. I'm calling about the volunteer programme."],
@@ -80,11 +80,11 @@ function formatTimestamp(seconds) {
 }
 
 function pauseAfter(text, index) {
-  if (index === 0) return 0.46;
-  if (text.length > 145) return 0.58;
-  if (text.endsWith("?")) return 0.34;
-  if (text.length < 28) return 0.42;
-  return 0.48;
+  if (index === 0) return 0.34;
+  if (text.length > 145) return 0.42;
+  if (text.endsWith("?")) return 0.22;
+  if (text.length < 28) return 0.25;
+  return 0.3;
 }
 
 function writeWave(path, parts) {
@@ -123,7 +123,9 @@ function writeWave(path, parts) {
 function spelledNameChunks(text) {
   const match = text.match(/^(.+?\.) ([A-Z](?:, [A-Z])+)[.]$/);
   if (!match) return [text];
-  return [match[1], ...match[2].split(", ")];
+  // Keep the spelling in one utterance. Starting a fresh synthesiser process for
+  // every letter produced the metallic, disconnected sound heard on mobile.
+  return [match[1], `${match[2]}.`];
 }
 
 function synthesizeTurn({ role, text, index, directory }) {
@@ -132,8 +134,10 @@ function synthesizeTurn({ role, text, index, directory }) {
     const fileStem = `${index}-${chunkIndex}`;
     const aiffPath = join(directory, `${fileStem}.aiff`);
     const wavPath = join(directory, `${fileStem}.wav`);
-    const voice = role === "female" ? "Karen" : "Daniel";
-    const rate = role === "female" ? "160" : chunks.length > 1 && chunkIndex > 0 ? "158" : "170";
+    const voice = role === "female" ? "Flo (English (UK))" : "Reed (English (UK))";
+    const baseRate = role === "female" ? 168 : 174;
+    const naturalVariation = [-3, 1, 0, 3, -1][index % 5];
+    const rate = String(chunks.length > 1 && chunkIndex > 0 ? 148 : baseRate + naturalVariation);
     execFileSync("/usr/bin/say", ["-v", voice, "-r", rate, "-o", aiffPath, chunk]);
     execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@44100", aiffPath, wavPath]);
     return readWave(wavPath);
@@ -143,7 +147,7 @@ function synthesizeTurn({ role, text, index, directory }) {
   const blockAlign = format.readUInt16LE(12);
   const data = Buffer.concat(waves.flatMap((wave, chunkIndex) => {
     if (chunkIndex === waves.length - 1) return [wave.data];
-    const pauseSeconds = chunkIndex === 0 ? .24 : .13;
+    const pauseSeconds = .2;
     return [wave.data, Buffer.alloc(Math.round(sampleRate * blockAlign * pauseSeconds))];
   }));
   return { format, data };

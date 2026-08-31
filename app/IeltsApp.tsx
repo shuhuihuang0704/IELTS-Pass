@@ -716,9 +716,9 @@ function weeklyOpeningTask(session: OfficialTestSession, weekKey = localWeekKey(
 type IeltsVoiceRole = "examiner" | "female" | "male";
 
 const preferredIeltsVoiceNames: Record<IeltsVoiceRole, string[]> = {
-  examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Moira", "Serena", "Kate", "Daniel"],
-  female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Moira", "Serena", "Kate"],
-  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Daniel", "Oliver", "Arthur", "George", "Ryan"],
+  examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Flo (English (UK))", "Shelley (English (UK))", "Karen", "Moira", "Serena", "Kate", "Daniel"],
+  female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Flo (English (UK))", "Shelley (English (UK))", "Karen", "Moira", "Serena", "Kate"],
+  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Reed (English (UK))", "Eddy (English (UK))", "Daniel", "Oliver", "Arthur", "George", "Ryan"],
 };
 
 function preferredIeltsVoice(role: IeltsVoiceRole = "examiner") {
