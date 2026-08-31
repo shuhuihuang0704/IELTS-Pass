@@ -21,7 +21,8 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
   assert.match(html, /<title>IELTS Pass/);
   assert.match(html, /场景化雅思学习/);
   assert.match(html, /IELTS PASS/);
-  assert.match(html, /创建你的学习账户/);
+  assert.match(html, /设置你的头像、名字与目标/);
+  assert.match(html, /无需注册或登录/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape|react-loading-skeleton/i);
 });
 
@@ -814,28 +815,15 @@ test("shows the signed-in avatar and name outside the Today homepage", async () 
   assert.match(styles, /position:fixed/);
 });
 
-test("ships account registration, secure sessions and score onboarding", async () => {
-  const [flow, avatars, route, authServer, hosting, schema, migration, planMigration, emailCodeMigration, emailCodeIndexes] = await Promise.all([
+test("ships no-account local profile onboarding and score planning", async () => {
+  const [flow, avatars, app, styles] = await Promise.all([
     readFile(new URL("../app/AuthFlow.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/AccountAvatar.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/auth/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/auth-server.ts", import.meta.url), "utf8"),
-    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
-    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0000_heavy_wolfpack.sql", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0001_safe_the_enforcers.sql", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0002_awesome_moon_knight.sql", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0003_aspiring_zarda.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
-  assert.match(flow, /手机号/);
-  assert.match(flow, /Email/);
-  assert.match(flow, /邮箱验证码/);
-  assert.match(flow, /one-time-code/);
-  assert.match(flow, /action: "send-email-code"/);
-  assert.match(flow, /action: "verify-email-code"/);
-  assert.match(flow, /使用原账号密码/);
-  assert.doesNotMatch(flow, /使用微信继续|微信登录 · 等待开放平台配置/);
-  assert.doesNotMatch(flow, /忘记密码|恢复码|RecoveryCodes/);
+  assert.doesNotMatch(flow, /手机号|Email|邮箱验证码|密码|注册并|验证并登录|auth-shell|\/api\/auth/);
+  assert.match(flow, /无需注册或登录/);
   assert.match(flow, /选择目标分数/);
   assert.match(flow, /5\.5, 6, 6\.5, 7, 7\.5, 8, 8\.5/);
   assert.match(flow, /设置你的头像、名字与目标/);
@@ -845,30 +833,13 @@ test("ships account registration, secure sessions and score onboarding", async (
   assert.match(flow, /daysUntilDate/);
   assert.match(avatars, /accountAvatarPresets/);
   assert.equal((avatars.match(/id: "preset:/g) ?? []).length, 6);
-  assert.match(route, /action === "register"/);
-  assert.match(route, /action === "login"/);
-  assert.match(route, /action === "send-email-code"/);
-  assert.match(route, /action === "verify-email-code"/);
-  assert.match(route, /action === "onboarding"/);
-  assert.match(route, /action === "profile"/);
-  assert.match(route, /wechat-callback/);
-  assert.match(authServer, /pbkdf2Async/);
-  assert.match(authServer, /passwordHashIterations = 210_000/);
-  assert.match(authServer, /emailCodeLifetimeMs = 10 \* 60 \* 1000/);
-  assert.match(authServer, /maximumCodeAttempts = 5/);
-  assert.match(authServer, /crypto\.subtle\.sign\("HMAC"/);
-  assert.match(authServer, /api\.brevo\.com\/v3\/smtp\/email/);
-  assert.doesNotMatch(authServer, /return \{[^}]*code[^}]*\}/);
-  assert.doesNotMatch(authServer, /deriveBits/);
-  assert.match(authServer, /HttpOnly; Path=\/; SameSite=Lax/);
-  assert.equal(JSON.parse(hosting).d1, "DB");
-  assert.match(schema, /authSessions/);
-  assert.match(schema, /emailLoginCodes/);
-  assert.match(schema, /examDate: text\("exam_date"\)/);
-  assert.match(migration, /CREATE TABLE `users`/);
-  assert.match(planMigration, /ADD `exam_date` text/);
-  assert.match(emailCodeMigration, /CREATE TABLE `email_login_codes`/);
-  assert.match(emailCodeIndexes, /idx_email_login_codes_email_created/);
+  assert.match(app, /profileStorageKey = "ielts-pass-local-profile-v1"/);
+  assert.match(app, /function readLocalProfile/);
+  assert.match(app, /provider: "guest"/);
+  assert.match(app, /localStorage\.setItem\(profileStorageKey/);
+  assert.doesNotMatch(app, /\/api\/auth\?action=session|action: "logout"|退出登录/);
+  assert.match(app, /无需登录；头像、名字、目标、笔记与进度保存在当前设备/);
+  assert.match(styles, /\.onboarding-progress i \{ width:100%;/);
 });
 
 test("includes the finished social preview and removes starter preview files", async () => {

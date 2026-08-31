@@ -2,7 +2,7 @@ import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
-  provider: text("provider", { enum: ["email", "phone", "wechat"] }).notNull(),
+  provider: text("provider", { enum: ["email", "phone", "wechat", "guest"] }).notNull(),
   identifier: text("identifier").notNull(),
   passwordHash: text("password_hash"),
   displayName: text("display_name").notNull(),

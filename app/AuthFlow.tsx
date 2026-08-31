@@ -1,17 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { AuthUser } from "./auth-server";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 
-type AuthMethod = "phone" | "email";
 type StudyPeriodMode = "days" | "exam-date";
-type AuthResponse = {
-  user?: AuthUser;
-  progress?: unknown;
-  isNew?: boolean;
-  message?: string;
-};
 
 function localDateKeyAfter(days: number) {
   const date = new Date();
@@ -34,112 +27,24 @@ function daysUntilDate(dateKey: string) {
 
 export default function AuthFlow({
   user,
-  onAuthenticated,
   onCompleteOnboarding,
 }: {
   user: AuthUser | null;
-  onAuthenticated: (response: AuthResponse) => void;
   onCompleteOnboarding: (targetBandScore: number, displayName: string, avatarUrl: string, studyPlanDays: number, examDate: string | null) => Promise<void>;
 }) {
-  const [mode, setMode] = useState<"login" | "register">("register");
-  const [accessMode, setAccessMode] = useState<"email-code" | "password">("email-code");
-  const [method, setMethod] = useState<AuthMethod>("phone");
-  const [identifier, setIdentifier] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [password, setPassword] = useState("");
-  const [emailCode, setEmailCode] = useState("");
-  const [codeCooldown, setCodeCooldown] = useState(0);
-  const [sendingCode, setSendingCode] = useState(false);
-  const [targetBandScore, setTargetBandScore] = useState<number | null>(null);
-  const [profileName, setProfileName] = useState<string | null>(null);
-  const [avatarChoice, setAvatarChoice] = useState<string | null>(null);
-  const [studyPeriodMode, setStudyPeriodMode] = useState<StudyPeriodMode>("days");
-  const [studyPlanDays, setStudyPlanDays] = useState("90");
-  const [examDate, setExamDate] = useState("");
+  const [targetBandScore, setTargetBandScore] = useState<number | null>(user?.targetBandScore ?? null);
+  const [profileName, setProfileName] = useState(user?.displayName ?? "");
+  const [avatarChoice, setAvatarChoice] = useState(user?.avatarUrl ?? defaultAccountAvatar);
+  const [studyPeriodMode, setStudyPeriodMode] = useState<StudyPeriodMode>(user?.examDate ? "exam-date" : "days");
+  const [studyPlanDays, setStudyPlanDays] = useState(String(user?.studyPlanDays ?? 90));
+  const [examDate, setExamDate] = useState(user?.examDate ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const targetOptions = useMemo(() => [5.5, 6, 6.5, 7, 7.5, 8, 8.5], []);
 
-  useEffect(() => {
-    if (codeCooldown <= 0) return;
-    const timer = window.setInterval(() => setCodeCooldown((current) => Math.max(0, current - 1)), 1000);
-    return () => window.clearInterval(timer);
-  }, [codeCooldown]);
-
-  const submitCredentials = async (event: FormEvent) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: mode, provider: method, identifier, password, displayName }),
-      });
-      const result = await response.json() as AuthResponse;
-      if (!response.ok || !result.user) throw new Error(result.message || "登录失败，请稍后重试");
-      onAuthenticated(result);
-    } catch (error) {
-      if (mode === "login") setPassword("");
-      setMessage(error instanceof Error ? error.message : "登录失败，请稍后重试");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const sendEmailCode = async () => {
-    if (!identifier.trim()) {
-      setMessage("请先输入 Email 地址");
-      return;
-    }
-    if (mode === "register" && !displayName.trim()) {
-      setMessage("请先输入昵称");
-      return;
-    }
-    setSendingCode(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "send-email-code", purpose: mode, identifier }),
-      });
-      const result = await response.json() as { message?: string; retryAfterSeconds?: number };
-      if (!response.ok) throw new Error(result.message || "验证码发送失败，请稍后重试");
-      setCodeCooldown(result.retryAfterSeconds ?? 60);
-      setMessage("验证码已发送，请查看邮箱和垃圾邮件文件夹");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "验证码发送失败，请稍后重试");
-    } finally {
-      setSendingCode(false);
-    }
-  };
-
-  const submitEmailCode = async (event: FormEvent) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "verify-email-code", purpose: mode, identifier, code: emailCode, displayName }),
-      });
-      const result = await response.json() as AuthResponse;
-      if (!response.ok || !result.user) throw new Error(result.message || "验证失败，请稍后重试");
-      onAuthenticated(result);
-    } catch (error) {
-      setEmailCode("");
-      setMessage(error instanceof Error ? error.message : "验证失败，请稍后重试");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const completeOnboarding = async () => {
     if (targetBandScore === null) return;
-    const nextDisplayName = (profileName ?? user?.displayName ?? "").trim();
-    const nextAvatar = avatarChoice ?? user?.avatarUrl ?? defaultAccountAvatar;
+    const nextDisplayName = profileName.trim();
     if (!nextDisplayName) {
       setMessage("请输入你的名字或昵称");
       return;
@@ -161,7 +66,7 @@ export default function AuthFlow({
     setSubmitting(true);
     setMessage("");
     try {
-      await onCompleteOnboarding(targetBandScore, nextDisplayName, nextAvatar, resolvedPlanDays, resolvedExamDate);
+      await onCompleteOnboarding(targetBandScore, nextDisplayName, avatarChoice, resolvedPlanDays, resolvedExamDate);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "计划创建失败，请重试");
     } finally {
@@ -169,17 +74,17 @@ export default function AuthFlow({
     }
   };
 
-  if (user) return (
+  return (
     <main className="onboarding-shell">
       <section className="onboarding-card">
         <header className="onboarding-brand"><span>IP</span><strong>IELTS PASS</strong></header>
-        <div className="onboarding-progress"><i /><i className="is-active" /></div>
+        <div className="onboarding-progress"><i /></div>
         <span className="onboarding-kicker">CREATE YOUR STUDY PROFILE</span>
         <h1>设置你的头像、名字与目标。</h1>
-        <p>这些资料会显示在“我的”页面；目标分数会调整每日词汇量、听读说难度和套题频率。</p>
+        <p>无需注册或登录。完成设置后即可开始学习，资料与进度会保存在当前设备。</p>
         <section className="onboarding-profile-editor">
-          <div className="onboarding-profile-preview"><AccountAvatar avatarUrl={avatarChoice ?? user.avatarUrl ?? defaultAccountAvatar} displayName={profileName ?? user.displayName} /><label><span>你的名字</span><input value={profileName ?? user.displayName} onChange={(event) => setProfileName(event.target.value)} maxLength={40} autoComplete="name" /></label></div>
-          <AccountAvatarPicker value={avatarChoice ?? user.avatarUrl ?? defaultAccountAvatar} displayName={profileName ?? user.displayName} onChange={setAvatarChoice} />
+          <div className="onboarding-profile-preview"><AccountAvatar avatarUrl={avatarChoice} displayName={profileName || "学习者"} /><label><span>你的名字</span><input value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="怎么称呼你" maxLength={40} autoComplete="name" /></label></div>
+          <AccountAvatarPicker value={avatarChoice} displayName={profileName || "学习者"} onChange={setAvatarChoice} />
         </section>
         <div className="onboarding-score-heading"><strong>选择目标分数</strong><small>之后仍可在“我的”页面修改</small></div>
         <div className="onboarding-band-grid" role="radiogroup" aria-label="选择 IELTS 目标分数">
@@ -191,48 +96,7 @@ export default function AuthFlow({
         </section>
         {message && <p className="auth-message" role="alert">{message}</p>}
         <button className="onboarding-submit" disabled={targetBandScore === null || submitting} onClick={completeOnboarding}>{submitting ? "正在创建计划…" : "创建我的学习计划 →"}</button>
-        <small className="onboarding-footnote">备考周期和考试日期之后仍可在“我的”页面调整。</small>
-      </section>
-    </main>
-  );
-
-  return (
-    <main className="auth-shell">
-      <section className="auth-story">
-        <header><span className="auth-brand-mark">IP</span><div><strong>IELTS PASS</strong><small>Daily study system</small></div></header>
-        <div className="auth-story-copy"><span>PERSONALISED IELTS PLAN</span><h1>让每一天的练习，都更接近你的目标。</h1><p>词汇、听力、阅读与口语会按照目标分数和学习进度持续调整。</p></div>
-        <div className="auth-water-visual" aria-hidden="true"><i /><i /><i /><strong>7.0</strong><small>TARGET BAND</small></div>
-        <footer><span>01 目标驱动</span><span>02 每日递升</span><span>03 进度同步</span></footer>
-      </section>
-      <section className="auth-panel">
-        <div className="auth-panel-inner">
-          <header><span>欢迎使用 IELTS PASS</span><h2>{mode === "register" ? "创建你的学习账户" : "继续你的学习计划"}</h2><p>{mode === "register" ? "注册后只需选择目标分数，即可生成个人学习路线。" : "登录后恢复你的目标、笔记与学习进度。"}</p></header>
-          <div className="auth-mode-tabs" role="tablist" aria-label="登录或注册">
-            <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "is-active" : ""} onClick={() => { setMode("register"); setEmailCode(""); setMessage(""); }}>注册</button>
-            <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "is-active" : ""} onClick={() => { setMode("login"); setEmailCode(""); setMessage(""); }}>登录</button>
-          </div>
-          {accessMode === "email-code" ? <form className="auth-form" onSubmit={submitEmailCode}>
-            {mode === "register" && <label><span>昵称</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="怎么称呼你" autoComplete="name" required /></label>}
-            <label><span>Email</span><input type="email" value={identifier} onChange={(event) => { setIdentifier(event.target.value); setEmailCode(""); }} placeholder="name@example.com" autoComplete="email" required /></label>
-            <label><span>邮箱验证码</span><div className="auth-code-row"><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="6 位验证码" autoComplete="one-time-code" required /><button type="button" onClick={sendEmailCode} disabled={sendingCode || codeCooldown > 0}>{sendingCode ? "发送中…" : codeCooldown > 0 ? `${codeCooldown}s` : "获取验证码"}</button></div></label>
-            {message && <p className="auth-message" role="status">{message}</p>}
-            <button type="submit" className="auth-submit" disabled={submitting || emailCode.length !== 6}>{submitting ? "正在验证…" : mode === "register" ? "验证并创建账户 →" : "验证并登录 →"}</button>
-          </form> : <>
-            <div className="auth-method-tabs" role="tablist" aria-label="选择账号方式">
-              <button type="button" role="tab" aria-selected={method === "phone"} className={method === "phone" ? "is-active" : ""} onClick={() => { setMethod("phone"); setIdentifier(""); setMessage(""); }}>手机号</button>
-              <button type="button" role="tab" aria-selected={method === "email"} className={method === "email" ? "is-active" : ""} onClick={() => { setMethod("email"); setIdentifier(""); setMessage(""); }}>Email</button>
-            </div>
-            <form className="auth-form" onSubmit={submitCredentials}>
-              {mode === "register" && <label><span>昵称</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="怎么称呼你" autoComplete="name" /></label>}
-              <label><span>{method === "phone" ? "手机号" : "Email"}</span><input type={method === "email" ? "email" : "tel"} value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder={method === "phone" ? "+86 138 0000 0000" : "name@example.com"} autoComplete={method === "email" ? "email" : "tel"} required /></label>
-              <label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="至少 8 个字符" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={8} required /></label>
-              {message && <p className="auth-message" role="alert">{message}</p>}
-              <button type="submit" className="auth-submit" disabled={submitting}>{submitting ? "请稍候…" : mode === "register" ? "注册并选择目标分数 →" : "登录 →"}</button>
-            </form>
-          </>}
-          <button className="auth-access-switch" type="button" onClick={() => { setAccessMode(accessMode === "email-code" ? "password" : "email-code"); setIdentifier(""); setEmailCode(""); setPassword(""); setMessage(""); }}>{accessMode === "email-code" ? "使用原账号密码" : "使用 Email 验证码"}</button>
-          <p className="auth-legal">验证码 10 分钟内有效且只能使用一次。继续即表示你同意服务条款与隐私政策。</p>
-        </div>
+        <small className="onboarding-footnote">头像、名字、目标分数和备考周期之后仍可在“我的”页面调整。</small>
       </section>
     </main>
   );

@@ -12,7 +12,7 @@ type AuthEnvironment = {
   AUTH_OTP_SECRET?: string;
 };
 
-export type AuthProvider = "email" | "phone" | "wechat";
+export type AuthProvider = "email" | "phone" | "wechat" | "guest";
 
 export type AuthUser = {
   id: string;

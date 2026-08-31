@@ -56,7 +56,31 @@ type View = "today" | "practice" | "official-test" | "scene" | "skill" | "review
 type NotebookDraft = Omit<NotebookEntry, "createdAt" | "note">;
 
 const storageKey = "ielts-ai-learning-progress-v1";
+const profileStorageKey = "ielts-pass-local-profile-v1";
 const studyIdleTimeoutMs = 90_000;
+
+function readLocalProfile(value: string | null): AuthUser | null {
+  if (!value) return null;
+  try {
+    const profile = JSON.parse(value) as Partial<AuthUser>;
+    const displayName = typeof profile.displayName === "string" ? profile.displayName.trim().slice(0, 40) : "";
+    const targetBandScore = Number(profile.targetBandScore);
+    const studyPlanDays = Number(profile.studyPlanDays);
+    if (!displayName || !Number.isFinite(targetBandScore) || !Number.isFinite(studyPlanDays)) return null;
+    return {
+      id: "local-guest",
+      provider: "guest",
+      identifier: "local-device",
+      displayName,
+      avatarUrl: typeof profile.avatarUrl === "string" ? profile.avatarUrl : defaultAccountAvatar,
+      targetBandScore: normalizeTargetBandScore(targetBandScore),
+      studyPlanDays: normalizeStudyPlanDays(studyPlanDays),
+      examDate: typeof profile.examDate === "string" ? profile.examDate : null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function hasPlayingStudyMedia() {
   return Array.from(document.querySelectorAll<HTMLMediaElement>("audio, video"))
@@ -1009,7 +1033,6 @@ export default function IeltsApp() {
   const [progress, setProgress] = useState<LearningProgress>(defaultProgress);
   const progressRef = useRef<LearningProgress>(defaultProgress);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const authUserRef = useRef<AuthUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [dictionarySearchOpen, setDictionarySearchOpen] = useState(false);
   const [dictionarySearchSeed, setDictionarySearchSeed] = useState("");
@@ -1024,43 +1047,26 @@ export default function IeltsApp() {
           : undefined;
 
   useEffect(() => {
-    let cancelled = false;
-    const hydrate = async () => {
-      try {
-        const stored = window.localStorage.getItem(storageKey);
-        const localProgress = mergeStoredProgress(stored ? JSON.parse(stored) : null);
-        const response = await fetch("/api/auth?action=session", { headers: { accept: "application/json" } });
-        const session = await response.json() as { user?: AuthUser | null; progress?: unknown; wechatEnabled?: boolean };
-        if (cancelled) return;
-        const next = session.progress ? mergeStoredProgress(session.progress) : localProgress;
-        progressRef.current = next;
-        setProgress(next);
-        const nextUser = session.user ?? null;
-        authUserRef.current = nextUser;
-        setAuthUser(nextUser);
-      } catch {
-        if (cancelled) return;
-        const stored = window.localStorage.getItem(storageKey);
-        const next = mergeStoredProgress(stored ? JSON.parse(stored) : null);
-        progressRef.current = next;
-        setProgress(next);
-        authUserRef.current = null;
-        setAuthUser(null);
-      } finally {
-        if (!cancelled) setHydrated(true);
-      }
+    let active = true;
+    const hydrateLocalData = async () => {
+      await Promise.resolve();
+      const stored = window.localStorage.getItem(storageKey);
+      let storedProgress: unknown = null;
+      try { storedProgress = stored ? JSON.parse(stored) : null; } catch { storedProgress = null; }
+      if (!active) return;
+      const next = mergeStoredProgress(storedProgress);
+      progressRef.current = next;
+      setProgress(next);
+      setAuthUser(readLocalProfile(window.localStorage.getItem(profileStorageKey)));
+      setHydrated(true);
     };
-    void hydrate();
-    return () => { cancelled = true; };
+    void hydrateLocalData();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
     progressRef.current = progress;
   }, [progress]);
-
-  useEffect(() => {
-    authUserRef.current = authUser;
-  }, [authUser]);
 
   useEffect(() => {
     if (!hydrated || !activeStudyCategory) return;
@@ -1075,7 +1081,6 @@ export default function IeltsApp() {
       progressRef.current = next;
       setProgress(next);
       window.localStorage.setItem(storageKey, JSON.stringify(next));
-      if (authUserRef.current) void fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "progress", progress: next }) });
     };
     const noteStudyInteraction = () => {
       const now = Date.now();
@@ -1119,21 +1124,8 @@ export default function IeltsApp() {
       const next = updater(current);
       progressRef.current = next;
       window.localStorage.setItem(storageKey, JSON.stringify(next));
-      if (authUserRef.current) void fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "progress", progress: next }) });
       return next;
     });
-  };
-
-  const handleAuthenticated = (response: { user?: AuthUser; progress?: unknown }) => {
-    if (!response.user) return;
-    authUserRef.current = response.user;
-    setAuthUser(response.user);
-    if (response.progress) {
-      const next = mergeStoredProgress(response.progress);
-      progressRef.current = next;
-      setProgress(next);
-      window.localStorage.setItem(storageKey, JSON.stringify(next));
-    }
   };
 
   const completeAccountOnboarding = async (score: number, displayName: string, avatarUrl: string, selectedPlanDays: number, examDate: string | null) => {
@@ -1146,32 +1138,30 @@ export default function IeltsApp() {
       studyPlanStartedAt: localDayKey(),
       examDate,
     };
-    const response = await fetch("/api/auth", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "onboarding", displayName, avatarUrl, targetBandScore, studyPlanDays, examDate, progress: nextProgress }),
-    });
-    const result = await response.json() as { user?: AuthUser; message?: string };
-    if (!response.ok || !result.user) throw new Error(result.message || "计划创建失败，请重试");
+    const localUser: AuthUser = {
+      id: "local-guest",
+      provider: "guest",
+      identifier: "local-device",
+      displayName,
+      avatarUrl,
+      targetBandScore,
+      studyPlanDays,
+      examDate,
+    };
     progressRef.current = nextProgress;
     setProgress(nextProgress);
     window.localStorage.setItem(storageKey, JSON.stringify(nextProgress));
-    authUserRef.current = result.user;
-    setAuthUser(result.user);
+    window.localStorage.setItem(profileStorageKey, JSON.stringify(localUser));
+    setAuthUser(localUser);
     setView("today");
   };
 
   const updateAccountProfile = async (displayName: string, avatarUrl: string) => {
-    const response = await fetch("/api/auth", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "profile", displayName, avatarUrl }),
-    });
-    const result = await response.json() as { user?: AuthUser; message?: string };
-    if (!response.ok || !result.user) throw new Error(result.message || "资料保存失败，请重试");
-    authUserRef.current = result.user;
-    setAuthUser(result.user);
-    return result.user;
+    if (!authUser) throw new Error("本机资料尚未创建");
+    const nextUser = { ...authUser, displayName, avatarUrl };
+    window.localStorage.setItem(profileStorageKey, JSON.stringify(nextUser));
+    setAuthUser(nextUser);
+    return nextUser;
   };
 
   const completeSkill = (skill: Skill, minutes: number) => {
@@ -1239,22 +1229,8 @@ export default function IeltsApp() {
     setView("today");
   };
 
-  const signOut = async () => {
-    try {
-      await fetch("/api/auth", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "logout" }),
-      });
-    } finally {
-      authUserRef.current = null;
-      setAuthUser(null);
-      setView("today");
-    }
-  };
-
-  if (!hydrated) return <AuthFlow user={null} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
-  if (!authUser || authUser.targetBandScore === null) return <AuthFlow user={authUser} onAuthenticated={handleAuthenticated} onCompleteOnboarding={completeAccountOnboarding} />;
+  if (!hydrated) return <AuthFlow user={null} onCompleteOnboarding={completeAccountOnboarding} />;
+  if (!authUser || authUser.targetBandScore === null) return <AuthFlow user={authUser} onCompleteOnboarding={completeAccountOnboarding} />;
 
   return (
     <main className={`app-shell${view !== "today" ? " has-account-badge" : ""}`} data-ready={hydrated}>
@@ -1296,7 +1272,7 @@ export default function IeltsApp() {
           />
         )}
         {view === "review" && <ReviewView progress={progress} updateProgress={updateProgress} />}
-        {view === "profile" && <ProfileView account={authUser} progress={progress} onReset={resetProgress} onSignOut={signOut} onUpdateAccount={updateAccountProfile} updateProgress={updateProgress} />}
+        {view === "profile" && <ProfileView account={authUser} progress={progress} onReset={resetProgress} onUpdateAccount={updateAccountProfile} updateProgress={updateProgress} />}
       </section>
       <MobileNavigation view={view} onNavigate={setView} />
       {dictionarySearchOpen && <DictionarySearchDialog initialQuery={dictionarySearchSeed} progress={progress} updateProgress={updateProgress} onClose={() => setDictionarySearchOpen(false)} />}
@@ -4665,7 +4641,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
   </div>;
 }
 
-function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, updateProgress }: { account: AuthUser; progress: LearningProgress; onReset: () => void; onSignOut: () => Promise<void>; onUpdateAccount: (displayName: string, avatarUrl: string) => Promise<AuthUser>; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
+function ProfileView({ account, progress, onReset, onUpdateAccount, updateProgress }: { account: AuthUser; progress: LearningProgress; onReset: () => void; onUpdateAccount: (displayName: string, avatarUrl: string) => Promise<AuthUser>; updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void }) {
   const [showWordbook, setShowWordbook] = useState(false);
   const [showStudyHistory, setShowStudyHistory] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -4792,7 +4768,7 @@ function ProfileView({ account, progress, onReset, onSignOut, onUpdateAccount, u
         <div className="study-plan-presets" aria-label="选择备考周期">{[30, 60, 90, 120].map((days) => <button className={progress.studyPlanDays === days ? "is-active" : ""} onClick={() => applyStudyPlan(days)} key={days}><strong>{days} 天</strong><small>每天 {dailyVocabularyTarget(days, progress.targetBandScore)} 核心词 · {dailyDictationTarget(days, progress.targetBandScore)} 听写 · {dailyConnectedSpeechTarget(days, progress.targetBandScore)} 词组</small></button>)}</div>
         <form className="study-plan-custom" onSubmit={(event) => { event.preventDefault(); applyStudyPlan(Number(customPlanDays)); }}><label htmlFor="custom-plan-days"><span>自定义学习天数</span><small>可输入 7–365 天；重新设置天数会清除原考试日期</small></label><div><input id="custom-plan-days" type="number" min="7" max="365" required value={customPlanDays} onChange={(event) => setCustomPlanDays(event.target.value)} /><button type="submit">重新生成计划</button></div></form>
       </section>
-      <section className="profile-settings"><div><strong>账号与学习数据</strong><p>学习目标、笔记与进度已同步到当前账号。</p>{profileMessage && <p className="profile-settings-message" role="alert">{profileMessage}</p>}</div><div className="profile-account-actions"><button type="button" onClick={openProfileEditor}>编辑头像与名字</button><button type="button" onClick={() => void onSignOut()}>退出登录</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
+      <section className="profile-settings"><div><strong>个人资料与学习数据</strong><p>无需登录；头像、名字、目标、笔记与进度保存在当前设备。</p>{profileMessage && <p className="profile-settings-message" role="alert">{profileMessage}</p>}</div><div className="profile-account-actions"><button type="button" onClick={openProfileEditor}>编辑头像与名字</button><button type="button" onClick={onReset}>重置学习进度</button></div></section>
       {showStudyHistory && <StudyHistoryDialog progress={progress} onClose={() => setShowStudyHistory(false)} />}
     </>
   );
