@@ -231,6 +231,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(dailyPractice, /audioCues/);
   assert.match(app, /type IeltsVoiceRole = "examiner" \| "female" \| "male"/);
   assert.match(app, /listening-scrubber/);
+  assert.match(app, /拖动笔记听力音频进度/);
+  assert.match(app, /seekNotebookAudio/);
   assert.match(app, /currentTime = nextTime/);
   assert.match(app, /听不懂？显示字幕/);
   assert.match(app, /开始口语模拟/);
@@ -286,7 +288,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /所在完整 Task 音频/);
   assert.doesNotMatch(app, /segmentIndex: Math\.max\(0, answers\.findIndex/);
   assert.match(app, /答案与易混淆音频/);
-  assert.match(app, /aria-label="播放听力片段"/);
+  assert.match(app, /播放听力片段/);
   assert.match(app, /"▶ 播放"/);
   assert.doesNotMatch(app, /播放 Q\$\{context\.questionNumber\} 答案与易混淆语境/);
   assert.doesNotMatch(app, /只回听这道题答案出现前后的片段/);
@@ -319,6 +321,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /\.notebook-reading-review \.is-correct-answer button/);
   assert.doesNotMatch(styles, /\.notebook-reading-review \.is-options li\.is-user-answer/);
   assert.match(styles, /\.notebook-listening-review \.is-audio button/);
+  assert.match(styles, /\.notebook-audio-scrubber input/);
   assert.match(styles, /\.notebook-listening-options button\.is-selected/);
   assert.match(styles, /\.notebook-entry\.is-collapsed/);
   assert.match(styles, /\.notebook-entry-preview/);

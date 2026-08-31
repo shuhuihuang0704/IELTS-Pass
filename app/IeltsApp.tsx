@@ -4101,6 +4101,8 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
   const [expandedNotebookIds, setExpandedNotebookIds] = useState<string[]>([]);
   const [notebookListeningSelections, setNotebookListeningSelections] = useState<Record<string, string[]>>({});
   const [notebookListeningInputs, setNotebookListeningInputs] = useState<Record<string, string>>({});
+  const [notebookAudioPlaying, setNotebookAudioPlaying] = useState(false);
+  const [notebookAudioProgress, setNotebookAudioProgress] = useState({ start: 0, end: 0, time: 0, ready: false });
   const notebookAudioRef = useRef<HTMLAudioElement | null>(null);
   const today = localDayKey();
   const reviewTarget = dailyReviewTarget(progress.studyPlanDays, progress.targetBandScore);
@@ -4130,14 +4132,14 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
       notebookAudioRef.current?.pause();
       notebookAudioRef.current = null;
       setActiveNotebookAudioId("");
+      setNotebookAudioPlaying(false);
       speak(media.text, .94);
       return;
     }
     if (!media.url) return;
     if (activeNotebookAudioId === entry.id && notebookAudioRef.current) {
-      notebookAudioRef.current.pause();
-      notebookAudioRef.current = null;
-      setActiveNotebookAudioId("");
+      if (notebookAudioRef.current.paused) void notebookAudioRef.current.play();
+      else notebookAudioRef.current.pause();
       return;
     }
     notebookAudioRef.current?.pause();
@@ -4145,9 +4147,12 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
     let playbackEndSeconds = media.endSeconds;
     notebookAudioRef.current = audio;
     setActiveNotebookAudioId(entry.id);
+    setNotebookAudioPlaying(false);
+    setNotebookAudioProgress({ start: 0, end: 0, time: 0, ready: false });
     const stopPlayback = () => {
       if (notebookAudioRef.current === audio) notebookAudioRef.current = null;
       setActiveNotebookAudioId("");
+      setNotebookAudioPlaying(false);
     };
     audio.onloadedmetadata = () => {
       let playbackStartSeconds = media.startSeconds ?? 0;
@@ -4156,18 +4161,30 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
         playbackStartSeconds = Math.max(0, segmentDuration * media.segmentIndex - 3);
         playbackEndSeconds = Math.min(audio.duration, segmentDuration * (media.segmentIndex + 1) + 4);
       }
+      const resolvedEndSeconds = Math.min(playbackEndSeconds ?? audio.duration, audio.duration);
       audio.currentTime = Math.min(playbackStartSeconds, audio.duration || Number.POSITIVE_INFINITY);
+      setNotebookAudioProgress({ start: playbackStartSeconds, end: resolvedEndSeconds, time: playbackStartSeconds, ready: true });
       void audio.play().catch(stopPlayback);
     };
     audio.ontimeupdate = () => {
+      setNotebookAudioProgress((current) => ({ ...current, time: audio.currentTime }));
       if (playbackEndSeconds && audio.currentTime >= playbackEndSeconds) {
         audio.pause();
         stopPlayback();
       }
     };
+    audio.onplay = () => setNotebookAudioPlaying(true);
+    audio.onpause = () => setNotebookAudioPlaying(false);
     audio.onended = stopPlayback;
     audio.onerror = stopPlayback;
   };
+  const seekNotebookAudio = (entryId: string, nextTime: number) => {
+    if (activeNotebookAudioId !== entryId || !notebookAudioRef.current) return;
+    const boundedTime = Math.min(notebookAudioProgress.end || nextTime, Math.max(notebookAudioProgress.start, nextTime));
+    notebookAudioRef.current.currentTime = boundedTime;
+    setNotebookAudioProgress((current) => ({ ...current, time: boundedTime }));
+  };
+  const formatNotebookAudioTime = (seconds: number) => `${Math.floor(Math.max(0, seconds) / 60)}:${String(Math.floor(Math.max(0, seconds) % 60)).padStart(2, "0")}`;
   const rateItem = (item: string, rating: WordRating) => {
     updateProgress((current) => {
       const rated = rateReviewWord(current, item, rating);
@@ -4205,7 +4222,7 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
               const notebookPreview = readingReview?.question ?? listeningReview?.question ?? (entry.kind === "word" ? `${entry.title} · ${detailPreview}` : detailPreview || entry.title);
               const notebookContentId = `notebook-content-${entry.id.replace(/[^a-z0-9_-]/gi, "-")}`;
               return <article className={`notebook-entry${expanded ? " is-expanded" : " is-collapsed"}`} key={entry.id}>
-                <header><span className={`notebook-kind ${entryCategory}`}>{notebookCategoryLabels[entryCategory]}</span><small>{entry.source}</small><button type="button" className="notebook-entry-toggle" aria-expanded={expanded} aria-controls={notebookContentId} onClick={() => { if (expanded && activeNotebookAudioId === entry.id) { notebookAudioRef.current?.pause(); notebookAudioRef.current = null; setActiveNotebookAudioId(""); } setExpandedNotebookIds((current) => expanded ? current.filter((id) => id !== entry.id) : [...current, entry.id]); }}>{expanded ? "收起" : "展开"}</button><button type="button" className="notebook-entry-delete" onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
+                <header><span className={`notebook-kind ${entryCategory}`}>{notebookCategoryLabels[entryCategory]}</span><small>{entry.source}</small><button type="button" className="notebook-entry-toggle" aria-expanded={expanded} aria-controls={notebookContentId} onClick={() => { if (expanded && activeNotebookAudioId === entry.id) { notebookAudioRef.current?.pause(); notebookAudioRef.current = null; setActiveNotebookAudioId(""); setNotebookAudioPlaying(false); } setExpandedNotebookIds((current) => expanded ? current.filter((id) => id !== entry.id) : [...current, entry.id]); }}>{expanded ? "收起" : "展开"}</button><button type="button" className="notebook-entry-delete" onClick={() => updateProgress((current) => ({ ...current, notebook: current.notebook.filter((item) => item.id !== entry.id) }))} aria-label={`删除笔记 ${entry.title}`}>删除</button></header>
                 {!expanded && <p className="notebook-entry-preview">{notebookPreview}</p>}
                 {expanded && <div id={notebookContentId} className="notebook-entry-expanded">
                 <div className={`notebook-entry-body${readingReview ? " is-reading-review" : listeningReview ? " is-listening-review" : ""}`}><div>{!readingReview && !listeningReview && <h2>{entry.title}</h2>}{readingReview ? <section className="notebook-reading-review">
@@ -4215,10 +4232,10 @@ function ReviewView({ progress, updateProgress }: { progress: LearningProgress; 
                   <article className="is-correct-answer"><span>正确答案</span>{readingReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{readingReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
                   <article className="is-explanation"><span>解析</span><p>{readingReview.explanation}</p></article>
                 </section> : listeningReview ? <section className="notebook-listening-review">
-                  <article className="is-audio"><span>答案与易混淆音频</span><button type="button" aria-label="播放听力片段" className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : "▶ 播放"}</button><small>包含题目前后语境、干扰项、纠正信息与最终答案</small>{listeningReview.confusionPoint && <p><b>易混淆点：</b>{listeningReview.confusionPoint}</p>}</article>
+                  <article className="is-audio"><span>答案与易混淆音频</span><button type="button" aria-label={activeNotebookAudioId === entry.id && notebookAudioPlaying ? "暂停听力片段" : "播放听力片段"} className={activeNotebookAudioId === entry.id && notebookAudioPlaying ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? notebookAudioPlaying ? "Ⅱ 暂停" : "▶ 继续" : "▶ 播放"}</button><div className="notebook-audio-scrubber"><input type="range" min={notebookAudioProgress.ready && activeNotebookAudioId === entry.id ? notebookAudioProgress.start : 0} max={notebookAudioProgress.ready && activeNotebookAudioId === entry.id ? Math.max(notebookAudioProgress.end, notebookAudioProgress.start + .1) : 1} step="0.1" value={notebookAudioProgress.ready && activeNotebookAudioId === entry.id ? notebookAudioProgress.time : 0} disabled={!notebookAudioProgress.ready || activeNotebookAudioId !== entry.id} onChange={(event) => seekNotebookAudio(entry.id, Number(event.target.value))} aria-label="拖动笔记听力音频进度" /><small>{notebookAudioProgress.ready && activeNotebookAudioId === entry.id ? `${formatNotebookAudioTime(notebookAudioProgress.time - notebookAudioProgress.start)} / ${formatNotebookAudioTime(notebookAudioProgress.end - notebookAudioProgress.start)}` : "播放后可拖动进度条"}</small></div><small>包含题目前后语境、干扰项、纠正信息与最终答案</small>{listeningReview.confusionPoint && <p><b>易混淆点：</b>{listeningReview.confusionPoint}</p>}</article>
                   <article className="is-listening-question"><span>题目</span><p>{listeningReview.question}</p>{listeningReview.options.length > 0 ? <div className="notebook-listening-options" role={listeningReview.allowsMultiple ? "group" : "radiogroup"} aria-label="选择你的答案">{listeningReview.options.map((option) => { const selected = listeningSelections.includes(option); return <button type="button" role={listeningReview.allowsMultiple ? "checkbox" : "radio"} aria-checked={selected} className={selected ? "is-selected" : ""} onClick={() => setNotebookListeningSelections((current) => ({ ...current, [entry.id]: listeningReview.allowsMultiple ? selected ? listeningSelections.filter((item) => item !== option) : [...listeningSelections, option] : [option] }))} key={option}><i>{selected ? "✓" : ""}</i><span>{option}</span></button>; })}</div> : <label className="notebook-listening-input"><span>输入你的答案</span><input value={notebookListeningInputs[entry.id] ?? ""} onChange={(event) => setNotebookListeningInputs((current) => ({ ...current, [entry.id]: event.target.value }))} placeholder="听完后输入答案" /></label>}</article>
                   <article className="is-correct-answer"><span>正确答案</span>{listeningReview.correctAnswer ? <button type="button" aria-expanded={answerRevealed} onClick={() => setRevealedNotebookAnswerIds((current) => answerRevealed ? current.filter((id) => id !== entry.id) : [...current, entry.id])}>{answerRevealed ? <b>{listeningReview.correctAnswer}</b> : <><i>••••••</i><small>点击显示正确答案</small></>}</button> : <em>提交后显示</em>}</article>
-                </section> : <p>{notebookDetailForDisplay(entry.detail)}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && !listeningReview && <button className={activeNotebookAudioId === entry.id ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? "Ⅱ 暂停" : `▶ ${entry.media.label}`}</button>}</div></div>
+                </section> : <p>{notebookDetailForDisplay(entry.detail)}</p>}</div><div className="notebook-entry-media">{entry.kind === "word" && <button className="review-audio" onClick={() => speak(entry.title, .9)} aria-label={`播放 ${entry.title}`}>▶</button>}{entry.media && !listeningReview && <button className={activeNotebookAudioId === entry.id && notebookAudioPlaying ? "is-playing" : ""} onClick={() => playNotebookMedia(entry)}>{activeNotebookAudioId === entry.id ? notebookAudioPlaying ? "Ⅱ 暂停" : "▶ 继续" : `▶ ${entry.media.label}`}</button>}</div></div>
                 {entry.reference && <details className="notebook-entry-reference"><summary>{entry.reference.label}</summary><iframe title={`${entry.title} · 题目原页`} src={`${entry.reference.url}#page=${entry.reference.page}&toolbar=0&navpanes=0&view=FitH`} /></details>}
                 <label><span>我的补充</span><textarea value={entry.note} placeholder="记录为什么容易错、同义替换或自己的例句……" onChange={(event) => {
                   const note = event.target.value;

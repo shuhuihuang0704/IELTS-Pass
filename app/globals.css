@@ -984,7 +984,7 @@ button { cursor: pointer; }
 .listening-controls { margin:29px 0 25px; }
 .listening-player { width:100%; min-height:88px; display:grid; grid-template-columns:43px minmax(100px,1fr) auto; align-items:center; gap:14px; padding:14px; border-radius:18px; color:var(--ink); background:#e9e5f7; }
 .listening-toggle { width:43px; height:43px; border:0; display:grid; place-items:center; border-radius:50%; color:white; background:var(--violet); font-weight:750; }
-.listening-scrubber { width:100%; accent-color:var(--violet); cursor:pointer; }
+.listening-scrubber { width:100%; min-height:28px; accent-color:var(--violet); cursor:pointer; touch-action:pan-x; }
 .listening-player-copy strong,.listening-player-copy small { display:block; text-align:right; }
 .listening-player-copy strong { font-size:11px; }
 .listening-player-copy small { margin-top:4px; color:#777179; font-variant-numeric:tabular-nums; font-size:9px; }
@@ -1197,6 +1197,10 @@ button { cursor: pointer; }
 .notebook-listening-review .is-audio button { width:100%; min-height:42px; margin-top:8px; border:0; border-radius:10px; color:white; background:#5849bd; font-size:9px; font-weight:750; }
 .notebook-listening-review .is-audio button.is-playing { background:#9d493f; }
 .notebook-listening-review .is-audio small { display:block; margin-top:7px; color:#777087; font-size:8px; }
+.notebook-audio-scrubber { margin-top:8px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:9px; }
+.notebook-audio-scrubber input { width:100%; min-height:28px; accent-color:#5849bd; cursor:pointer; touch-action:pan-x; }
+.notebook-audio-scrubber input:disabled { cursor:not-allowed; opacity:.45; }
+.notebook-audio-scrubber small { min-width:70px; margin:0!important; text-align:right; font-variant-numeric:tabular-nums; }
 .notebook-listening-options { margin-top:8px; display:grid; gap:6px; }
 .notebook-listening-options button { min-height:38px; padding:7px 9px; display:grid; grid-template-columns:20px 1fr; align-items:center; gap:8px; border:1px solid #e5e0e8; border-radius:9px; color:#5a545e; background:white; font-size:9px; text-align:left; }
 .notebook-listening-options button i { width:20px; height:20px; display:grid; place-items:center; border:1px solid #d8d1dc; border-radius:50%; color:white; font-size:8px; font-style:normal; }
