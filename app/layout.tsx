@@ -1,6 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import PwaSupport from "./PwaSupport";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#5b54d6",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -12,12 +20,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+    applicationName: "IELTS Pass",
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, statusBarStyle: "default", title: "IELTS Pass" },
+    icons: {
+      icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+      shortcut: "/favicon.svg",
+      apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    },
     openGraph: { title, description, images: [{ url: image, width: 1536, height: 1024, alt: "IELTS AI 场景化学习" }] },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><body>{children}</body></html>;
+  return <html lang="zh-CN"><body>{children}<PwaSupport /></body></html>;
 }

@@ -25,6 +25,27 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape|react-loading-skeleton/i);
 });
 
+test("ships an installable Android web app", async () => {
+  const [manifestText, support, serviceWorker] = await Promise.all([
+    readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+    readFile(new URL("../app/PwaSupport.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../public/sw.js", import.meta.url), "utf8"),
+  ]);
+  const manifest = JSON.parse(manifestText);
+  assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.start_url, "/?source=android-pwa");
+  assert.equal(manifest.prefer_related_applications, false);
+  assert.deepEqual(manifest.icons.map((icon) => icon.sizes), ["192x192", "512x512"]);
+  assert.match(support, /beforeinstallprompt/);
+  assert.match(support, /serviceWorker\.register\("\/sw\.js"/);
+  assert.match(serviceWorker, /request\.mode === "navigate"/);
+  for (const icon of ["icon-192.png", "icon-512.png"]) {
+    const file = new URL(`../public/${icon}`, import.meta.url);
+    await access(file);
+    assert.ok((await stat(file)).size > 1_000);
+  }
+});
+
 test("ships all four learning modes and persistent progress", async () => {
   const [app, data, dailyPractice, expandedVocabulary, listeningCorpus, notices, state, styles] = await Promise.all([
     readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
