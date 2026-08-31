@@ -101,6 +101,23 @@ npm run dev
 
 打开 [http://localhost:3000](http://localhost:3000)。
 
+### 配置 Email 验证码登录
+
+验证码由服务器通过 Brevo Transactional Email 发送，API Key 不会进入浏览器，也不能提交到 GitHub。
+
+1. 注册 Brevo，进入 **Settings → Senders & IP → Senders**，添加并验证一个可收信的发件邮箱。
+2. 在 **SMTP & API → API Keys** 创建 API Key。
+3. 在本地 `.env` 或托管平台的 Secret / Environment Variables 中配置：
+
+```bash
+BREVO_API_KEY=你的服务端密钥
+AUTH_EMAIL_FROM=已经在 Brevo 验证的发件邮箱
+AUTH_EMAIL_FROM_NAME=IELTS PASS
+AUTH_OTP_SECRET=至少32位的随机字符串
+```
+
+`AUTH_OTP_SECRET` 用于 HMAC 哈希验证码和请求来源；验证码明文不会写入数据库。当前规则为 6 位数字、10 分钟过期、一次性使用、最多尝试 5 次、同一邮箱 60 秒内不能重复发送，并设有邮箱与网络地址的小时限流。
+
 ### 验证质量
 
 ```bash
@@ -162,7 +179,7 @@ tests/
 - [x] Speaking 官方样题的独立录音、60 秒准备、声学基础分析与话题模板
 - [x] 词汇与真题共用的个人笔记本、错题标记和本地持久化
 - [ ] 接入真实 AI 对话与结构化口语反馈
-- [ ] 用户登录与手机、电脑进度同步
+- [x] Email 验证码 / 原密码登录与手机、电脑进度同步
 - [ ] 扩充雅思题型和人工审核场景语料
 - [ ] 模考、写作与能力趋势报告
 - [ ] 小范围真实用户测试和订阅体系
@@ -171,7 +188,7 @@ tests/
 
 ## 数据与隐私
 
-当前 MVP 不上传录音或学习数据。进度存储在浏览器 `localStorage` 中，用户可以在「我的」页面随时重置。接入云端和真实 AI 前，需要补充明确的隐私政策、数据保留期限和删除机制。
+当前 MVP 不上传录音；登录用户的学习进度同时保存在浏览器 `localStorage` 与站点 D1 数据库，用于手机、电脑间恢复。账号密码使用 PBKDF2 加盐哈希，Email 验证码使用服务端 HMAC 哈希且一次性消费。正式开放注册前仍需要补充明确的隐私政策、数据保留期限、账号注销和数据删除机制。
 
 ---
 

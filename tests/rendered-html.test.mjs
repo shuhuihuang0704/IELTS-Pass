@@ -815,7 +815,7 @@ test("shows the signed-in avatar and name outside the Today homepage", async () 
 });
 
 test("ships account registration, secure sessions and score onboarding", async () => {
-  const [flow, avatars, route, authServer, hosting, schema, migration, planMigration] = await Promise.all([
+  const [flow, avatars, route, authServer, hosting, schema, migration, planMigration, emailCodeMigration, emailCodeIndexes] = await Promise.all([
     readFile(new URL("../app/AuthFlow.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/AccountAvatar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/auth/route.ts", import.meta.url), "utf8"),
@@ -824,9 +824,16 @@ test("ships account registration, secure sessions and score onboarding", async (
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0000_heavy_wolfpack.sql", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0001_safe_the_enforcers.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0002_awesome_moon_knight.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0003_aspiring_zarda.sql", import.meta.url), "utf8"),
   ]);
   assert.match(flow, /手机号/);
   assert.match(flow, /Email/);
+  assert.match(flow, /邮箱验证码/);
+  assert.match(flow, /one-time-code/);
+  assert.match(flow, /action: "send-email-code"/);
+  assert.match(flow, /action: "verify-email-code"/);
+  assert.match(flow, /使用原账号密码/);
   assert.doesNotMatch(flow, /使用微信继续|微信登录 · 等待开放平台配置/);
   assert.doesNotMatch(flow, /忘记密码|恢复码|RecoveryCodes/);
   assert.match(flow, /选择目标分数/);
@@ -840,18 +847,28 @@ test("ships account registration, secure sessions and score onboarding", async (
   assert.equal((avatars.match(/id: "preset:/g) ?? []).length, 6);
   assert.match(route, /action === "register"/);
   assert.match(route, /action === "login"/);
+  assert.match(route, /action === "send-email-code"/);
+  assert.match(route, /action === "verify-email-code"/);
   assert.match(route, /action === "onboarding"/);
   assert.match(route, /action === "profile"/);
   assert.match(route, /wechat-callback/);
   assert.match(authServer, /pbkdf2Async/);
   assert.match(authServer, /passwordHashIterations = 210_000/);
+  assert.match(authServer, /emailCodeLifetimeMs = 10 \* 60 \* 1000/);
+  assert.match(authServer, /maximumCodeAttempts = 5/);
+  assert.match(authServer, /crypto\.subtle\.sign\("HMAC"/);
+  assert.match(authServer, /api\.brevo\.com\/v3\/smtp\/email/);
+  assert.doesNotMatch(authServer, /return \{[^}]*code[^}]*\}/);
   assert.doesNotMatch(authServer, /deriveBits/);
   assert.match(authServer, /HttpOnly; Path=\/; SameSite=Lax/);
   assert.equal(JSON.parse(hosting).d1, "DB");
   assert.match(schema, /authSessions/);
+  assert.match(schema, /emailLoginCodes/);
   assert.match(schema, /examDate: text\("exam_date"\)/);
   assert.match(migration, /CREATE TABLE `users`/);
   assert.match(planMigration, /ADD `exam_date` text/);
+  assert.match(emailCodeMigration, /CREATE TABLE `email_login_codes`/);
+  assert.match(emailCodeIndexes, /idx_email_login_codes_email_created/);
 });
 
 test("includes the finished social preview and removes starter preview files", async () => {

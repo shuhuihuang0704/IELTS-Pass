@@ -1,11 +1,14 @@
 import {
   authDb,
   clearSessionCookie,
+  consumeEmailCode,
   createSession,
   currentUser,
   deleteCurrentSession,
+  emailCodeIsConfigured,
   ensureAuthSchema,
   hashPassword,
+  issueEmailCode,
   normalizeIdentifier,
   publicAuthPayload,
   requestWechatState,
@@ -48,7 +51,7 @@ export async function GET(request: Request) {
     await ensureAuthSchema();
     if (action === "session") {
       const row = await currentUser(request);
-      return json({ ...(row ? publicAuthPayload(row) : { user: null, progress: null }), wechatEnabled: wechatIsConfigured() });
+      return json({ ...(row ? publicAuthPayload(row) : { user: null, progress: null }), wechatEnabled: wechatIsConfigured(), emailCodeEnabled: emailCodeIsConfigured() });
     }
     if (action === "wechat-start") {
       if (!wechatIsConfigured()) return errorResponse(new Error("微信登录尚未配置开放平台 AppID"), 503);
@@ -112,6 +115,37 @@ export async function POST(request: Request) {
   const action = String(body.action ?? "");
   try {
     await ensureAuthSchema();
+    if (action === "send-email-code") {
+      if (!emailCodeIsConfigured()) return errorResponse(new Error("邮箱验证码服务尚未配置完成"), 503);
+      const email = normalizeIdentifier("email", body.identifier);
+      const purpose = String(body.purpose ?? "") as "login" | "register";
+      if (purpose !== "login" && purpose !== "register") throw new Error("验证码用途无效");
+      return json({ ok: true, ...await issueEmailCode(request, email, purpose) });
+    }
+    if (action === "verify-email-code") {
+      if (!emailCodeIsConfigured()) return errorResponse(new Error("邮箱验证码服务尚未配置完成"), 503);
+      const email = normalizeIdentifier("email", body.identifier);
+      const purpose = String(body.purpose ?? "") as "login" | "register";
+      if (purpose !== "login" && purpose !== "register") throw new Error("验证码用途无效");
+      const existing = await authDb().prepare("SELECT id, provider, identifier, display_name AS displayName, avatar_url AS avatarUrl, target_band_score AS targetBandScore, study_plan_days AS studyPlanDays, exam_date AS examDate, progress_json AS progressJson FROM users WHERE provider = 'email' AND identifier = ?")
+        .bind(email).first<Record<string, unknown>>();
+      if (purpose === "register" && existing) return errorResponse(new Error("该 Email 已注册，请切换到登录"), 409);
+      if (purpose === "login" && !existing) return errorResponse(new Error("该 Email 尚未注册，请先创建账户"), 404);
+      await consumeEmailCode(email, purpose, body.code);
+      let row = existing;
+      let isNew = false;
+      if (!row) {
+        const id = crypto.randomUUID();
+        const now = Date.now();
+        const displayName = String(body.displayName ?? "").trim().slice(0, 40) || email.split("@")[0];
+        await authDb().prepare("INSERT INTO users (id, provider, identifier, display_name, created_at, updated_at) VALUES (?, 'email', ?, ?, ?, ?)")
+          .bind(id, email, displayName, now, now).run();
+        row = { id, provider: "email", identifier: email, displayName, avatarUrl: null, targetBandScore: null, studyPlanDays: null, examDate: null, progressJson: null };
+        isNew = true;
+      }
+      const cookie = await createSession(request, String(row.id));
+      return json({ ...publicAuthPayload(row as never), isNew, emailCodeEnabled: true }, isNew ? 201 : 200, { "set-cookie": cookie });
+    }
     if (action === "register") {
       const provider = String(body.provider ?? "") as AuthProvider;
       if (provider !== "email" && provider !== "phone") throw new Error("请选择手机号或 Email 注册");

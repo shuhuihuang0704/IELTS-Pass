@@ -1,4 +1,4 @@
-import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -25,6 +25,21 @@ export const authSessions = sqliteTable("auth_sessions", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 }, (table) => [
   uniqueIndex("idx_auth_sessions_token_hash").on(table.tokenHash),
+]);
+
+export const emailLoginCodes = sqliteTable("email_login_codes", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  purpose: text("purpose", { enum: ["login", "register"] }).notNull(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  consumedAt: integer("consumed_at", { mode: "timestamp_ms" }),
+  requestIpHash: text("request_ip_hash").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+}, (table) => [
+  index("idx_email_login_codes_email_created").on(table.email, table.createdAt),
+  index("idx_email_login_codes_ip_created").on(table.requestIpHash, table.createdAt),
 ]);
 
 export const userProviderIdentities = sqliteTable("user_provider_identities", {

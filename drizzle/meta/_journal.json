@@ -15,6 +15,20 @@
       "when": 1787863753913,
       "tag": "0001_safe_the_enforcers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788195490677,
+      "tag": "0002_awesome_moon_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788195501103,
+      "tag": "0003_aspiring_zarda",
+      "breakpoints": true
     }
   ]
 }

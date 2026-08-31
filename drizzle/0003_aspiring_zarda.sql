@@ -1,0 +1,2 @@
+CREATE INDEX `idx_email_login_codes_email_created` ON `email_login_codes` (`email`,`created_at`);--> statement-breakpoint
+CREATE INDEX `idx_email_login_codes_ip_created` ON `email_login_codes` (`request_ip_hash`,`created_at`);

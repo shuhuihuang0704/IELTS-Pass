@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { AuthUser } from "./auth-server";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 
@@ -42,10 +42,14 @@ export default function AuthFlow({
   onCompleteOnboarding: (targetBandScore: number, displayName: string, avatarUrl: string, studyPlanDays: number, examDate: string | null) => Promise<void>;
 }) {
   const [mode, setMode] = useState<"login" | "register">("register");
+  const [accessMode, setAccessMode] = useState<"email-code" | "password">("email-code");
   const [method, setMethod] = useState<AuthMethod>("phone");
   const [identifier, setIdentifier] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [emailCode, setEmailCode] = useState("");
+  const [codeCooldown, setCodeCooldown] = useState(0);
+  const [sendingCode, setSendingCode] = useState(false);
   const [targetBandScore, setTargetBandScore] = useState<number | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [avatarChoice, setAvatarChoice] = useState<string | null>(null);
@@ -55,6 +59,12 @@ export default function AuthFlow({
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const targetOptions = useMemo(() => [5.5, 6, 6.5, 7, 7.5, 8, 8.5], []);
+
+  useEffect(() => {
+    if (codeCooldown <= 0) return;
+    const timer = window.setInterval(() => setCodeCooldown((current) => Math.max(0, current - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [codeCooldown]);
 
   const submitCredentials = async (event: FormEvent) => {
     event.preventDefault();
@@ -72,6 +82,55 @@ export default function AuthFlow({
     } catch (error) {
       if (mode === "login") setPassword("");
       setMessage(error instanceof Error ? error.message : "登录失败，请稍后重试");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const sendEmailCode = async () => {
+    if (!identifier.trim()) {
+      setMessage("请先输入 Email 地址");
+      return;
+    }
+    if (mode === "register" && !displayName.trim()) {
+      setMessage("请先输入昵称");
+      return;
+    }
+    setSendingCode(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "send-email-code", purpose: mode, identifier }),
+      });
+      const result = await response.json() as { message?: string; retryAfterSeconds?: number };
+      if (!response.ok) throw new Error(result.message || "验证码发送失败，请稍后重试");
+      setCodeCooldown(result.retryAfterSeconds ?? 60);
+      setMessage("验证码已发送，请查看邮箱和垃圾邮件文件夹");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "验证码发送失败，请稍后重试");
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const submitEmailCode = async (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "verify-email-code", purpose: mode, identifier, code: emailCode, displayName }),
+      });
+      const result = await response.json() as AuthResponse;
+      if (!response.ok || !result.user) throw new Error(result.message || "验证失败，请稍后重试");
+      onAuthenticated(result);
+    } catch (error) {
+      setEmailCode("");
+      setMessage(error instanceof Error ? error.message : "验证失败，请稍后重试");
     } finally {
       setSubmitting(false);
     }
@@ -149,21 +208,30 @@ export default function AuthFlow({
         <div className="auth-panel-inner">
           <header><span>欢迎使用 IELTS PASS</span><h2>{mode === "register" ? "创建你的学习账户" : "继续你的学习计划"}</h2><p>{mode === "register" ? "注册后只需选择目标分数，即可生成个人学习路线。" : "登录后恢复你的目标、笔记与学习进度。"}</p></header>
           <div className="auth-mode-tabs" role="tablist" aria-label="登录或注册">
-            <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "is-active" : ""} onClick={() => { setMode("register"); setMessage(""); }}>注册</button>
-            <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "is-active" : ""} onClick={() => { setMode("login"); setMessage(""); }}>登录</button>
+            <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "is-active" : ""} onClick={() => { setMode("register"); setEmailCode(""); setMessage(""); }}>注册</button>
+            <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "is-active" : ""} onClick={() => { setMode("login"); setEmailCode(""); setMessage(""); }}>登录</button>
           </div>
-          <div className="auth-method-tabs" role="tablist" aria-label="选择账号方式">
-            <button type="button" role="tab" aria-selected={method === "phone"} className={method === "phone" ? "is-active" : ""} onClick={() => { setMethod("phone"); setIdentifier(""); setMessage(""); }}>手机号</button>
-            <button type="button" role="tab" aria-selected={method === "email"} className={method === "email" ? "is-active" : ""} onClick={() => { setMethod("email"); setIdentifier(""); setMessage(""); }}>Email</button>
-          </div>
-          <form className="auth-form" onSubmit={submitCredentials}>
-            {mode === "register" && <label><span>昵称</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="怎么称呼你" autoComplete="name" /></label>}
-            <label><span>{method === "phone" ? "手机号" : "Email"}</span><input type={method === "email" ? "email" : "tel"} value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder={method === "phone" ? "+86 138 0000 0000" : "name@example.com"} autoComplete={method === "email" ? "email" : "tel"} required /></label>
-            <label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="至少 8 个字符" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={8} required /></label>
-            {message && <p className="auth-message" role="alert">{message}</p>}
-            <button type="submit" className="auth-submit" disabled={submitting}>{submitting ? "请稍候…" : mode === "register" ? "注册并选择目标分数 →" : "登录 →"}</button>
-          </form>
-          <p className="auth-legal">继续即表示你同意服务条款与隐私政策。账号密码经过加盐加密保存，不会明文存储。</p>
+          {accessMode === "email-code" ? <form className="auth-form" onSubmit={submitEmailCode}>
+            {mode === "register" && <label><span>昵称</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="怎么称呼你" autoComplete="name" required /></label>}
+            <label><span>Email</span><input type="email" value={identifier} onChange={(event) => { setIdentifier(event.target.value); setEmailCode(""); }} placeholder="name@example.com" autoComplete="email" required /></label>
+            <label><span>邮箱验证码</span><div className="auth-code-row"><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="6 位验证码" autoComplete="one-time-code" required /><button type="button" onClick={sendEmailCode} disabled={sendingCode || codeCooldown > 0}>{sendingCode ? "发送中…" : codeCooldown > 0 ? `${codeCooldown}s` : "获取验证码"}</button></div></label>
+            {message && <p className="auth-message" role="status">{message}</p>}
+            <button type="submit" className="auth-submit" disabled={submitting || emailCode.length !== 6}>{submitting ? "正在验证…" : mode === "register" ? "验证并创建账户 →" : "验证并登录 →"}</button>
+          </form> : <>
+            <div className="auth-method-tabs" role="tablist" aria-label="选择账号方式">
+              <button type="button" role="tab" aria-selected={method === "phone"} className={method === "phone" ? "is-active" : ""} onClick={() => { setMethod("phone"); setIdentifier(""); setMessage(""); }}>手机号</button>
+              <button type="button" role="tab" aria-selected={method === "email"} className={method === "email" ? "is-active" : ""} onClick={() => { setMethod("email"); setIdentifier(""); setMessage(""); }}>Email</button>
+            </div>
+            <form className="auth-form" onSubmit={submitCredentials}>
+              {mode === "register" && <label><span>昵称</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="怎么称呼你" autoComplete="name" /></label>}
+              <label><span>{method === "phone" ? "手机号" : "Email"}</span><input type={method === "email" ? "email" : "tel"} value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder={method === "phone" ? "+86 138 0000 0000" : "name@example.com"} autoComplete={method === "email" ? "email" : "tel"} required /></label>
+              <label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="至少 8 个字符" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={8} required /></label>
+              {message && <p className="auth-message" role="alert">{message}</p>}
+              <button type="submit" className="auth-submit" disabled={submitting}>{submitting ? "请稍候…" : mode === "register" ? "注册并选择目标分数 →" : "登录 →"}</button>
+            </form>
+          </>}
+          <button className="auth-access-switch" type="button" onClick={() => { setAccessMode(accessMode === "email-code" ? "password" : "email-code"); setIdentifier(""); setEmailCode(""); setPassword(""); setMessage(""); }}>{accessMode === "email-code" ? "使用原账号密码" : "使用 Email 验证码"}</button>
+          <p className="auth-legal">验证码 10 分钟内有效且只能使用一次。继续即表示你同意服务条款与隐私政策。</p>
         </div>
       </section>
     </main>

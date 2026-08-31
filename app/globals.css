@@ -274,17 +274,21 @@ button { cursor: pointer; }
 .auth-mode-tabs { margin-top:24px; padding:4px; display:grid; grid-template-columns:1fr 1fr; border-radius:13px; background:#eae8ee; }
 .auth-mode-tabs button,.auth-method-tabs button { min-height:39px; border:0; border-radius:9px; color:#79747f; background:transparent; font-size:10px; }
 .auth-mode-tabs button.is-active,.auth-method-tabs button.is-active { color:#423ba1; background:white; box-shadow:0 4px 14px rgba(43,36,70,.08); font-weight:750; }
-.auth-method-tabs { display:flex; gap:5px; }
+.auth-method-tabs { margin-top:15px; display:flex; gap:5px; }
 .auth-method-tabs button { flex:1; border:1px solid #e4e0e7; }
 .auth-method-tabs button.is-active { border-color:#cfc9eb; }
 .auth-form { margin-top:15px; display:grid; gap:12px; }
 .auth-form label>span { display:block; margin:0 0 6px 2px; color:#6d6873; font-size:8px; font-weight:700; }
 .auth-form input { width:100%; min-height:47px; padding:0 13px; border:1px solid #ddd9e1; border-radius:12px; color:#29262d; background:white; font:inherit; font-size:11px; outline:none; }
 .auth-form input:focus { border-color:#7067d5; box-shadow:0 0 0 4px rgba(92,83,202,.09); }
+.auth-code-row { display:grid; grid-template-columns:minmax(0,1fr) 112px; gap:8px; }
+.auth-code-row button { border:1px solid #d8d3e7; border-radius:12px; color:#534ab8; background:#f3f1fc; font-size:9px; font-weight:750; }
+.auth-code-row button:disabled { color:#9d98a7; background:#efedf2; }
 .auth-submit,.onboarding-submit { width:100%; min-height:49px; border:0; border-radius:13px; color:white; background:linear-gradient(135deg,#6258d2,#4b45b0); box-shadow:0 12px 26px rgba(71,62,170,.2); font-size:10px; font-weight:750; }
 .auth-submit:disabled,.onboarding-submit:disabled { opacity:.48; box-shadow:none; }
 .auth-message { margin:0; padding:9px 11px; border-radius:9px; color:#99463f; background:#f9eae8; font-size:9px; line-height:1.45; }
 .auth-legal { margin:15px auto 0; max-width:380px; color:#aaa5ad; font-size:7px; line-height:1.55; text-align:center; }
+.auth-access-switch { width:100%; margin-top:13px; padding:5px; border:0; color:#6259c8; background:transparent; font-size:9px; font-weight:700; }
 .account-avatar { width:58px; height:58px; flex:0 0 auto; display:grid; place-items:center; overflow:hidden; border:1px solid rgba(255,255,255,.6); border-radius:19px; color:white; box-shadow:0 9px 22px rgba(47,40,95,.16),inset 0 1px rgba(255,255,255,.32); }
 .account-avatar b { font-size:22px; line-height:1; }
 .account-avatar img { width:100%; height:100%; object-fit:cover; }
