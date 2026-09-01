@@ -91,6 +91,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /IELTS 英式标准发音/);
   assert.match(app, /IELTS 英式自然语速/);
   assert.match(app, /DailyVocabularySprint/);
+  assert.match(app, /autoPronounceDailyVocabularyWord\(word\.word\)/);
+  assert.match(app, /▶ 重播发音/);
   assert.match(app, /SCENE DICTATION|每天.*个听写词|听清再写准/);
   assert.match(app, /CONNECTED SPEECH|每天.*个词组|听懂自然语流/);
   assert.match(app, /Matching Headings|Matching Information|Summary Completion/);

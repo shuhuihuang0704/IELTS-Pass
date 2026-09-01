@@ -760,6 +760,10 @@ function speak(text: string, rate = 0.94) {
   return true;
 }
 
+function autoPronounceDailyVocabularyWord(word: string) {
+  return speak(word, .9);
+}
+
 function normalizeOfficialAnswer(value: string) {
   return value
     .normalize("NFKC")
@@ -3220,6 +3224,14 @@ function DailyVocabularySprint({
   const unfamiliarCount = dailyWords.filter((item) => progress.dailyVocabularyRatings[item.word] === "unfamiliar").length;
 
   useEffect(() => {
+    if (!word || pendingRating !== null) return;
+    const pronunciationTimer = window.setTimeout(() => {
+      autoPronounceDailyVocabularyWord(word.word);
+    }, 120);
+    return () => window.clearTimeout(pronunciationTimer);
+  }, [pendingRating, word]);
+
+  useEffect(() => {
     if (finished && !progress.dailyVocabularyCompleted) onComplete();
   }, [finished, onComplete, progress.dailyVocabularyCompleted]);
 
@@ -3276,7 +3288,7 @@ function DailyVocabularySprint({
           })}
         </div>
         <section className={`daily-word-card ${pendingRating ? "is-revealed" : ""}`}>
-          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => speak(word.word, .9)} aria-label={`播放 ${word.word} 的发音`}>▶ 发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
+          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => speak(word.word, .9)} aria-label={`重新播放 ${word.word} 的发音`}>▶ 重播发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
           <h2>{word.word}</h2>
           <p className="word-collocation">{pendingRating ? word.collocation : "看到单词后，凭第一反应选择熟悉程度"}</p>
           <div className="daily-word-answer" aria-live="polite">
