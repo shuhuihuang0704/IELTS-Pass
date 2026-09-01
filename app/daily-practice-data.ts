@@ -68,6 +68,13 @@ type SpeakingScenario = {
 
 export type DailyPracticeBand = 6 | 7 | 8;
 
+function localPracticeAsset(path: string) {
+  const githubPagesBase = typeof window !== "undefined" && window.location.hostname.endsWith("github.io")
+    ? "/IELTS-Pass"
+    : "";
+  return `${githubPagesBase}${path}`;
+}
+
 function dailyRotationIndex(dayKey: string, length: number) {
   const dayNumber = Math.floor(new Date(`${dayKey}T00:00:00Z`).getTime() / 86_400_000);
   return ((dayNumber % length) + length) % length;
@@ -79,8 +86,8 @@ function difficultyRotationIndex(dayKey: string, length: number, band: DailyPrac
 
 const artsCentreListening: DailyListeningSet = {
   code: "Daily Set B",
-  audioSrc: "/listening-arts-centre.wav?voices=natural-uk-dual-v6",
-  captionsSrc: "/listening-arts-centre.vtt?voices=natural-uk-dual-v6",
+  audioSrc: localPracticeAsset("/listening-arts-centre.wav?voices=natural-uk-dual-v6"),
+  captionsSrc: localPracticeAsset("/listening-arts-centre.vtt?voices=natural-uk-dual-v6"),
   voiceLabel: "自然英国女课程顾问 × 英国男学员",
   audioCues: {
     l1: { startSeconds: 5.9, endSeconds: 12.5 }, l2: { startSeconds: 12.7, endSeconds: 18.1 },
@@ -129,8 +136,8 @@ const artsCentreListening: DailyListeningSet = {
 
 const wildlifeListening: DailyListeningSet = {
   code: "Daily Set C",
-  audioSrc: "/listening-wildlife-volunteer.wav?voices=natural-uk-dual-v6",
-  captionsSrc: "/listening-wildlife-volunteer.vtt?voices=natural-uk-dual-v6",
+  audioSrc: localPracticeAsset("/listening-wildlife-volunteer.wav?voices=natural-uk-dual-v6"),
+  captionsSrc: localPracticeAsset("/listening-wildlife-volunteer.vtt?voices=natural-uk-dual-v6"),
   voiceLabel: "自然英国女志愿者主管 × 英国男申请者",
   audioCues: {
     l1: { startSeconds: 6, endSeconds: 12.2 }, l2: { startSeconds: 12.3, endSeconds: 19 },
@@ -182,8 +189,8 @@ const listeningSets: DailyListeningSet[] = [
     code: "Daily Set A",
     exercise: listeningExercise,
     evidence: listeningReviewEvidence,
-    audioSrc: "/listening-section-1-v2.wav?voices=natural-uk-dual-v6",
-    captionsSrc: "/listening-section-1.vtt?voices=natural-uk-dual-v6",
+    audioSrc: localPracticeAsset("/listening-section-1-v2.wav?voices=natural-uk-dual-v6"),
+    captionsSrc: localPracticeAsset("/listening-section-1.vtt?voices=natural-uk-dual-v6"),
     voiceLabel: "自然英国女接待员 × 英国男学生",
     audioCues: {
       l1: { startSeconds: 8.6, endSeconds: 16.1 }, l2: { startSeconds: 16.2, endSeconds: 24.1 },
