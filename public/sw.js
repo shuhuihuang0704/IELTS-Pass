@@ -1,10 +1,12 @@
-const CACHE_NAME = "ielts-pass-shell-2026-08-31-android-refresh-1";
-const OFFLINE_DOCUMENT = "/__ielts-pass-offline-document__";
+const CACHE_NAME = "ielts-pass-shell-2026-09-01-cross-platform-install-1";
+const APP_SCOPE = new URL("./", self.registration.scope);
+const scopedPath = (path) => new URL(path, APP_SCOPE).pathname;
+const OFFLINE_DOCUMENT = scopedPath("__ielts-pass-offline-document__");
 const APP_SHELL = [
-  "/manifest.webmanifest",
-  "/favicon.svg",
-  "/icon-192.png",
-  "/icon-512.png"
+  scopedPath("manifest.webmanifest"),
+  scopedPath("favicon.svg"),
+  scopedPath("icon-192.png"),
+  scopedPath("icon-512.png")
 ];
 
 self.addEventListener("install", (event) => {
@@ -29,7 +31,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith(scopedPath("api/"))) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

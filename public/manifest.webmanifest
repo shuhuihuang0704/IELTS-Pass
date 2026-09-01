@@ -2,9 +2,9 @@
   "name": "IELTS Pass — 场景化雅思学习",
   "short_name": "IELTS Pass",
   "description": "词汇、听力、阅读、口语与写作一体化的个人雅思学习计划。",
-  "id": "/",
-  "start_url": "/?source=android-pwa",
-  "scope": "/",
+  "id": "./",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#f6f6f8",
@@ -15,13 +15,13 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

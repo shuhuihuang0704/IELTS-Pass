@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-const serviceWorkerVersion = "2026.08.31-android-refresh-1";
+const serviceWorkerVersion = "2026.09.01-cross-platform-install-1";
+
+function appBasePath() {
+  const configuredBase = import.meta.env.BASE_URL || "/";
+  return configuredBase.endsWith("/") ? configuredBase : `${configuredBase}/`;
+}
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -24,6 +29,7 @@ export default function PwaSupport() {
     const workerCleanups: Array<() => void> = [];
 
     if ("serviceWorker" in navigator) {
+      const basePath = appBasePath();
       const hadController = Boolean(navigator.serviceWorker.controller);
       let refreshedForThisUpdate = false;
       const requestActivation = (worker: ServiceWorker | null) => {
@@ -39,8 +45,8 @@ export default function PwaSupport() {
       navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
       workerCleanups.push(() => navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange));
 
-      void navigator.serviceWorker.register(`/sw.js?v=${serviceWorkerVersion}`, {
-        scope: "/",
+      void navigator.serviceWorker.register(`${basePath}sw.js?v=${serviceWorkerVersion}`, {
+        scope: basePath,
         updateViaCache: "none",
       }).then((registration) => {
         if (cancelled) return;
@@ -120,7 +126,7 @@ export default function PwaSupport() {
       <span className="pwa-install-mark" aria-hidden="true">IP</span>
       <div>
         <strong>安装 IELTS Pass</strong>
-        <small>添加到安卓桌面，像 App 一样打开</small>
+        <small>安装到 Windows 或手机桌面，像 App 一样打开</small>
       </div>
       <button type="button" onClick={install}>安装</button>
       <button type="button" className="pwa-install-close" aria-label="暂不安装" onClick={() => setVisible(false)}>×</button>

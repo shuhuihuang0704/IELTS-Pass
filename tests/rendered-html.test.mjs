@@ -26,7 +26,7 @@ test("server-renders the IELTS AI product shell and metadata", async () => {
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape|react-loading-skeleton/i);
 });
 
-test("ships an installable Android web app", async () => {
+test("ships an installable cross-platform web app", async () => {
   const [manifestText, support, serviceWorker] = await Promise.all([
     readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
     readFile(new URL("../app/PwaSupport.tsx", import.meta.url), "utf8"),
@@ -34,16 +34,23 @@ test("ships an installable Android web app", async () => {
   ]);
   const manifest = JSON.parse(manifestText);
   assert.equal(manifest.display, "standalone");
-  assert.equal(manifest.start_url, "/?source=android-pwa");
+  assert.equal(manifest.id, "./");
+  assert.equal(manifest.start_url, "./?source=pwa");
+  assert.equal(manifest.scope, "./");
   assert.equal(manifest.prefer_related_applications, false);
+  assert.deepEqual(manifest.icons.map((icon) => icon.src), ["./icon-192.png", "./icon-512.png"]);
   assert.deepEqual(manifest.icons.map((icon) => icon.sizes), ["192x192", "512x512"]);
   assert.match(support, /beforeinstallprompt/);
-  assert.match(support, /serviceWorker\.register\(`\/sw\.js\?v=\$\{serviceWorkerVersion\}`/);
+  assert.match(support, /import\.meta\.env\.BASE_URL/);
+  assert.match(support, /serviceWorker\.register\(`\$\{basePath\}sw\.js\?v=\$\{serviceWorkerVersion\}`/);
+  assert.match(support, /安装到 Windows 或手机桌面/);
   assert.match(support, /updateViaCache: "none"/);
   assert.match(support, /controllerchange/);
   assert.match(serviceWorker, /SKIP_WAITING/);
   assert.match(serviceWorker, /cache: "no-store"/);
   assert.match(serviceWorker, /OFFLINE_DOCUMENT/);
+  assert.match(serviceWorker, /self\.registration\.scope/);
+  assert.match(serviceWorker, /scopedPath\("manifest\.webmanifest"\)/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
   for (const icon of ["icon-192.png", "icon-512.png"]) {
     const file = new URL(`../public/${icon}`, import.meta.url);
