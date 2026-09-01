@@ -38,7 +38,12 @@ test("ships an installable Android web app", async () => {
   assert.equal(manifest.prefer_related_applications, false);
   assert.deepEqual(manifest.icons.map((icon) => icon.sizes), ["192x192", "512x512"]);
   assert.match(support, /beforeinstallprompt/);
-  assert.match(support, /serviceWorker\.register\("\/sw\.js"/);
+  assert.match(support, /serviceWorker\.register\(`\/sw\.js\?v=\$\{serviceWorkerVersion\}`/);
+  assert.match(support, /updateViaCache: "none"/);
+  assert.match(support, /controllerchange/);
+  assert.match(serviceWorker, /SKIP_WAITING/);
+  assert.match(serviceWorker, /cache: "no-store"/);
+  assert.match(serviceWorker, /OFFLINE_DOCUMENT/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
   for (const icon of ["icon-192.png", "icon-512.png"]) {
     const file = new URL(`../public/${icon}`, import.meta.url);
