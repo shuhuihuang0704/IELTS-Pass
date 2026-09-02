@@ -32,7 +32,7 @@
 ## 当前可以测试什么
 
 - **场景学习路径**：词汇 → 听力 → 口语 → 阅读。
-- **每日 100 词**：从 3,600 词核心库中按日期轮换，分成 5 组快速辨认，36 天完成一轮，自动保存当日进度。
+- **每日词汇计划**：从 2,969 个高可信英文词头中按日期轮换，学习量随备考天数与目标分数自动调整，分组快速辨认并保存当日进度。
 - **三档学习队列**：按“认识 / 模糊 / 不熟悉”判断；点击认识后先核对中文含义，可确认进入下一词，也可点“记错了”让它重新进入本轮和间隔复习。
 - **自适应间隔复习**：需要强化的词按 1、3、7、14、30、60 天递增安排；复习时再次模糊或遗忘会缩短间隔并记录遗忘次数。
 - **80 词场景听写**：8 × 10 词分组，覆盖住宿、出行、教育、健康、工作、环境、服务和活动场景。每组在同一页连续输入 10 个答案，按 Enter 自动跳到下一格并播放下一词，整组一次提交检查，减少逐词等待和重复点击。
@@ -52,14 +52,14 @@
 - **多次作答记录**：官方阅读与听力提交后可以“再做一次”；新一轮会清空当前答题区并重新锁定答案或原文，旧答案则按次数永久保存在可展开的历史记录中。
 - **记忆回流**：词汇错误自动进入复习，掌握后可以移出。
 - **个人笔记本**：每日词汇、场景听写词组和官方真题均可一键标记；提交后的错题会保存自己的答案与正确答案，笔记中可以继续补充易错原因、同义替换或例句。
-- **完整单词本与全英语查词**：“我的”页面可进入完整学习词库，合并每日高频核心词与场景听写词并自动去重；词条改为紧凑双栏卡片，可直接发音或加入个人笔记。首页和单词本共用查词入口：优先从本地 3,600 词库即时显示中文意思、词性和例句，词库外单词再通过站点服务查询开放英语词典，返回音标、词性、英文释义和例句；外部查询设有超时提示，不会一直停留在加载状态。
+- **完整单词本与全英语查词**：“我的”页面可进入完整学习词库，合并每日核心词与场景听写词并自动去重；词条采用紧凑双栏卡片，可直接发音或加入个人笔记。首页和单词本共用查词入口：优先从本地 2,969 词库即时显示中文意思、词性和原创例句，词库外单词再通过站点服务查询开放英语词典，返回音标、词性、英文释义和例句；外部查询设有超时提示，不会一直停留在加载状态。
 - **本地持久化**：刷新浏览器后保留学习记录。
 - **响应式布局**：同一套功能适配手机与电脑，但使用不同信息布局。
 - **Android 可安装版本**：安卓用户可通过 Chrome 打开公开网址并选择“安装”，添加到桌面后以独立 App 窗口运行；资料与进度保存在当前设备。
 
 > 当前考官回复和回答展开提示使用可替换的本地逻辑，目的是在没有 API 密钥时也能测试考试流程；它不会冒充官方 IELTS 评分。正式 AI 模型和可选的跨设备云同步属于下一阶段。
 >
-> 当前词库不是《雅思词汇真经》的电子化版本：该书只作为“3600+ 核心词、22 个主题”的产品规模参考，本项目没有其完整词表或再分发授权。3,600 词核心库由项目原有 300 个独立整理主题词、NGSL 1.2、NAWL 1.2 与少量 NGSL-GR 1.0 中频阅读词合并去重而成；中文释义来自 MIT 许可的 ECDICT。完整署名与许可见 `THIRD_PARTY_NOTICES.md`。
+> 当前词库不是教材的电子化版本。构建过程只从用户提供的学习表中识别英文词头，舍弃原释义、例句、助记、版式和排列顺序；再以独立词频重新排序，使用 MIT 许可的 ECDICT 补充中文释义与词性，并在 App 内生成原创语境例句。原 PDF 不随项目发布。完整方法与许可见 `THIRD_PARTY_NOTICES.md`。
 >
 > 官方套题模块在 App 内加载 IELTS.org 官方原始材料。Reading 使用 Modified Large Print [文章册](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-text-booklet.pdf)、[题册](https://cdn.ielts.org/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-question-booklet.pdf)及[答案表](https://ielts.org/cdn/ielts-access-arrangements-sample-tests/ielts-modified-large-print/ielts-academic-reading-access-arrangement-modified-large-print-sample-test-answer-key.pdf)，共 3 篇、40 题；另加载官方 [Listening](https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf)、[Writing](https://ielts.org/cdn/Sample-tests/ielts-academic-writing-sample-tasks-2023.pdf) 与 [Speaking](https://ielts.org/cdn/ielts-sample-tests/ielts-speaking-sample-tasks-2023.pdf) Sample Tasks。这些可以确认是官方公开样题，但不能表述为已正式考过的 Cambridge 历年原卷；商业题库必须获得授权后才能内置。
 
@@ -151,7 +151,7 @@ tests/
 
 - [x] 响应式应用外壳与品牌视觉
 - [x] 租房场景的词汇、听力、口语、阅读闭环
-- [x] 3,600 词核心库、每日轮换 100 词、36 天一轮、5 × 20 分组进度和错词回流
+- [x] 2,969 词核心库、按个人计划生成每日学习量、分组进度和错词回流
 - [x] Academic Reading 混合题型与口语考官式讨论
 - [x] 80 词场景听写与 Listening Section 1 十题混合套题
 - [x] 为扩展词库补齐可核验来源、词性、中文释义、英文语境与第三方许可说明

@@ -1,4 +1,4 @@
-import { expandedVocabularyRows } from "./vocabulary-expanded";
+import { userHeadwordVocabularyRows } from "./vocabulary-user-headwords";
 import { listeningCorpusMeta, listeningCorpusPhrases, listeningCorpusWords } from "./listening-corpus";
 
 export type Skill = "vocabulary" | "listening" | "speaking" | "reading";
@@ -32,6 +32,7 @@ export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, secti
   hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
 }));
 
+/* Historical independent vocabulary build retained for source-level migration reference only.
 const dailyVocabularySource = `
 analyse|分析；剖析|学术核心|analyse the results
 assess|评估；评价|学术核心|assess the impact
@@ -428,7 +429,7 @@ const preparedExpandedVocabulary = expandedVocabularyRows.map(([word, meaning, p
   return { word, meaning, partOfSpeech, example, collocation: example, ...expandedSourceMeta[sourceCode] };
 });
 
-export const dailyVocabulary = Array.from({ length: 36 }, (_, dayIndex) => {
+const legacyDailyVocabulary = Array.from({ length: 36 }, (_, dayIndex) => {
   const curatedStart = Math.ceil(curatedDailyVocabulary.length * dayIndex / 36);
   const curatedEnd = Math.ceil(curatedDailyVocabulary.length * (dayIndex + 1) / 36);
   const curatedBatch = curatedDailyVocabulary.slice(curatedStart, curatedEnd);
@@ -437,6 +438,79 @@ export const dailyVocabulary = Array.from({ length: 36 }, (_, dayIndex) => {
   const expandedBatch = preparedExpandedVocabulary.slice(expandedStart, expandedStart + expandedCount);
   return [...curatedBatch, ...expandedBatch];
 }).flat();
+
+const legacyVocabularyByWord = new Map(legacyDailyVocabulary.map((entry) => [entry.word.toLowerCase(), entry]));
+*/
+
+const topicExampleContext: Record<string, string> = {
+  "自然地理": "natural processes and environmental change",
+  "植物研究": "plant growth and conservation",
+  "动物保护": "wildlife and biodiversity",
+  "太空探索": "space science and exploration",
+  "学校教育": "education and student development",
+  "科技发明": "technology and innovation",
+  "文化历史": "culture and historical change",
+  "语言演化": "language learning and communication",
+  "娱乐运动": "sport and leisure",
+  "娱乐与物品": "daily life and consumer choices",
+  "物品材料": "materials and product design",
+  "时尚潮流": "fashion and social trends",
+  "饮食健康": "diet and public health",
+  "建筑场所": "buildings and urban spaces",
+  "交通旅行": "transport and travel",
+  "国家政府": "government and public policy",
+  "社会经济": "society and the economy",
+  "法律法规": "law and public responsibility",
+  "战争冲突": "conflict and international relations",
+  "社会关系": "relationships and community life",
+  "行为动作": "human behaviour and decision-making",
+};
+
+function stableExampleIndex(word: string, size: number) {
+  return [...word].reduce((total, character) => total + character.charCodeAt(0), 0) % size;
+}
+
+function buildOriginalHeadwordExample(word: string, partOfSpeech: string, category: string) {
+  const context = topicExampleContext[category] ?? "a common IELTS topic";
+  const templates = partOfSpeech.startsWith("v")
+    ? [
+        `Researchers may ${word} the available evidence before drawing a conclusion about ${context}.`,
+        `The report explains how communities can ${word} when conditions related to ${context} change.`,
+        `Policy makers should consider whether to ${word} as they respond to issues involving ${context}.`,
+      ]
+    : partOfSpeech.startsWith("adj")
+      ? [
+          `The study describes this as a ${word} feature of ${context}.`,
+          `A ${word} change could influence future decisions about ${context}.`,
+          `The researchers found that the pattern was especially ${word} in discussions of ${context}.`,
+        ]
+      : partOfSpeech.startsWith("adv")
+        ? [
+            `The figures changed ${word} during the study of ${context}.`,
+            `The two groups responded ${word} to the same issue involving ${context}.`,
+            `The report shows how the situation developed ${word} in relation to ${context}.`,
+          ]
+        : [
+            `The report examines the role of ${word} in debates about ${context}.`,
+            `Public discussion of ${word} has increased alongside wider interest in ${context}.`,
+            `The study identifies ${word} as an important consideration in research on ${context}.`,
+          ];
+  return templates[stableExampleIndex(`${category}:${word}`, templates.length)];
+}
+
+export const dailyVocabulary = userHeadwordVocabularyRows.map(([word, meaning, dictionaryPartOfSpeech, category]) => {
+  const partOfSpeech = dictionaryPartOfSpeech;
+  const example = buildOriginalHeadwordExample(word, partOfSpeech, category);
+  return {
+    word,
+    meaning,
+    category,
+    partOfSpeech,
+    example,
+    collocation: example,
+    source: "用户提供英文词头 · ECDICT 开放释义 · 原创例句",
+  };
+});
 
 export function getDailyVocabulary(dayKey: string, count = 100) {
   const dayNumber = Math.floor(new Date(`${dayKey}T00:00:00`).getTime() / 86_400_000);

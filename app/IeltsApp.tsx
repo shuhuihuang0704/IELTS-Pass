@@ -4625,7 +4625,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
     }).catch(() => {
       if (!active) return;
       setResults([]);
-      setError("词库外查询暂时超时。你仍然可以搜索本地 3,600 词的中文释义，稍后再试这个词。");
+      setError(`词库外查询暂时超时。你仍然可以搜索本地 ${dailyVocabulary.length.toLocaleString()} 词的中文释义，稍后再试这个词。`);
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [personalEntries, requestedQuery, requestId]);
@@ -4640,7 +4640,7 @@ function DictionarySearchDialog({ initialQuery, progress, updateProgress, onClos
     <section className="dictionary-search-dialog" role="dialog" aria-modal="true" aria-label="全英语词典搜索">
       <header><div><span>GLOBAL ENGLISH DICTIONARY</span><h2>查单词与中文释义</h2><p>输入英文即可先看中文意思，再查看词性、音标、英文释义和例句。</p></div><button onClick={onClose} aria-label="关闭词典">×</button></header>
       <form onSubmit={(event) => { event.preventDefault(); const term = query.trim(); if (!term) return; const hasLocalResult = findLocalDictionaryEntries(term, personalEntries).length > 0; setLoading(!hasLocalResult); setError(""); setResults([]); setRequestedQuery(term); setRequestId((current) => current + 1); }}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入英语单词或中文意思" aria-label="输入英语单词" /><button type="submit" disabled={loading}>{loading ? "查询中…" : "查词"}</button></form>
-      <p className="dictionary-search-source">本地 3,600 词使用现有中文词库；词库外结果由开放英语词典与中文翻译服务实时提供。</p>
+      <p className="dictionary-search-source">本地 {dailyVocabulary.length.toLocaleString()} 词使用开放许可中文词典与原创例句；词库外结果由开放英语词典与中文翻译服务实时提供。</p>
       {localResults.length > 0 && <section className="dictionary-local-results" aria-label="本地词库释义">
         <header><strong>{localResults.length === 1 ? "中文释义" : `找到 ${localResults.length} 个本地词条`}</strong><span>IELTS PASS CORE LIBRARY</span></header>
         {localResults.map((entry) => {

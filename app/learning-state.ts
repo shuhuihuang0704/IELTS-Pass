@@ -123,8 +123,8 @@ export type LearningProgress = {
   streak: number;
 };
 
-export const vocabularyLibraryVersion = "3600-v2-listening-corpus";
-export const vocabularyPlanSize = 3600;
+export const vocabularyLibraryVersion = "user-headwords-2969-v1";
+export const vocabularyPlanSize = 2969;
 
 export function normalizeStudyPlanDays(value: unknown) {
   return typeof value === "number" && Number.isFinite(value)

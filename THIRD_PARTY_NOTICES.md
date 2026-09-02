@@ -1,4 +1,12 @@
-# Third-party vocabulary notices
+# Vocabulary sources and notices
+
+## User-supplied English headwords
+
+- Use in this project: English headword candidates only.
+- Excluded: the source document's Chinese definitions, examples, memory aids, page design and ordering.
+- Changes: malformed or clipped candidates are rejected, duplicates are removed, and the remaining words are independently re-ordered with ECDICT frequency metadata.
+- Distribution: the source PDF is not included in the repository or website.
+- App-authored material: all daily example sentences are generated from original topic-aware templates in `app/learning-data.ts`.
 
 The expanded vocabulary dataset in `app/vocabulary-expanded.ts` combines the following sources. The generated dataset is kept separate from the rest of the application so its attribution and license remain explicit.
 
@@ -33,4 +41,4 @@ The expanded vocabulary dataset in `app/vocabulary-expanded.ts` combines the fol
 - Use in this project: concise Chinese meanings for the selected NGSL and NAWL headwords.
 - License: MIT License, Copyright (c) Linwei. The full license is available in the upstream [LICENSE](https://github.com/skywind3000/ECDICT/blob/master/LICENSE) file.
 
-The dataset is not copied from or presented as an electronic edition of 《雅思词汇真经》.
+The dataset is not presented as an electronic edition of the user-supplied source document.

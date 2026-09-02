@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const serviceWorkerVersion = "2026.09.01-cross-platform-install-1";
+const serviceWorkerVersion = "2026.09.01-user-headwords-1";
 
 function appBasePath() {
   const configuredBase = import.meta.env.BASE_URL || "/";

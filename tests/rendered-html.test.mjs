@@ -60,11 +60,12 @@ test("ships an installable cross-platform web app", async () => {
 });
 
 test("ships all four learning modes and persistent progress", async () => {
-  const [app, data, dailyPractice, expandedVocabulary, listeningCorpus, notices, state, styles] = await Promise.all([
+  const [app, data, dailyPractice, expandedVocabulary, userHeadwords, listeningCorpus, notices, state, styles] = await Promise.all([
     readFile(new URL("../app/IeltsApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/daily-practice-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/vocabulary-expanded.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/vocabulary-user-headwords.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/listening-corpus.ts", import.meta.url), "utf8"),
     readFile(new URL("../THIRD_PARTY_NOTICES.md", import.meta.url), "utf8"),
     readFile(new URL("../app/learning-state.ts", import.meta.url), "utf8"),
@@ -136,7 +137,8 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.doesNotMatch(app, /officialTestSchedule\.slice\(0, sessionsPerWeek\)/);
   assert.match(state, /completedDailyTasks/);
   assert.match(state, /officialPracticePercent/);
-  assert.match(state, /vocabularyLibraryVersion = "3600-v2-listening-corpus"/);
+  assert.match(state, /vocabularyLibraryVersion = "user-headwords-2969-v1"/);
+  assert.match(state, /vocabularyPlanSize = 2969/);
   assert.match(state, /isCurrentVocabularyLibrary/);
   assert.match(state, /speakingPart3Turns/);
   assert.match(state, /listeningScore/);
@@ -418,7 +420,7 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(app, /开放英语词典/);
   assert.match(app, /findLocalDictionaryEntries/);
   assert.match(app, /查单词与中文释义/);
-  assert.match(app, /本地 3,600 词使用现有中文词库/);
+  assert.match(app, /本地 \{dailyVocabulary\.length\.toLocaleString\(\)\} 词使用开放许可中文词典与原创例句/);
   assert.match(app, /单词本 ·/);
   assert.match(app, /每日学习记录/);
   assert.match(app, /继续增加学习/);
@@ -494,6 +496,11 @@ test("ships all four learning modes and persistent progress", async () => {
   assert.match(styles, /@keyframes profile-wave/);
   assert.match(data, /length: 36/);
   assert.match(data, /expandedVocabularyRows/);
+  assert.match(data, /userHeadwordVocabularyRows/);
+  assert.equal((userHeadwords.match(/^ {2}\[/gm) ?? []).length, 2969);
+  assert.match(userHeadwords, /Chinese meanings and parts of speech: ECDICT/);
+  assert.match(data, /buildOriginalHeadwordExample/);
+  assert.match(data, /用户提供英文词头 · ECDICT 开放释义 · 原创例句/);
   const curatedVocabularySource = data.match(/const dailyVocabularySource = `([\s\S]*?)`\.trim\(\);/);
   assert.ok(curatedVocabularySource);
   assert.equal(curatedVocabularySource[1].trim().split("\n").length, 300);
