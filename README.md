@@ -169,6 +169,12 @@ tests/
 
 更完整的分阶段计划见 [PRODUCT_PLAN.md](./PRODUCT_PLAN.md)。
 
+## Windows 下载
+
+[**下载 Windows 安装版或免安装版 →**](https://github.com/shuhuihuang0704/IELTS-Pass/releases/latest)
+
+支持 Windows 10/11 x64；麦克风练习需要系统授权。详细说明见 [WINDOWS.md](./WINDOWS.md)。
+
 ## 数据与隐私
 
 当前 MVP 不要求注册或登录，也不上传录音。头像、名字、目标、笔记与学习进度保存在当前设备的浏览器存储中；清除浏览器数据或更换设备不会自动恢复。未来加入可选云同步前，需要补充明确的隐私政策、数据保留期限和数据删除机制。

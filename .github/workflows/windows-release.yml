@@ -1,0 +1,31 @@
+name: Build Windows EXE
+on:
+  push:
+    tags: ["windows-v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - working-directory: desktop
+        run: npm install --no-audit --no-fund
+      - working-directory: desktop
+        run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IELTS-Pass-Windows
+          path: desktop/release/*.exe
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/windows-v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem "desktop/release/*.exe" | ForEach-Object { $_.FullName }
+          gh release create "$env:GITHUB_REF_NAME" $assets --repo "$env:GITHUB_REPOSITORY" --title "IELTS Pass for Windows $env:GITHUB_REF_NAME" --notes "Windows 10/11 x64 installer and portable edition. Internet access is required for online features."
