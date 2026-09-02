@@ -4,7 +4,7 @@
   "private": true,
   "description": "Windows desktop client for IELTS Pass",
   "main": "main.cjs",
-  "scripts": { "start": "electron .", "dist": "electron-builder --win --x64" },
+  "scripts": { "start": "electron .", "dist": "electron-builder --win --x64", "dist:mac": "electron-builder --mac --x64 --arm64" },
   "devDependencies": { "electron": "^37.2.6", "electron-builder": "^26.0.12" },
   "build": {
     "appId": "com.shuhuihuang.ieltspass",
@@ -12,6 +12,7 @@
     "directories": { "output": "release" },
     "files": ["main.cjs", "package.json"],
     "win": { "target": ["nsis", "portable"] },
+    "mac": { "target": ["dmg", "zip"], "category": "public.app-category.education", "artifactName": "IELTS-Pass-${version}-${arch}.${ext}" },
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "artifactName": "IELTS-Pass-Setup-${version}-${arch}.${ext}" },
     "portable": { "artifactName": "IELTS-Pass-Portable-${version}-${arch}.${ext}" }
   }

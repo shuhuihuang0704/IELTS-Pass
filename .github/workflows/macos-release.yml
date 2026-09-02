@@ -1,0 +1,32 @@
+name: Build macOS App
+on:
+  push:
+    tags: ["macos-v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  macos:
+    runs-on: macos-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - working-directory: desktop
+        run: npm install --no-audit --no-fund
+      - working-directory: desktop
+        run: npm run dist:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IELTS-Pass-macOS
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/macos-v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" desktop/release/*.dmg desktop/release/*.zip --repo "$GITHUB_REPOSITORY" --title "IELTS Pass for macOS $GITHUB_REF_NAME" --notes "macOS packages for Apple Silicon and Intel Macs. Unsigned build; internet access is required."

@@ -1,6 +1,6 @@
 # IELTS Pass for Windows
 
-前往 [GitHub Releases](https://github.com/shuhuihuang0704/IELTS-Pass/releases/latest) 下载 **Setup.exe 安装版**或 **Portable.exe 免安装版**。
+前往 [Windows Release](https://github.com/shuhuihuang0704/IELTS-Pass/releases/tag/windows-v1.0.0) 下载 **Setup.exe 安装版**或 **Portable.exe 免安装版**。
 
 支持 Windows 10/11 x64。麦克风练习需要允许应用使用麦克风；在线词典、账号及同步等联网能力取决于在线服务。
 
