@@ -759,7 +759,10 @@ function speak(text: string, rate = 0.94) {
   // Resume it before every new request and wait for voices to become available.
   synthesis.cancel();
   synthesis.resume();
+  let started = false;
   const speakNow = () => {
+    if (started) return;
+    started = true;
     const utterance = createIeltsUtterance(text, rate);
     utterance.onerror = () => synthesis.cancel();
     synthesis.speak(utterance);
@@ -780,10 +783,48 @@ function speak(text: string, rate = 0.94) {
   return true;
 }
 
+function isAppleMobileBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function speakSequence(texts: string[], rate = 0.94) {
+  if (!("speechSynthesis" in window)) return false;
+  const queue = texts.map((text) => text.trim()).filter(Boolean);
+  if (queue.length === 0) return false;
+  const synthesis = window.speechSynthesis;
+  synthesis.cancel();
+  synthesis.resume();
+  let started = false;
+  const speakNow = () => {
+    if (started) return;
+    started = true;
+    queue.forEach((text) => synthesis.speak(createIeltsUtterance(text, rate)));
+  };
+  if (synthesis.getVoices().length > 0) speakNow();
+  else {
+    const onVoicesChanged = () => {
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      speakNow();
+    };
+    synthesis.addEventListener("voiceschanged", onVoicesChanged, { once: true });
+    window.setTimeout(() => {
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      if (!synthesis.speaking) speakNow();
+    }, 250);
+  }
+  return true;
+}
+
 let pronunciationAudio: HTMLAudioElement | null = null;
 
 function playPronunciation(text: string, rate = 1) {
   if (typeof window === "undefined" || !text.trim()) return false;
+  // iOS Safari and embedded iOS browsers can reject a newly-created remote
+  // audio playback when it is triggered by a timer. Native speech is local
+  // and remains available after the initial user gesture.
+  if (isAppleMobileBrowser()) return speak(text, rate);
   // Android WebViews (including in-app browsers) may expose speechSynthesis
   // without installing an English voice. Use a regular MP3 pronunciation
   // first, then fall back to the device TTS when that service is unavailable.
@@ -2921,7 +2962,7 @@ function VocabularyPractice({
       setActiveDictationItem(itemIndex);
       if (dictationLastSpokenRef.current !== itemIndex) {
         dictationInputRefs.current[itemIndex]?.focus();
-        if (slotOffset <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
+        if (!isAppleMobileBrowser() && slotOffset <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
         dictationLastSpokenRef.current = itemIndex;
       }
     };
@@ -2973,10 +3014,12 @@ function VocabularyPractice({
     dictationLastSpokenRef.current = startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds ? -1 : itemIndex;
     setDictationAudioTime(startTime);
     setDictationPlayback("playing");
-    if (startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
+    if (isAppleMobileBrowser() && dictationPlayback !== "paused") speakSequence(dictationWords.map((item) => item.word), .9);
+    else if (startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
   };
 
   const seekDictationSequence = (nextTime: number) => {
+    const wasPlaying = dictationPlayback === "playing";
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     const safeTime = Math.max(0, Math.min(dictationAudioDuration, nextTime));
     const itemIndex = Math.min(dictationWords.length - 1, Math.floor(Math.min(safeTime, dictationAudioDuration - .01) / dictationSlotSeconds));
@@ -2987,6 +3030,7 @@ function VocabularyPractice({
     setDictationAudioTime(safeTime);
     setActiveDictationItem(itemIndex);
     dictationInputRefs.current[itemIndex]?.focus();
+    if (isAppleMobileBrowser() && wasPlaying) speakSequence(dictationWords.slice(itemIndex).map((item) => item.word), .9);
     if (safeTime >= dictationAudioDuration) setDictationPlayback("ended");
   };
 
@@ -3113,7 +3157,7 @@ function ConnectedSpeechPractice({
       setActiveItem(itemIndex);
       if (lastSpokenRef.current !== itemIndex) {
         inputRefs.current[itemIndex]?.focus();
-        if (slotOffset <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
+        if (!isAppleMobileBrowser() && slotOffset <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
         lastSpokenRef.current = itemIndex;
       }
     };
@@ -3165,10 +3209,12 @@ function ConnectedSpeechPractice({
     lastSpokenRef.current = startTime % slotSeconds <= speechWindowSeconds ? -1 : itemIndex;
     setAudioTime(startTime);
     setPlayback("playing");
-    if (startTime % slotSeconds <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
+    if (isAppleMobileBrowser() && playback !== "paused") speakSequence(groupPhrases.map((item) => item.phrase), .96);
+    else if (startTime % slotSeconds <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
   };
 
   const seekSequence = (nextTime: number) => {
+    const wasPlaying = playback === "playing";
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     const safeTime = Math.max(0, Math.min(audioDuration, nextTime));
     const itemIndex = Math.min(groupPhrases.length - 1, Math.floor(Math.min(safeTime, audioDuration - .01) / slotSeconds));
@@ -3179,6 +3225,7 @@ function ConnectedSpeechPractice({
     setAudioTime(safeTime);
     setActiveItem(itemIndex);
     inputRefs.current[itemIndex]?.focus();
+    if (isAppleMobileBrowser() && wasPlaying) speakSequence(groupPhrases.slice(itemIndex).map((item) => item.phrase), .96);
     if (safeTime >= audioDuration) setPlayback("ended");
   };
 
@@ -3407,7 +3454,9 @@ function ListeningPractice({
     if (!audio) return;
     if (audio.paused) {
       setAudioError(false);
-      if (audio.readyState === 0) audio.load();
+      // Calling load() immediately before play() can cancel Safari's pending
+      // resource request. play() itself starts loading and preserves the
+      // user's tap gesture, which is required by iOS media policy.
       void audio.play().catch(() => {
         setAudioError(true);
         setPlayerState("error");
