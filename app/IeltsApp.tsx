@@ -780,8 +780,27 @@ function speak(text: string, rate = 0.94) {
   return true;
 }
 
+let pronunciationAudio: HTMLAudioElement | null = null;
+
+function playPronunciation(text: string, rate = 1) {
+  if (typeof window === "undefined" || !text.trim()) return false;
+  // Android WebViews (including in-app browsers) may expose speechSynthesis
+  // without installing an English voice. Use a regular MP3 pronunciation
+  // first, then fall back to the device TTS when that service is unavailable.
+  pronunciationAudio ??= new Audio();
+  const audio = pronunciationAudio;
+  audio.pause();
+  audio.src = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text.trim())}&type=2`;
+  audio.playbackRate = rate;
+  const playPromise = audio.play();
+  playPromise.catch(() => {
+    speak(text, rate);
+  });
+  return true;
+}
+
 function autoPronounceDailyVocabularyWord(word: string) {
-  return speak(word, .9);
+  return playPronunciation(word, .9);
 }
 
 function normalizeOfficialAnswer(value: string) {
@@ -2900,7 +2919,7 @@ function VocabularyPractice({
       setActiveDictationItem(itemIndex);
       if (dictationLastSpokenRef.current !== itemIndex) {
         dictationInputRefs.current[itemIndex]?.focus();
-        if (slotOffset <= dictationSpeechWindowSeconds) speak(dictationWords[itemIndex].word, .9);
+        if (slotOffset <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
         dictationLastSpokenRef.current = itemIndex;
       }
     };
@@ -2910,10 +2929,12 @@ function VocabularyPractice({
   }, [dictationAudioDuration, dictationPlayback, dictationWords]);
 
   useEffect(() => () => {
+    pronunciationAudio?.pause();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
   const resetDictationPlayer = (time = 0) => {
+    pronunciationAudio?.pause();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     dictationAudioTimeRef.current = time;
     dictationAnchorTimeRef.current = time;
@@ -2950,6 +2971,7 @@ function VocabularyPractice({
     dictationLastSpokenRef.current = startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds ? -1 : itemIndex;
     setDictationAudioTime(startTime);
     setDictationPlayback("playing");
+    if (startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
   };
 
   const seekDictationSequence = (nextTime: number) => {
@@ -3089,7 +3111,7 @@ function ConnectedSpeechPractice({
       setActiveItem(itemIndex);
       if (lastSpokenRef.current !== itemIndex) {
         inputRefs.current[itemIndex]?.focus();
-        if (slotOffset <= speechWindowSeconds) speak(groupPhrases[itemIndex].phrase, .96);
+        if (slotOffset <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
         lastSpokenRef.current = itemIndex;
       }
     };
@@ -3099,10 +3121,12 @@ function ConnectedSpeechPractice({
   }, [audioDuration, groupPhrases, playback]);
 
   useEffect(() => () => {
+    pronunciationAudio?.pause();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
   const resetPlayer = (time = 0) => {
+    pronunciationAudio?.pause();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     audioTimeRef.current = time;
     anchorTimeRef.current = time;
@@ -3139,6 +3163,7 @@ function ConnectedSpeechPractice({
     lastSpokenRef.current = startTime % slotSeconds <= speechWindowSeconds ? -1 : itemIndex;
     setAudioTime(startTime);
     setPlayback("playing");
+    if (startTime % slotSeconds <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
   };
 
   const seekSequence = (nextTime: number) => {
@@ -3308,7 +3333,7 @@ function DailyVocabularySprint({
           })}
         </div>
         <section className={`daily-word-card ${pendingRating ? "is-revealed" : ""}`}>
-          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => speak(word.word, .9)} aria-label={`重新播放 ${word.word} 的发音`}>▶ 重播发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
+          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => playPronunciation(word.word, .9)} aria-label={`重新播放 ${word.word} 的发音`}>▶ 重播发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
           <h2>{word.word}</h2>
           <p className="word-collocation">{pendingRating ? word.collocation : "看到单词后，凭第一反应选择熟悉程度"}</p>
           <div className="daily-word-answer" aria-live="polite">
