@@ -753,10 +753,30 @@ function createIeltsUtterance(text: string, rate = 0.94, pitch = 0.98, role: Iel
 }
 
 function speak(text: string, rate = 0.94) {
-  if (!("speechSynthesis" in window)) return false;
-  window.speechSynthesis.cancel();
-  const utterance = createIeltsUtterance(text, rate);
-  window.speechSynthesis.speak(utterance);
+  if (!("speechSynthesis" in window) || !text.trim()) return false;
+  const synthesis = window.speechSynthesis;
+  // Android Chrome can leave the synthesizer paused after the first utterance.
+  // Resume it before every new request and wait for voices to become available.
+  synthesis.cancel();
+  synthesis.resume();
+  const speakNow = () => {
+    const utterance = createIeltsUtterance(text, rate);
+    utterance.onerror = () => synthesis.cancel();
+    synthesis.speak(utterance);
+  };
+  if (synthesis.getVoices().length > 0) speakNow();
+  else {
+    const onVoicesChanged = () => {
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      speakNow();
+    };
+    synthesis.addEventListener("voiceschanged", onVoicesChanged, { once: true });
+    // Some Android WebViews never emit voiceschanged; use the default voice.
+    window.setTimeout(() => {
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      if (!synthesis.speaking) speakNow();
+    }, 250);
+  }
   return true;
 }
 
@@ -3345,7 +3365,8 @@ function ListeningPractice({
   const [choiceAnswers, setChoiceAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
-  const [playerState, setPlayerState] = useState<"idle" | "playing" | "paused">("idle");
+  const [playerState, setPlayerState] = useState<"idle" | "playing" | "paused" | "error">("idle");
+  const [audioError, setAudioError] = useState(false);
   const [audioTime, setAudioTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const listeningAudio = useRef<HTMLAudioElement | null>(null);
@@ -3357,8 +3378,13 @@ function ListeningPractice({
   const toggleListening = () => {
     const audio = listeningAudio.current;
     if (!audio) return;
-    if (audio.paused) void audio.play();
-    else audio.pause();
+    if (audio.paused) {
+      setAudioError(false);
+      void audio.play().catch(() => {
+        setAudioError(true);
+        setPlayerState("error");
+      });
+    } else audio.pause();
   };
 
   const restartListening = () => {
@@ -3366,7 +3392,11 @@ function ListeningPractice({
     if (!audio) return;
     audio.currentTime = 0;
     setAudioTime(0);
-    void audio.play();
+    setAudioError(false);
+    void audio.play().catch(() => {
+      setAudioError(true);
+      setPlayerState("error");
+    });
   };
 
   const formatAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -3539,6 +3569,7 @@ function ListeningPractice({
     setScore(null);
     setShowTranscript(false);
     setAudioTime(0);
+    setAudioError(false);
     setPlayerState("idle");
   };
 
@@ -3548,11 +3579,11 @@ function ListeningPractice({
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>{exerciseDate} · Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>Band {difficulty.band}.0 · {difficulty.listening.focus} · 达标 {difficulty.listening.passScore}/10</p>
         <div className="listening-controls">
-          <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => setPlayerState("playing")} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
+          <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); setAudioError(false); }} onError={() => { setAudioError(true); setPlayerState("error"); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => { setAudioError(false); setPlayerState("playing"); }} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${playerState}`}>
             <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
-            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : "播放英澳双人完整录音"}</strong><small>{formatAudioTime(audioTime)} / {formatAudioTime(audioDuration)} · Band {difficulty.band}.0 训练语速 {difficulty.listening.rate.toFixed(2)}×</small></span>
+            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放英澳双人完整录音"}</strong><small>{audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
           </div>
           <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
         </div>
