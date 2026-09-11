@@ -790,7 +790,9 @@ function playPronunciation(text: string, rate = 1) {
   pronunciationAudio ??= new Audio();
   const audio = pronunciationAudio;
   audio.pause();
-  audio.src = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text.trim())}&type=2`;
+  // type=1 requests the British-English pronunciation used for IELTS practice.
+  audio.src = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text.trim())}&type=1`;
+  audio.preload = "auto";
   audio.playbackRate = rate;
   const playPromise = audio.play();
   playPromise.catch(() => {
