@@ -3380,6 +3380,7 @@ function ListeningPractice({
     if (!audio) return;
     if (audio.paused) {
       setAudioError(false);
+      if (audio.readyState === 0) audio.load();
       void audio.play().catch(() => {
         setAudioError(true);
         setPlayerState("error");
@@ -3579,7 +3580,7 @@ function ListeningPractice({
         <div className="exercise-kicker"><span>{listeningExercise.subtitle}</span><span>{exerciseDate} · Questions 1–10</span></div>
         <h2>{listeningExercise.title}</h2><p>Band {difficulty.band}.0 · {difficulty.listening.focus} · 达标 {difficulty.listening.passScore}/10</p>
         <div className="listening-controls">
-          <audio ref={listeningAudio} src={listeningSet.audioSrc} preload="metadata" onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); setAudioError(false); }} onError={() => { setAudioError(true); setPlayerState("error"); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => { setAudioError(false); setPlayerState("playing"); }} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
+          <audio key={listeningSet.audioSrc} ref={listeningAudio} src={listeningSet.audioSrc} preload="auto" playsInline onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); setAudioError(false); }} onError={() => { setAudioError(true); setPlayerState("error"); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => { setAudioError(false); setPlayerState("playing"); }} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${playerState}`}>
             <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
