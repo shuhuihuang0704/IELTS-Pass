@@ -1954,3 +1954,11 @@ button { transition:transform .16s ease,box-shadow .16s ease,filter .16s ease; }
   .global-account-badge>strong { font-size:8px; }
   .app-shell.has-account-badge .workspace,.app-shell.has-account-badge .workspace.is-official-test { padding-top:calc(78px + env(safe-area-inset-top)); }
 }
+
+/* Speaking has no answer card to keep beside the prompt. On phones it should
+   use the full reading width; after submission, review material follows below. */
+@media (max-width:900px) {
+  .official-standard-paper-body.is-speaking-workspace { grid-template-columns:1fr; }
+  .official-standard-paper-body.is-speaking-workspace>.official-speaking-response { grid-column:1; grid-row:1; }
+  .official-standard-paper-body.is-speaking-workspace>.official-material-column { grid-column:1; grid-row:2; }
+}
