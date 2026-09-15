@@ -1516,18 +1516,13 @@ button { cursor: pointer; }
   .reading-annotation-toolbar>div { flex:1 1 100%; }
   .reading-annotation-toolbar button { flex:1; }
   .official-full-reading-body { display:flex; flex-direction:column; }
-  .official-full-reading-body { display:grid; grid-template-columns:minmax(88vw,1fr) minmax(88vw,1fr); gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; }
-  .official-full-reading-body>.official-answer-sheet { grid-column:2; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; order:unset; position:sticky; top:12px; scroll-snap-align:start; }
-  .official-full-reading-body>.official-reading-booklet { grid-column:1; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; position:sticky; top:12px; scroll-snap-align:start; }
+  .official-full-reading-body>.official-answer-sheet { width:100%; max-height:none; overflow:visible; order:10; position:static; }
   .official-full-reading-body>.official-answer-sheet>header,.official-full-reading-body>.official-answer-sheet>footer { padding:0; position:static; box-shadow:none; }
   .official-reading-booklet { max-height:none; padding-right:0; overflow:visible; position:static; }
   .official-standard-paper-body.is-listening-workspace,.official-standard-paper-body.is-writing-workspace { display:flex; flex-direction:column; }
   .official-standard-paper-body.is-listening-workspace>.official-answer-sheet,.official-standard-paper-body.is-writing-workspace>.official-writing-response { width:100%; max-height:none; overflow:visible; order:10; position:static; }
   .official-standard-paper-body.is-listening-workspace>.official-answer-sheet>header,.official-standard-paper-body.is-listening-workspace>.official-answer-sheet>footer,.official-standard-paper-body.is-writing-workspace>.official-writing-response>header,.official-standard-paper-body.is-writing-workspace>.official-writing-response>footer { padding:0; position:static; box-shadow:none; }
   .official-standard-paper-body.is-listening-workspace>.official-material-column,.official-standard-paper-body.is-writing-workspace>.official-material-column { max-height:none; padding-right:0; overflow:visible; position:static; }
-  .official-standard-paper-body.is-listening-workspace { display:grid; grid-template-columns:minmax(88vw,1fr) minmax(88vw,1fr); gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; }
-  .official-standard-paper-body.is-listening-workspace>.official-material-column { grid-column:1; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; position:sticky; top:12px; scroll-snap-align:start; }
-  .official-standard-paper-body.is-listening-workspace>.official-answer-sheet { grid-column:2; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; order:unset; position:sticky; top:12px; scroll-snap-align:start; }
 }
 @media (max-width:560px) {
   .official-plan-strip { grid-template-columns:1fr auto; gap:15px; padding:19px; }
@@ -1561,15 +1556,10 @@ button { cursor: pointer; }
   .official-writing-model>header { flex-direction:column; }
   .official-writing-model-note { grid-template-columns:1fr; }
   .official-full-reading-body,.official-standard-paper-body { display:flex; flex-direction:column; }
-  .official-full-reading-body { display:grid; grid-template-columns:minmax(88vw,1fr) minmax(88vw,1fr); gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; }
-  .official-full-reading-body>.official-answer-sheet { grid-column:2; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; order:unset; position:sticky; top:12px; scroll-snap-align:start; }
-  .official-full-reading-body>.official-reading-booklet { grid-column:1; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; position:sticky; top:12px; scroll-snap-align:start; }
+  .official-full-reading-body>.official-answer-sheet { width:100%; max-height:none; overflow:visible; order:10; position:static; }
   .official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { width:100%; max-height:none; overflow:visible; order:10; position:static; }
   .official-full-reading-body>.official-answer-sheet>header,.official-full-reading-body>.official-answer-sheet>footer { padding:0; position:static; box-shadow:none; }
   .official-standard-paper-body>.official-material-column { max-height:none; padding-right:0; overflow:visible; position:static; }
-  .official-standard-paper-body.is-listening-workspace { display:grid; grid-template-columns:minmax(88vw,1fr) minmax(88vw,1fr); gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; }
-  .official-standard-paper-body.is-listening-workspace>.official-material-column { grid-column:1; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; position:sticky; top:12px; scroll-snap-align:start; }
-  .official-standard-paper-body.is-listening-workspace>.official-answer-sheet { grid-column:2; grid-row:1; width:100%; max-height:calc(100vh - 24px); overflow-y:auto; order:unset; position:sticky; top:12px; scroll-snap-align:start; }
   .official-reading-booklet { max-height:none; grid-column:1; grid-row:1; padding-right:0; overflow:visible; position:static; }
   .official-reading-booklet>header { align-items:stretch; flex-direction:column; }
   .official-reading-sections button { flex:1; }
