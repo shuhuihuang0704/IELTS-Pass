@@ -144,6 +144,8 @@ type ReadingSourceEvidence = {
   location: string;
   excerpt: string;
 };
+type OfficialReadingParagraph = { label?: string; text: string };
+type OfficialReadingPassage = { title: string; subtitle?: string; paragraphs: OfficialReadingParagraph[] };
 type SpeakingTopicTemplate = {
   title: string;
   steps: { label: string; prompt: string; example: string }[];
@@ -350,6 +352,53 @@ const readingSourceEvidence: Record<string, ReadingSourceEvidence> = {
   "reading-passage-3:38": { location: "B 段，第 8–13 行 · 官方文章册 P9", excerpt: "Maintaining motivation is one of the most difficult long-term tasks we face ... The type we are has a profound impact on how we approach challenges and our chances of success." },
   "reading-passage-3:39": { location: "B 段，第 8–13 行 · 官方文章册 P9", excerpt: "Maintaining motivation is one of the most difficult long-term tasks we face ... The type we are has a profound impact on how we approach challenges and our chances of success." },
   "reading-passage-3:40": { location: "A 段，第 1–6 行；B 段，第 1–3 行 · 官方文章册 P9", excerpt: "our lives and those of elite sporting champions are not without parallel ... The psychological tools used to develop personal drive and self-belief to record levels can be applied effectively to ordinary situations." },
+};
+// Rendered locally so the reading passage has a real selectable text layer. The
+// original PDF remains available in the question pane, but browser PDF viewers
+// are cross-origin and cannot expose their selection to our highlight controls.
+const officialReadingPassages: Record<string, OfficialReadingPassage> = {
+  "reading-passage-1": {
+    title: "RAGS TO RICHES",
+    subtitle: "The jaws of ragworms may yield a valuable new material",
+    paragraphs: [
+      { text: "When it comes to looking for advanced engineering materials, the animal kingdom rarely comes to mind. Yet engineers sometimes find that the natural world produces more impressive substances than those devised by the human brain. Spider-silk, for example, is stronger than steel, and is now finding its way into bulletproof jackets. And the ridges and furrows of a gecko’s ceiling-grasping toes have inspired a glue-less adhesive tape." },
+      { text: "The newest candidate for translation from the animal to human world, though, looks even more unlikely. Dr Chris Broomell and Dr Herbert Waite, of the University of California, Santa Barbara, have been studying the jaws of ragworms – which, as careless fishermen who have used them for bait will attest, can give a nasty nip. NEREIS VIRENS, also known as the sandworm or ragworm, is a burrowing marine worm found in shallow waters in the North Atlantic region. Dr Broomell and Dr Waite were curious about the composition of the only hard parts of an otherwise squishy animal. They were keen to discover what created the remarkable toughness of its jaws, which rivals that of human teeth and exceeds the hardness of many synthetic plastics. In finding out, they may have blundered across the starting point for a new biological material." },
+      { text: "In the 1980s, ecologists looking for organisms that could be used as indicators of oceanic pollution took a keen interest in ragworms. These ecologists found that the worms’ jaws contained a lot of zinc, a metal that is toxic in large doses. Their initial suggestion was that the worms were dumping excess zinc into their jaws, where it could do no harm, as a way of keeping their bodies free of poison. Measuring the zinc in ragworm jaws was thus thought of as a way of monitoring zinc pollution." },
+      { text: "That suggestion, however, fell apart when it became clear that the jaws of worms from clean water, too, were stuffed with similar quantities of zinc. At this point, the ecologists lost interest. But engineers were intrigued. Eventually, Dr Broomell and Dr Waite decided to have a closer look at what was really going on." },
+      { text: "They collected the jaws of 1,000 worms and first checked the strength and durability of these by pressing them with a microscopic diamond probe. This revealed that the material from which they are made is as strong as aluminium and impressively light. Most strong biological structures of this sort, such as shells, are highly mineralised. That is, they incorporate crystals of insoluble inorganic salts, most often calcium carbonate or calcium phosphate, in a matrix of protein. This creates a composite material akin to glass-fibre or carbon-fibre. These composites are of interest to engineers in their own right, but when Dr Broomell and Dr Waite stuck ragworm jaws in an X-ray spectroscope they found no sign of mineralisation at all." },
+      { text: "That confused them, and they have spent several years trying to find out what is really going on. What they have discovered, as they report in the journal BIOMACROMOLECULES, is that the zinc is far from being a pollutant. In fact, it is crucial to ragworm survival. Anyone who has seen them will know that they crawl around beaches and mudflats using tiny structures along the sides of their bodies that work like legs, but are in fact gills. At the front of their bulbous blue heads they have curved fangs that they use to capture and tear apart their crustaceous prey." },
+      { text: "In fact, they found that ragworm jaws are made of a mixture of protein and zinc ions. The protein in question contains a lot of an amino acid called histidine. Indeed, it has ten times more of this amino acid than the average protein. Histidine likes to bind tightly to zinc ions. The consequence is that a material composed of histidine-rich proteins and zinc has enormous strength. But, lacking the dense calcium salts of mineralised biological structures, it is also quite light." },
+      { text: "These qualities are a desirable combination in an engineering material – and particularly so in those materials used in aircraft. Dr Broomell and Dr Waite have thus passed their discovery on to a group of scientists at NASA, America’s aerospace agency, in order that they can try to take the next steps. These are to see whether worm-jaw protein, or something similar, can be made in large quantities, and to try forming it into useful shapes. If both of those prove possible, then an intriguing alternative to traditional composite materials may become available – and worms, in a sense, will fly." },
+    ],
+  },
+  "reading-passage-2": {
+    title: "THE NATURE AND AIMS OF ARCHAEOLOGY",
+    paragraphs: [
+      { text: "Archaeology is partly the discovery of the treasures of the past, partly the careful work of the scientific analyst, partly the exercise of the creative imagination. It is toiling in the sun on an excavation in the Middle East, it is working with living Inuit and Yupik people in the snows of Alaska, and it is investigating the sewers of Roman Britain. But it is also the painstaking task of interpretation, so that we come to understand what these things mean for the human story. And it is the conservation of the world’s cultural heritage against looting and careless harm." },
+      { text: "Archaeology, then, is both a physical activity out in the field, and an intellectual pursuit in the study or laboratory. That is part of its great attraction. The rich mixture of danger and detective work has also made it the perfect vehicle for fiction writers and filmmakers, from Agatha Christie with MURDER IN MESOPOTAMIA to Stephen Spielberg with INDIANA JONES. However far from reality such portrayals are, they capture the essential truth that archaeology is an exciting quest – the quest for knowledge about ourselves and our past." },
+      { text: "But how does archaeology relate to disciplines such as anthropology and history that are also concerned with the human story? Is archaeology itself a science? And what are the responsibilities of the archaeologist in today’s world?" },
+      { text: "Anthropology at its broadest is the study of humanity – our physical characteristics as animals and our unique non-biological characteristics that we call culture. Culture in this sense includes what the anthropologist Edward Tylor summarised in 1871 as ‘knowledge, belief, art, morals, custom and any other capabilities and habits acquired by man as a member of society’. Anthropologists also use the term culture in a more restricted sense when they refer to the culture of a particular society, meaning the non-biological characteristics unique to that society, which distinguish it from other societies. Anthropology is thus a broad discipline – so broad that it is generally broken down into three smaller disciplines: physical anthropology, cultural anthropology and archaeology." },
+      { text: "Physical anthropology, or biological anthropology as it is also called, concerns the study of human biological or physical characteristics and how they evolved. Cultural anthropology – or social anthropology – analyses human culture and society. Two of its branches are ethnography (the study at first hand of individual living cultures) and ethnology (which sets out to compare cultures using ethnographic evidence to derive general principles about human society)." },
+      { text: "Archaeology is the ‘past tense of cultural anthropology’. Whereas cultural anthropologists will often base their conclusions on the experience of living within contemporary communities, archaeologists study past societies primarily through their material remains – the buildings, tools, and other artefacts that constitute what is known as the material culture left over from former societies." },
+      { text: "Nevertheless, one of the most important tasks for the archaeologists today is to know how to interpret material culture in human terms. How were those pots used? Why are some dwellings round and others square? Here the methods of archaeology and ethnography overlap. Archaeologists in recent decades have developed ‘ethnoarchaeology’, where like ethnographers they live among contemporary communities, but with the specific purpose of learning how such societies use material culture – how they make their tools and weapons, why they build their settlements where they do, and so on. Moreover, archaeology has an active role to play in the field of conservation. Heritage studies constitutes a developing field, where it is realised that the world’s cultural heritage is a diminishing resource which holds different meanings for different people." },
+      { text: "If, then, archaeology deals with the past, in what way does it differ from history? In the broadest sense, just as archaeology is an aspect of anthropology, so too is it a part of history – where we mean the whole history of humankind from its beginnings over 3 million years ago. Indeed, for more than 99 per cent of that huge span of time, archaeology – the study of past material culture – is the only significant source of information. Conventional historical sources begin only with the introduction of written records around 3000 BC in Western Asia, and much later in most other parts of the world." },
+      { text: "A commonly drawn distinction is between pre-history, i.e. the period before written records – and history in the narrow sense, meaning the study of the past using written evidence. To archaeology, which studies all cultures and periods, whether with or without writing, the distinction between history and pre-history is a convenient dividing line that recognises the importance of the written word, but in no way lessens the importance of the useful information contained in oral histories." },
+      { text: "Since the aim of archaeology is the understanding of humankind, it is a humanistic study, and since it deals with the human past, it is a historical discipline. But it differs from the study of written history in a fundamental way. The material the archaeologist finds does not tell us directly what to think. Historical records make statements, offer opinions and pass judgements. The objects the archaeologists discover, on the other hand, tell us nothing directly in themselves. In this respect, the practice of the archaeologist is rather like that of the scientist who collects data, conducts experiments, formulates a hypothesis, tests the hypothesis against more data, and then, in conclusion, devises a model that seems best to summarise the pattern observed in the data. The archaeologist has to develop a picture of the past, just as the scientist has to develop a coherent view of the natural world." },
+    ],
+  },
+  "reading-passage-3": {
+    title: "WINNING WITH OUR MINDS",
+    paragraphs: [
+      { label: "A", text: "The vast majority of us will never experience the joy of setting a world record or winning an Olympic gold medal. But that doesn't mean our lives and those of elite sporting champions are without parallel. After all, the mental concentration required to score a goal could be the same as that which we use to secure a deal or job promotion." },
+      { label: "B", text: "The psychological tools used to develop personal drive and self-belief to record levels can be applied effectively to ordinary situations. 'I think elite sport and everyday life are very similar,' says Gavin Freeman, a senior psychologist from the Australian Institute of Sport (AIS). 'From a psychological perspective, individuals in both areas go through the same process. An athlete's motivation to succeed is almost identical to the motivation of a normal individual.' Maintaining motivation is one of the most difficult long-term tasks we face. Freeman believes that we all fall into one of two categories: those motivated to succeed and those motivated to avoid failure. The type we are has a profound impact on how we approach challenges and our chances of success. 'The individual who's motivated to succeed will see any mishap as a step towards success,' he says. 'Australian skier Alisa Camplin tore a knee ligament four months before the Winter Olympics: rather than give up, she redirected her amazing ability to concentrate on “What do I need to do so I CAN land a jump?”'" },
+      { label: "C", text: "By contrast, those motivated to avoid failure will bypass negative evaluation. Either they won't try hard – and then they'll have a built-in excuse – or they'll put themselves in non-challenging situations where they're guaranteed success. 'Individual athletes might enter competitions at a lower level,' Freeman says, 'while team-based athletes might accept mediocrity rather than achieving their full potential.'" },
+      { label: "D", text: "Another important key to meeting challenges is to be aware of self-talk which reinforces both positive and negative thoughts, according to Jocelyn Penna, an Australian sports psychologist from the Sydney Sports Medicine Centre. 'We need to get that internal dialogue to help us. Sometimes it will say, “I'm looking forward to a particular challenge.” But if it frequently says, “I'm going to make a mistake,” you're not going to succeed.' When approaching an event, you need to say, “I've planned for this, and I've tried my best.” We can apply this strategy to job interviews, exams or corporate meetings.'" },
+      { label: "E", text: "'First, identify what your internal dialogue is saying,' says Penna. 'Then take note of the external situations that trigger positive and negative self-talk. Thirdly, come up with cue words or actions that help you think positively. For example, if you know there'll be a person who triggers negative thoughts, prepare for the meeting by saying, “I know what I'm talking about, I can manage this.”' A sense of life direction is crucial to self-worth and our efforts need to be targeted. 'It's important to have specific goals,' Penna says. 'But whether the outcome is a gold medal or a job promotion, you need to think about the series of smaller triumphs which will get you there.'" },
+      { label: "F", text: "Few of us are strangers to nervous anxiety before a significant event. Job interviews, performance reviews and even first dates can all create stomach-churning tension. Dr Clark Perry, a former senior Australian sports psychologist and now managing director of a corporate training company, suggests diverting our attention. 'The technique of centred breathing makes you concentrate on the rise and fall of your breath. Focus on the present moment, not what you're about to do. Tennis players often do this before a serve.' While dealing with success is challenging, confronting a lack of it is even more so. Perry believes we need to train ourselves not to be afraid of failure. 'Look in the mirror and say, “I'm not afraid to fail. If I become bankrupt tomorrow, I'm OK. I'll do whatever I need to do,”' he says. 'Success will then fly to you. The best athletes focus on being their best, not on the end result.'" },
+      { label: "G", text: "Sometimes when things go continuously awry, they are known in sport as 'losing streaks'. They affect our confidence and our ability to bounce back. Jeff Bond, a sports psychology pioneer who has worked in corporate training, believes slumps should be critically evaluated. 'Examine what's happened: if events have been imposed on you – for example, your company was taken over and you were made redundant – you can't do much about it. However, if you weren't working to the best of your ability, then you had some control. Look at your contributions and make changes based on that.' Bond doesn't believe there is a significant difference between elite sports people and the rest of us. 'They're certainly not different from high achievers in other areas,' he says. 'High achievers create opportunities. They expose themselves to the training, the people and the materials that help them reach their potential. They begin with a vision and establish a framework to achieve it.'" },
+      { label: "H", text: "Despite the fact that many of us will strive, not all of us will achieve what we set out to do. So how can we reconcile ourselves to the fact that our best effort wasn't enough? The experts say we should acknowledge we did our best, recognise what we learned and, hopefully, enjoy ourselves along the way." },
+    ],
+  },
 };
 type ReadingSourceHighlight = { page: number; rects: Array<[number, number, number, number]> };
 const readingSourceHighlights: Record<string, ReadingSourceHighlight> = {
@@ -1828,7 +1877,7 @@ function OfficialTestRunner({
   const [officialHighlights, setOfficialHighlights] = useState<Record<string, string[]>>({});
   const [selectedOfficialText, setSelectedOfficialText] = useState("");
   const readingBookletRef = useRef<HTMLDivElement>(null);
-  const officialAnnotationRef = useRef<HTMLDivElement>(null);
+  const officialArticleRef = useRef<HTMLElement>(null);
   const task = material.tasks[taskIndex];
   const taskUnitLabel = task.speakingPrompt ? "Part" : material.passagePdfUrl ? "Passage" : "Task";
   const audioTrack = material.audioTracks?.[audioTrackIndex];
@@ -1861,11 +1910,7 @@ function OfficialTestRunner({
   const completedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => officialTaskResultIsComplete(materialTask, progress.officialTaskResults[officialTaskRecordId(session, material, materialTask)])).length;
   const recordId = officialPracticeRecordId(session);
   const taskOfficialHighlights = officialHighlights[taskKey] ?? [];
-  const officialReadingExcerpts = material.passagePdfUrl
-    ? Object.entries(readingSourceEvidence)
-      .filter(([key]) => key.startsWith(`${task.id}:`))
-      .map(([key, evidence]) => ({ key, question: key.split(":")[1], excerpt: evidence.excerpt }))
-    : [];
+  const officialReadingPassage = material.passagePdfUrl ? officialReadingPassages[task.id] : undefined;
 
   useEffect(() => {
     if (timerState !== "running") return;
@@ -1980,7 +2025,7 @@ function OfficialTestRunner({
   };
   const captureOfficialSelection = () => {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !officialAnnotationRef.current?.contains(selection.anchorNode) || !officialAnnotationRef.current.contains(selection.focusNode)) {
+    if (!selection || selection.isCollapsed || !officialArticleRef.current?.contains(selection.anchorNode) || !officialArticleRef.current.contains(selection.focusNode)) {
       setSelectedOfficialText("");
       return;
     }
@@ -1996,19 +2041,26 @@ function OfficialTestRunner({
     setSelectedOfficialText("");
     window.getSelection()?.removeAllRanges();
   };
-  const renderOfficialExcerpt = (excerpt: string) => {
-    const phrases = taskOfficialHighlights.filter((phrase) => excerpt.toLocaleLowerCase().includes(phrase.toLocaleLowerCase())).sort((a, b) => b.length - a.length);
-    if (!phrases.length) return excerpt;
+  const renderOfficialArticleText = (text: string) => {
+    const evidencePhrase = activeReadingQuestion ? readingSourceEvidence[`${task.id}:${activeReadingQuestion}`]?.excerpt.split(" ... ")[0] : "";
+    const phrases = [...taskOfficialHighlights, evidencePhrase]
+      .filter((phrase) => phrase && text.toLocaleLowerCase().includes(phrase.toLocaleLowerCase()))
+      .sort((a, b) => b.length - a.length);
+    if (!phrases.length) return text;
     const escaped = phrases.map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
-    return excerpt.split(pattern).map((part, index) => phrases.some((phrase) => phrase.toLocaleLowerCase() === part.toLocaleLowerCase()) ? <mark className="personal-highlight" key={`${taskKey}-excerpt-${index}`}>{part}</mark> : part);
+    return text.split(pattern).map((part, index) => {
+      const isEvidence = Boolean(evidencePhrase && evidencePhrase.toLocaleLowerCase() === part.toLocaleLowerCase());
+      const isPersonal = taskOfficialHighlights.some((phrase) => phrase.toLocaleLowerCase() === part.toLocaleLowerCase());
+      return isEvidence || isPersonal ? <mark className={isEvidence ? "official-evidence-highlight" : "personal-highlight"} key={`${taskKey}-article-${index}`}>{part}</mark> : part;
+    });
   };
   const showReadingEvidence = (questionNumber: string) => {
     setActiveReadingQuestion(questionNumber);
     const evidence = readingSourceEvidence[`${task.id}:${questionNumber}`];
     const page = Number(evidence?.location.match(/P(\d+)/)?.[1] ?? 0);
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      const targetLine = document.getElementById(`official-reading-highlight-${questionNumber}-0`);
+      const targetLine = document.querySelector<HTMLElement>(`[data-official-reading-evidence="${task.id}:${questionNumber}"]`);
       const targetPage = document.getElementById(`official-reading-passage-page-${page}`);
       if (targetLine) targetLine.scrollIntoView({ behavior: "smooth", block: "center" });
       else if (targetPage) targetPage.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2168,20 +2220,23 @@ function OfficialTestRunner({
                 <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? allAnswersFilled ? "✓ 本 Passage 已完成" : "已提交查看答案 · 尚未完成" : "独立作答 · 不影响其他 Passage"}</small></div>
                 <span>{task.questionLabel}</span>
               </header>
-              {officialReadingExcerpts.length > 0 && <section className="official-reading-annotation" ref={officialAnnotationRef} onMouseUp={captureOfficialSelection} onTouchEnd={captureOfficialSelection}>
-                <div className="official-reading-annotation-toolbar">
-                  <div><strong>文章划线</strong><small>{selectedOfficialText ? `已选择 ${selectedOfficialText.length} 个字符` : taskOfficialHighlights.length ? `已标记 ${taskOfficialHighlights.length} 处` : "拖选下面的原文摘录后点击“标记”"}</small></div>
-                  <button type="button" disabled={!selectedOfficialText} onMouseDown={(event) => event.preventDefault()} onClick={addOfficialHighlight}>标记选中内容</button>
-                  <button type="button" className="is-secondary" disabled={!taskOfficialHighlights.length} onClick={() => setOfficialHighlights((current) => ({ ...current, [taskKey]: [] }))}>清除划线</button>
-                </div>
-                <div className="official-reading-excerpt-list" aria-label="可划线的原文摘录">
-                  {officialReadingExcerpts.map((item) => <p key={item.key}><b>Q{item.question}</b><span>{renderOfficialExcerpt(item.excerpt)}</span></p>)}
-                </div>
-                <small className="official-reading-annotation-note">PDF 阅读器来自官方跨域文档，无法直接捕获其中的选区；这里提供同题原文摘录划线，提交后仍可用“荧光笔定位原文”。</small>
-              </section>}
               <section className="official-reading-pair" key={task.id}>
                 <header><b>{task.label} · 阅读文章</b><small>仅显示当前 Passage</small></header>
-                <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingHighlight); return <div id={`official-reading-passage-page-${page}`} className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />{isEvidencePage && <span className="official-reading-highlight-layer" aria-hidden="true">{activeReadingHighlight.rects.map(([x, y, width, height], index) => <i id={`official-reading-highlight-${activeReadingQuestion}-${index}`} key={`${activeReadingQuestion}-${index}`} style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }} />)}</span>}</div>; })}</div>
+                {officialReadingPassage ? <>
+                  <section className="official-reading-annotation">
+                    <div className="official-reading-annotation-toolbar">
+                      <div><strong>文章划线</strong><small>{selectedOfficialText ? `已选择 ${selectedOfficialText.length} 个字符` : taskOfficialHighlights.length ? `已标记 ${taskOfficialHighlights.length} 处` : "在下面文章正文中拖选文字后点击“标记”"}</small></div>
+                      <button type="button" disabled={!selectedOfficialText} onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()} onClick={addOfficialHighlight}>标记选中内容</button>
+                      <button type="button" className="is-secondary" disabled={!taskOfficialHighlights.length} onClick={() => setOfficialHighlights((current) => ({ ...current, [taskKey]: [] }))}>清除划线</button>
+                    </div>
+                    <small className="official-reading-annotation-note">请直接在文章正文中拖选任意词句；标记会保留在本设备，点击“荧光笔定位原文”也会滚动到对应句子。</small>
+                  </section>
+                  <article className="official-reading-article" ref={officialArticleRef} onMouseUp={captureOfficialSelection} onTouchEnd={captureOfficialSelection}>
+                    <h2>{officialReadingPassage.title}</h2>
+                    {officialReadingPassage.subtitle && <p className="official-reading-article-subtitle">{officialReadingPassage.subtitle}</p>}
+                    {officialReadingPassage.paragraphs.map((paragraph, index) => { const evidenceText = activeReadingQuestion ? readingSourceEvidence[`${task.id}:${activeReadingQuestion}`]?.excerpt.split(" ... ")[0] : ""; const evidenceTarget = evidenceText && paragraph.text.toLocaleLowerCase().includes(evidenceText.toLocaleLowerCase()) ? `${task.id}:${activeReadingQuestion}` : undefined; return <p id={`official-reading-article-paragraph-${task.id}-${index}`} data-official-reading-evidence={evidenceTarget} key={`${task.id}-article-${index}`}>{paragraph.label && <b className="official-reading-paragraph-label">{paragraph.label}</b>}{renderOfficialArticleText(paragraph.text)}</p>; })}
+                  </article>
+                </> : <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingHighlight); return <div id={`official-reading-passage-page-${page}`} className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />{isEvidencePage && <span className="official-reading-highlight-layer" aria-hidden="true">{activeReadingHighlight.rects.map(([x, y, width, height], index) => <i key={`${activeReadingQuestion}-${index}`} style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }} />)}</span>}</div>; })}</div>}
                 <div className="official-reading-continue"><span>接着完成</span><b>{task.questionLabel}</b></div>
                 <header><b>{task.label} · 对应题目</b><small>只包含本 Passage 的题目页</small></header>
                 <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
