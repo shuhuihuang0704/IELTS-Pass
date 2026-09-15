@@ -817,6 +817,7 @@ button { cursor: pointer; }
 .official-audio-dock label { color:#6f6870; font-size:8px; }
 .official-audio-dock select { width:100%; height:34px; margin-top:5px; padding:0 9px; border:1px solid #d9d3db; border-radius:9px; color:var(--ink); background:white; font:inherit; font-size:9px; }
 .official-audio-dock audio { width:100%; height:36px; }
+.official-audio-fallback-note { color:#7b6a38; font-size:8px; }
 .official-listening-transcript { margin-top:12px; padding:13px; border:1px dashed #d8d0dd; border-radius:15px; color:#746d77; background:#f6f3f7; }
 .official-listening-transcript.is-unlocked { border-style:solid; color:var(--ink); background:#faf9fb; }
 .official-listening-transcript>header { display:flex; align-items:center; justify-content:space-between; gap:12px; }

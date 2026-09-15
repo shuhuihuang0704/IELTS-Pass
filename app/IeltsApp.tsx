@@ -110,7 +110,7 @@ type OfficialTestSession = {
   materials: OfficialTestMaterial[];
 };
 
-type OfficialAudioTrack = { label: string; url: string };
+type OfficialAudioTrack = { label: string; url: string; fallbackUrl?: string };
 type ElectronicWritingModel = {
   title: string;
   wordCount: number;
@@ -204,14 +204,14 @@ const listeningMaterial: OfficialTestMaterial = {
   // IELTS Listening Sample Tasks booklet, served from a stable public mirror.
   pdfUrl: "https://jsaf-ieltsjapan.com/ielts_wp/wp-content/uploads/2023/12/ielts-listening-sample-tasks-2023.pdf",
   audioTracks: [
-    { label: "Task 1 · Form Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-1-form-completion.mp3" },
-    { label: "Task 2 · Multiple Choice", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-2-multiple-choice.mp3" },
-    { label: "Task 3 · Short-answer Questions", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-3-short-answer-questions.mp3" },
-    { label: "Task 4 · Sentence Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-4-sentence-completion.mp3" },
-    { label: "Task 5 · Matching 1", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-5-matching.mp3" },
-    { label: "Task 6 · Matching 2", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-6-matching.mp3" },
-    { label: "Task 7 · Map Labelling", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-7-plan-map-diagram-labelling.mp3" },
-    { label: "Task 8 · Note Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
+    { label: "Task 1 · Form Completion", url: "https://ielts.ng/wp-content/uploads/2017/06/section-1-ielts-listening-recording-1.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-1-form-completion.mp3" },
+    { label: "Task 2 · Multiple Choice", url: "https://ielts.ng/wp-content/uploads/2017/06/section-2-sample-a-ielts-listening-recording.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-2-multiple-choice.mp3" },
+    { label: "Task 3 · Short-answer Questions", url: "https://ielts.ng/wp-content/uploads/2017/06/section-3-sample-a-ielts-listening-recording.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-3-short-answer-questions.mp3" },
+    { label: "Task 4 · Sentence Completion", url: "https://ielts.ng/wp-content/uploads/2017/06/section-4-ielts-listening-recording.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-4-sentence-completion.mp3" },
+    { label: "Task 5 · Matching 1", url: "https://ielts.ng/wp-content/uploads/2017/06/new-ielts-listening-recording-5.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-5-matching.mp3" },
+    { label: "Task 6 · Matching 2", url: "https://ielts.ng/wp-content/uploads/2017/06/new-ielts-listening-recording-6.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-6-matching.mp3" },
+    { label: "Task 7 · Map Labelling", url: "https://ielts.ng/wp-content/uploads/2017/06/new-ielts-listening-recording-7.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-7-plan-map-diagram-labelling.mp3" },
+    { label: "Task 8 · Note Completion", url: "https://edu.ge.ch/moodle/pluginfile.php/1224165/mod_folder/content/0/4.%20ielts-listening-sample-task-8-note-completion.mp3?forcedownload=1", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
   ],
   tasks: [
     { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, questionPages: [3], transcriptPage: 4, transcriptPages: [4, 5, 6], answerPage: 7, audioTrackIndex: 0, answers: [
@@ -1854,6 +1854,8 @@ function OfficialTestRunner({
   const [taskIndex, setTaskIndex] = useState(initialTaskIndex);
   const [paperMode, setPaperMode] = useState<"questions" | "answers">("questions");
   const [audioTrackIndex, setAudioTrackIndex] = useState(material.tasks[initialTaskIndex]?.audioTrackIndex ?? initialTaskIndex);
+  const [officialAudioUrl, setOfficialAudioUrl] = useState(material.audioTracks?.[material.tasks[initialTaskIndex]?.audioTrackIndex ?? initialTaskIndex]?.url ?? "");
+  const [officialAudioFallbackUsed, setOfficialAudioFallbackUsed] = useState(false);
   const [officialResponses, setOfficialResponses] = useState<Record<string, string>>(() => {
     const responses: Record<string, string> = {};
     for (const sessionMaterial of session.materials) {
@@ -1887,6 +1889,11 @@ function OfficialTestRunner({
   const taskRecordKey = officialTaskRecordId(session, material, task);
   const taskAttemptHistory = progress.officialTaskAttemptHistory[taskRecordKey] ?? [];
   const taskAnswers = task.answers ?? [];
+
+  useEffect(() => {
+    setOfficialAudioUrl(audioTrack?.url ?? "");
+    setOfficialAudioFallbackUsed(false);
+  }, [audioTrack?.url]);
   const activeReadingHighlight = activeReadingQuestion ? readingSourceHighlights[`${task.id}:${activeReadingQuestion}`] : undefined;
   const activeReadingEvidencePage = activeReadingHighlight?.page ?? 0;
   const openResponseKey = `${taskKey}:open-response`;
@@ -2211,7 +2218,13 @@ function OfficialTestRunner({
             <div className="official-audio-dock">
               <label>{speakingTaskMode ? "当前 Part 的官方示范录音" : "当前独立 Task 的官方录音"}<select value={audioTrackIndex} onChange={(event) => changeTask(Number(event.target.value))}>{material.audioTracks.map((track, index) => <option value={index} key={track.url}>{track.label}</option>)}</select></label>
               {/* eslint-disable-next-line jsx-a11y/media-has-caption -- The official transcript is included in the embedded source PDF. */}
-              <audio key={audioTrack.url} controls preload="metadata" src={audioTrack.url}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
+              <audio key={officialAudioUrl} controls preload="metadata" src={officialAudioUrl} onError={() => {
+                if (!officialAudioFallbackUsed && audioTrack.fallbackUrl) {
+                  setOfficialAudioFallbackUsed(true);
+                  setOfficialAudioUrl(audioTrack.fallbackUrl);
+                }
+              }}>当前浏览器不支持音频播放；对应原文位于官方 PDF。</audio>
+              {officialAudioFallbackUsed && <small className="official-audio-fallback-note">已自动切换备用音频源。</small>}
             </div>
           )}
           {material.passagePdfUrl && paperMode === "questions" ? (
