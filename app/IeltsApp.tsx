@@ -204,14 +204,18 @@ const listeningMaterial: OfficialTestMaterial = {
   // IELTS Listening Sample Tasks booklet, served from a stable public mirror.
   pdfUrl: "https://jsaf-ieltsjapan.com/ielts_wp/wp-content/uploads/2023/12/ielts-listening-sample-tasks-2023.pdf",
   audioTracks: [
-    { label: "Task 1 · Form Completion", url: "https://ielts.ng/wp-content/uploads/2017/06/section-1-ielts-listening-recording-1.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-1-form-completion.mp3" },
-    { label: "Task 2 · Multiple Choice", url: "https://ielts.ng/wp-content/uploads/2017/06/section-2-sample-a-ielts-listening-recording.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-2-multiple-choice.mp3" },
-    { label: "Task 3 · Short-answer Questions", url: "https://ielts.ng/wp-content/uploads/2017/06/section-3-sample-a-ielts-listening-recording.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-3-short-answer-questions.mp3" },
-    { label: "Task 4 · Sentence Completion", url: "https://ielts.ng/wp-content/uploads/2017/06/section-4-ielts-listening-recording.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-4-sentence-completion.mp3" },
-    { label: "Task 5 · Matching 1", url: "https://ielts.ng/wp-content/uploads/2017/06/new-ielts-listening-recording-5.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-5-matching.mp3" },
-    { label: "Task 6 · Matching 2", url: "https://ielts.ng/wp-content/uploads/2017/06/new-ielts-listening-recording-6.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-6-matching.mp3" },
-    { label: "Task 7 · Map Labelling", url: "https://ielts.ng/wp-content/uploads/2017/06/new-ielts-listening-recording-7.mp3", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-7-plan-map-diagram-labelling.mp3" },
-    { label: "Task 8 · Note Completion", url: "https://edu.ge.ch/moodle/pluginfile.php/1224165/mod_folder/content/0/4.%20ielts-listening-sample-task-8-note-completion.mp3?forcedownload=1", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-8-note-completion.mp3" },
+    // These are the current downloadable MP3 links used by IELTS preparation
+    // centres. The Moodle copies are used as a cross-origin fallback for the
+    // four files that are also mirrored there; this avoids the old ielts.ng
+    // hotlink-protected URLs that returned 403 on mobile browsers.
+    { label: "Task 1 · Form Completion", url: "https://www.ielts.org/about-the-test/~/media/1F0F93C716F440E885CC8A83AE5F501F.ashx", fallbackUrl: "https://edu.ge.ch/moodle/pluginfile.php/1224165/mod_folder/content/0/1.%20ielts-listening-sample-task-1-form-completion.mp3?forcedownload=1" },
+    { label: "Task 2 · Multiple Choice", url: "https://www.ielts.org/about-the-test/~/media/C464FB28068F4A1BB54CFF1965A503B7.ashx", fallbackUrl: "https://edu.ge.ch/moodle/pluginfile.php/1224165/mod_folder/content/0/2.%20ielts-listening-sample-task-2-multiple-choice.mp3?forcedownload=1" },
+    { label: "Task 3 · Short-answer Questions", url: "https://www.ielts.org/about-the-test/~/media/5C141A90B3574601958B5589F93B3623.ashx", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-3-short-answer-questions.mp3" },
+    { label: "Task 4 · Sentence Completion", url: "https://www.ielts.org/about-the-test/~/media/97AA413E337745DE899D5DABBF915E2F.ashx", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-4-sentence-completion.mp3" },
+    { label: "Task 5 · Matching 1", url: "https://www.ielts.org/about-the-test/~/media/B0AF27694E314164903BAE3A1DA210F1.ashx", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-5-matching.mp3" },
+    { label: "Task 6 · Matching 2", url: "https://www.ielts.org/about-the-test/~/media/0CF10F5014FD440895B1EF0116F57126.ashx", fallbackUrl: "https://edu.ge.ch/moodle/pluginfile.php/1224165/mod_folder/content/0/3.%20ielts-listening-sample-task-6-matching.mp3?forcedownload=1" },
+    { label: "Task 7 · Map Labelling", url: "https://www.ielts.org/about-the-test/~/media/5B44F4BE3137456DAA19BB6B7A019715.ashx", fallbackUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-7-plan-map-diagram-labelling.mp3" },
+    { label: "Task 8 · Note Completion", url: "https://www.ielts.org/about-the-test/~/media/9A17B89DF16B4C7AA460B031ED9E00E4.ashx", fallbackUrl: "https://edu.ge.ch/moodle/pluginfile.php/1224165/mod_folder/content/0/4.%20ielts-listening-sample-task-8-note-completion.mp3?forcedownload=1" },
   ],
   tasks: [
     { id: "form-completion", label: "Form Completion", questionLabel: "Questions 1–8", questionPage: 3, questionPages: [3], transcriptPage: 4, transcriptPages: [4, 5, 6], answerPage: 7, audioTrackIndex: 0, answers: [
