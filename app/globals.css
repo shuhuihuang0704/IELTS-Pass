@@ -497,28 +497,35 @@ button { cursor: pointer; }
 .official-paper-panel>header strong { margin-top:4px; font-size:13px; }
 .official-paper-panel>header>small { color:var(--muted); font-size:9px; }
 .official-full-reading-body,.official-standard-paper-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:12px; align-items:start; }
-.official-full-reading-body>.official-answer-sheet,.official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { grid-column:2; grid-row:1 / span 20; max-height:760px; overflow:auto; position:sticky; top:12px; }
+.official-full-reading-body>.official-answer-sheet,.official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { grid-column:2; grid-row:1; align-self:start; }
 .official-full-reading-body { grid-template-columns:minmax(0,1.5fr) minmax(300px,.72fr); }
 .official-standard-paper-body.is-listening-workspace,.official-standard-paper-body.is-writing-workspace { grid-template-columns:minmax(0,1.5fr) minmax(300px,.72fr); }
-.official-standard-paper-body.is-speaking-workspace { display:block; }
-.official-standard-paper-body.is-speaking-workspace>.official-speaking-response { width:min(100%,720px); max-width:720px; max-height:none; margin:16px auto 0; overflow:visible; position:static; }
-.official-standard-paper-body.is-speaking-workspace>.official-material-column { width:min(100%,720px); margin:12px auto 0; display:flex; position:static; }
-.official-full-reading-body>.official-answer-sheet { max-height:calc(100vh - 24px); overflow-y:auto; position:sticky; top:12px; scrollbar-gutter:stable; }
-.official-full-reading-body>.official-answer-sheet>header { padding:12px 0 10px; position:sticky; top:-15px; z-index:3; background:#faf9fb; }
-.official-full-reading-body>.official-answer-sheet>footer { padding:10px 0 15px; position:sticky; bottom:-15px; z-index:3; background:#faf9fb; box-shadow:0 -8px 16px rgba(49,42,53,.06); }
+.official-standard-paper-body.is-speaking-workspace { grid-template-columns:minmax(0,1.5fr) minmax(300px,.72fr); }
+.official-standard-paper-body.is-speaking-workspace>.official-speaking-response { width:auto; max-width:none; margin-top:13px; }
+.official-standard-paper-body.is-speaking-workspace>.official-material-column { width:auto; margin:0; display:flex; }
 .official-full-reading-body>.official-material-column { display:contents; }
 .official-standard-paper-body>.official-material-column { min-width:0; grid-column:1; grid-row:1; display:flex; flex-direction:column; gap:12px; }
 .official-standard-paper-body>.official-material-column>.official-audio-dock,.official-standard-paper-body>.official-material-column>.official-source-document,.official-standard-paper-body>.official-material-column>.official-speaking-material-lock,.official-standard-paper-body>.official-material-column>.official-listening-transcript,.official-standard-paper-body>.official-material-column>.official-writing-model { min-width:0; }
-.official-standard-paper-body.is-listening-workspace>.official-material-column,.official-standard-paper-body.is-writing-workspace>.official-material-column { max-height:calc(100vh - 24px); padding-right:4px; overflow-y:auto; position:sticky; top:12px; scrollbar-gutter:stable; }
-.official-standard-paper-body.is-listening-workspace>.official-answer-sheet,.official-standard-paper-body.is-writing-workspace>.official-writing-response { max-height:calc(100vh - 24px); overflow-y:auto; scrollbar-gutter:stable; }
-.official-standard-paper-body.is-listening-workspace>.official-answer-sheet>header,.official-standard-paper-body.is-writing-workspace>.official-writing-response>header { padding-top:12px; position:sticky; top:-15px; z-index:3; background:#faf9fb; }
-.official-standard-paper-body.is-listening-workspace>.official-answer-sheet>footer,.official-standard-paper-body.is-writing-workspace>.official-writing-response>footer { padding-bottom:15px; position:sticky; bottom:-15px; z-index:3; background:#faf9fb; box-shadow:0 -8px 16px rgba(49,42,53,.06); }
-.official-reading-booklet { min-width:0; max-height:calc(100vh - 24px); grid-column:1; grid-row:1; margin-top:13px; padding-right:4px; overflow-y:auto; position:sticky; top:12px; scrollbar-gutter:stable; }
+.official-standard-paper-body.is-listening-workspace>.official-material-column,.official-standard-paper-body.is-writing-workspace>.official-material-column { padding-right:4px; }
+.official-reading-booklet { min-width:0; grid-column:1; grid-row:1; margin-top:13px; padding-right:4px; }
 .official-reading-booklet>header { padding:9px; display:flex; align-items:center; justify-content:space-between; gap:8px; border-radius:13px; background:#f4f1ed; }
 .official-reading-booklet>header>span { color:#716979; font-size:8px; }
 .official-reading-task-status strong,.official-reading-task-status small { display:block; }
 .official-reading-task-status strong { font-size:10px; }
 .official-reading-task-status small { margin-top:3px; color:#7166d8; font-size:8px; }
+.official-reading-annotation { margin-top:8px; padding:10px; border:1px solid #e1dce9; border-radius:13px; background:#faf9fc; }
+.official-reading-annotation-toolbar { display:flex; align-items:center; gap:8px; }
+.official-reading-annotation-toolbar>div { min-width:0; flex:1; }
+.official-reading-annotation-toolbar strong,.official-reading-annotation-toolbar small { display:block; }
+.official-reading-annotation-toolbar strong { color:#5143b6; font-size:10px; }
+.official-reading-annotation-toolbar small { margin-top:3px; overflow:hidden; color:#827b86; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
+.official-reading-annotation-toolbar button { min-height:30px; padding:0 9px; border:0; border-radius:8px; color:white; background:#6255c9; font-size:8px; font-weight:700; white-space:nowrap; }
+.official-reading-annotation-toolbar button.is-secondary { color:#5143b6; background:#ece9f8; }
+.official-reading-annotation-toolbar button:disabled { color:#aaa4ad; background:#ebe8ed; cursor:not-allowed; }
+.official-reading-excerpt-list { margin-top:8px; display:grid; gap:5px; }
+.official-reading-excerpt-list p { margin:0; padding:7px 8px; display:grid; grid-template-columns:28px 1fr; gap:7px; border-radius:8px; color:#5f5862; background:white; font-family:Georgia,"Times New Roman",serif; font-size:10px; line-height:1.5; }
+.official-reading-excerpt-list p>b { color:#5143b6; font-family:inherit; font-size:8px; }
+.official-reading-annotation-note { display:block; margin-top:7px; color:#8a838e; font-size:7px; line-height:1.45; }
 .official-reading-sections { display:flex; gap:5px; }
 .official-reading-sections button { min-height:35px; padding:0 9px; border:0; border-radius:8px; color:#6e6770; background:#e8e3df; font-size:8px; }
 .official-reading-sections button small { display:block; margin-top:2px; color:inherit; font-size:7px; }
@@ -1083,8 +1090,7 @@ button { cursor: pointer; }
 .exercise-context .demo-note { margin-top:24px; padding-top:18px; border-top:1px solid #eeeaf0; color:#817a83; font-size:10px; }
 .reading-layout { display:grid; grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr); gap:14px; align-items:start; }
 .reading-passage,.reading-questions { min-height:560px; padding:30px; }
-.reading-passage { position:sticky; top:20px; max-height:calc(100vh - 40px); overflow:auto; }
-.reading-questions { position:sticky; top:20px; max-height:calc(100vh - 40px); overflow-y:auto; scrollbar-gutter:stable; }
+.reading-passage,.reading-questions { position:static; max-height:none; overflow:visible; }
 .reading-subtitle { display:block; margin-top:8px; color:#777179; font-size:10px; }
 .reading-paragraphs { margin-top:28px; }
 .reading-paragraphs section { position:relative; padding:20px 0 20px 36px; border-top:1px solid #e9e5ea; }
@@ -1505,8 +1511,8 @@ button { cursor: pointer; }
   .official-runner-sidebar { position:sticky; }
   .official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace) { display:flex; flex-direction:column; }
   .official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-answer-sheet,.official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-writing-response,.official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-speaking-response,.official-standard-paper-body:not(.is-listening-workspace):not(.is-writing-workspace)>.official-open-response-note { width:100%; max-height:none; overflow:visible; order:10; position:static; }
-  .official-standard-paper-body.is-speaking-workspace:not(.is-listening-workspace):not(.is-writing-workspace) { display:block; }
-  .official-standard-paper-body.is-speaking-workspace>.official-speaking-response { width:min(100%,720px); max-width:720px; }
+  .official-standard-paper-body.is-speaking-workspace:not(.is-listening-workspace):not(.is-writing-workspace) { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,.8fr); }
+  .official-standard-paper-body.is-speaking-workspace>.official-speaking-response { width:auto; max-width:none; }
 }
 @media (max-width:680px) {
   .reading-layout { grid-template-columns:1fr; }
@@ -1519,10 +1525,10 @@ button { cursor: pointer; }
   .official-full-reading-body>.official-answer-sheet { width:100%; max-height:none; overflow:visible; order:10; position:static; }
   .official-full-reading-body>.official-answer-sheet>header,.official-full-reading-body>.official-answer-sheet>footer { padding:0; position:static; box-shadow:none; }
   .official-reading-booklet { max-height:none; padding-right:0; overflow:visible; position:static; }
-  .official-standard-paper-body.is-listening-workspace,.official-standard-paper-body.is-writing-workspace { display:flex; flex-direction:column; }
-  .official-standard-paper-body.is-listening-workspace>.official-answer-sheet,.official-standard-paper-body.is-writing-workspace>.official-writing-response { width:100%; max-height:none; overflow:visible; order:10; position:static; }
+  .official-standard-paper-body.is-listening-workspace,.official-standard-paper-body.is-writing-workspace,.official-standard-paper-body.is-speaking-workspace { display:flex; flex-direction:column; }
+  .official-standard-paper-body.is-listening-workspace>.official-answer-sheet,.official-standard-paper-body.is-writing-workspace>.official-writing-response,.official-standard-paper-body.is-speaking-workspace>.official-speaking-response { width:100%; max-height:none; overflow:visible; order:10; position:static; }
   .official-standard-paper-body.is-listening-workspace>.official-answer-sheet>header,.official-standard-paper-body.is-listening-workspace>.official-answer-sheet>footer,.official-standard-paper-body.is-writing-workspace>.official-writing-response>header,.official-standard-paper-body.is-writing-workspace>.official-writing-response>footer { padding:0; position:static; box-shadow:none; }
-  .official-standard-paper-body.is-listening-workspace>.official-material-column,.official-standard-paper-body.is-writing-workspace>.official-material-column { max-height:none; padding-right:0; overflow:visible; position:static; }
+  .official-standard-paper-body.is-listening-workspace>.official-material-column,.official-standard-paper-body.is-writing-workspace>.official-material-column,.official-standard-paper-body.is-speaking-workspace>.official-material-column { max-height:none; padding-right:0; overflow:visible; position:static; }
 }
 @media (max-width:560px) {
   .official-plan-strip { grid-template-columns:1fr auto; gap:15px; padding:19px; }
@@ -1565,6 +1571,9 @@ button { cursor: pointer; }
   .official-reading-sections button { flex:1; }
   .official-reading-pair { padding:7px; }
   .official-reading-pair>header { align-items:flex-start; flex-direction:column; }
+  .official-reading-annotation-toolbar { align-items:stretch; flex-wrap:wrap; }
+  .official-reading-annotation-toolbar>div { flex:1 1 100%; }
+  .official-reading-annotation-toolbar button { flex:1; }
   .official-task-map>header { align-items:flex-start; }
   .official-task-map>div { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .official-listening-transcript>header { align-items:flex-start; flex-direction:column; }

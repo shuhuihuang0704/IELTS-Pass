@@ -198,7 +198,9 @@ function officialAnswerAudioMedia(answer: OfficialAnswer, audioTrack?: OfficialA
 const listeningMaterial: OfficialTestMaterial = {
   id: "listening",
   label: "Listening",
-  pdfUrl: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening-sample-tasks-2023.pdf",
+  // The original IELTS CDN path now returns 404. This is the same 33-page
+  // IELTS Listening Sample Tasks booklet, served from a stable public mirror.
+  pdfUrl: "https://jsaf-ieltsjapan.com/ielts_wp/wp-content/uploads/2023/12/ielts-listening-sample-tasks-2023.pdf",
   audioTracks: [
     { label: "Task 1 · Form Completion", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-1-form-completion.mp3" },
     { label: "Task 2 · Multiple Choice", url: "https://ielts.org/cdn/ielts-sample-tests/ielts-listening/ielts-listening-sample-task-2-multiple-choice.mp3" },
@@ -1823,7 +1825,10 @@ function OfficialTestRunner({
   const [showAttemptHistory, setShowAttemptHistory] = useState(false);
   const [taskAttemptVersions, setTaskAttemptVersions] = useState<Record<string, number>>({});
   const [activeReadingQuestion, setActiveReadingQuestion] = useState<string | null>(null);
+  const [officialHighlights, setOfficialHighlights] = useState<Record<string, string[]>>({});
+  const [selectedOfficialText, setSelectedOfficialText] = useState("");
   const readingBookletRef = useRef<HTMLDivElement>(null);
+  const officialAnnotationRef = useRef<HTMLDivElement>(null);
   const task = material.tasks[taskIndex];
   const taskUnitLabel = task.speakingPrompt ? "Part" : material.passagePdfUrl ? "Passage" : "Task";
   const audioTrack = material.audioTracks?.[audioTrackIndex];
@@ -1855,6 +1860,12 @@ function OfficialTestRunner({
   const materialQuestionCount = materialRequiredTasks.reduce((total, materialTask) => total + ((materialTask.answers?.length ?? 0) || 1), 0);
   const completedMaterialTaskCount = materialRequiredTasks.filter((materialTask) => officialTaskResultIsComplete(materialTask, progress.officialTaskResults[officialTaskRecordId(session, material, materialTask)])).length;
   const recordId = officialPracticeRecordId(session);
+  const taskOfficialHighlights = officialHighlights[taskKey] ?? [];
+  const officialReadingExcerpts = material.passagePdfUrl
+    ? Object.entries(readingSourceEvidence)
+      .filter(([key]) => key.startsWith(`${task.id}:`))
+      .map(([key, evidence]) => ({ key, question: key.split(":")[1], excerpt: evidence.excerpt }))
+    : [];
 
   useEffect(() => {
     if (timerState !== "running") return;
@@ -1964,7 +1975,33 @@ function OfficialTestRunner({
     setPaperMode("questions");
     setShowAttemptHistory(false);
     setActiveReadingQuestion(null);
+    setSelectedOfficialText("");
     setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
+  };
+  const captureOfficialSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !officialAnnotationRef.current?.contains(selection.anchorNode) || !officialAnnotationRef.current.contains(selection.focusNode)) {
+      setSelectedOfficialText("");
+      return;
+    }
+    const selected = selection.toString().trim().replace(/\s+/g, " ");
+    setSelectedOfficialText(selected.length >= 2 ? selected : "");
+  };
+  const addOfficialHighlight = () => {
+    if (!selectedOfficialText) return;
+    setOfficialHighlights((current) => ({
+      ...current,
+      [taskKey]: Array.from(new Set([...(current[taskKey] ?? []), selectedOfficialText])),
+    }));
+    setSelectedOfficialText("");
+    window.getSelection()?.removeAllRanges();
+  };
+  const renderOfficialExcerpt = (excerpt: string) => {
+    const phrases = taskOfficialHighlights.filter((phrase) => excerpt.toLocaleLowerCase().includes(phrase.toLocaleLowerCase())).sort((a, b) => b.length - a.length);
+    if (!phrases.length) return excerpt;
+    const escaped = phrases.map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+    return excerpt.split(pattern).map((part, index) => phrases.some((phrase) => phrase.toLocaleLowerCase() === part.toLocaleLowerCase()) ? <mark className="personal-highlight" key={`${taskKey}-excerpt-${index}`}>{part}</mark> : part);
   };
   const showReadingEvidence = (questionNumber: string) => {
     setActiveReadingQuestion(questionNumber);
@@ -2042,7 +2079,7 @@ function OfficialTestRunner({
               submitCurrentTask();
             }}>
               <header>
-                <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>{material.passagePdfUrl ? "固定在右侧 · 可独立滚动完成当前 Passage 全部题目" : "按官方题号填写，提交前不会显示答案"}</small></div>
+                <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>{material.passagePdfUrl ? "右侧并列显示 · 随页面同步滚动完成当前 Passage" : "右侧并列显示 · 随页面同步滚动填写当前 Task"}</small></div>
                 <b className={taskSubmitted ? "is-scored" : ""}>{taskSubmitted ? `${correctAnswerCount} / ${taskAnswers.length}` : `${answeredCount} / ${taskAnswers.length}`}</b>
               </header>
               <div className="official-answer-grid">
@@ -2131,6 +2168,17 @@ function OfficialTestRunner({
                 <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? allAnswersFilled ? "✓ 本 Passage 已完成" : "已提交查看答案 · 尚未完成" : "独立作答 · 不影响其他 Passage"}</small></div>
                 <span>{task.questionLabel}</span>
               </header>
+              {officialReadingExcerpts.length > 0 && <section className="official-reading-annotation" ref={officialAnnotationRef} onMouseUp={captureOfficialSelection} onTouchEnd={captureOfficialSelection}>
+                <div className="official-reading-annotation-toolbar">
+                  <div><strong>文章划线</strong><small>{selectedOfficialText ? `已选择 ${selectedOfficialText.length} 个字符` : taskOfficialHighlights.length ? `已标记 ${taskOfficialHighlights.length} 处` : "拖选下面的原文摘录后点击“标记”"}</small></div>
+                  <button type="button" disabled={!selectedOfficialText} onMouseDown={(event) => event.preventDefault()} onClick={addOfficialHighlight}>标记选中内容</button>
+                  <button type="button" className="is-secondary" disabled={!taskOfficialHighlights.length} onClick={() => setOfficialHighlights((current) => ({ ...current, [taskKey]: [] }))}>清除划线</button>
+                </div>
+                <div className="official-reading-excerpt-list" aria-label="可划线的原文摘录">
+                  {officialReadingExcerpts.map((item) => <p key={item.key}><b>Q{item.question}</b><span>{renderOfficialExcerpt(item.excerpt)}</span></p>)}
+                </div>
+                <small className="official-reading-annotation-note">PDF 阅读器来自官方跨域文档，无法直接捕获其中的选区；这里提供同题原文摘录划线，提交后仍可用“荧光笔定位原文”。</small>
+              </section>}
               <section className="official-reading-pair" key={task.id}>
                 <header><b>{task.label} · 阅读文章</b><small>仅显示当前 Passage</small></header>
                 <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingHighlight); return <div id={`official-reading-passage-page-${page}`} className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />{isEvidencePage && <span className="official-reading-highlight-layer" aria-hidden="true">{activeReadingHighlight.rects.map(([x, y, width, height], index) => <i id={`official-reading-highlight-${activeReadingQuestion}-${index}`} key={`${activeReadingQuestion}-${index}`} style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }} />)}</span>}</div>; })}</div>
