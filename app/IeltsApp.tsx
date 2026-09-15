@@ -718,7 +718,7 @@ type IeltsVoiceRole = "examiner" | "female" | "male";
 const preferredIeltsVoiceNames: Record<IeltsVoiceRole, string[]> = {
   examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Flo (English (UK))", "Shelley (English (UK))", "Karen", "Moira", "Serena", "Kate", "Daniel"],
   female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Flo (English (UK))", "Shelley (English (UK))", "Karen", "Moira", "Serena", "Kate"],
-  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Reed (English (UK))", "Eddy (English (UK))", "Daniel", "Oliver", "Arthur", "George", "Ryan"],
+  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Daniel", "Oliver", "Arthur", "George", "Reed (English (UK))", "Eddy (English (UK))", "Ryan"],
 };
 
 function preferredIeltsVoice(role: IeltsVoiceRole = "examiner") {
@@ -727,17 +727,18 @@ function preferredIeltsVoice(role: IeltsVoiceRole = "examiner") {
   const britishVoices = voices.filter((voice) => /^en-GB$/i.test(voice.lang));
   const nearbyIeltsVoices = voices.filter((voice) => /^en-(AU|IE|NZ)$/i.test(voice.lang));
   const candidates = [...britishVoices, ...nearbyIeltsVoices];
+  const englishVoices = voices.filter((voice) => /^en-/i.test(voice.lang));
   const namedVoice = preferredIeltsVoiceNames[role]
-    .map((name) => candidates.find((voice) => voice.name.includes(name)))
+    .map((name) => candidates.find((voice) => voice.name.includes(name)) ?? englishVoices.find((voice) => voice.name.includes(name)))
     .find((voice) => voice !== undefined);
   const femaleVoice = preferredIeltsVoiceNames.female
-    .map((name) => candidates.find((voice) => voice.name.includes(name)))
+    .map((name) => candidates.find((voice) => voice.name.includes(name)) ?? englishVoices.find((voice) => voice.name.includes(name)))
     .find((voice) => voice !== undefined);
   return namedVoice
-    ?? (role === "male" ? candidates.find((voice) => voice !== femaleVoice) : undefined)
+    ?? (role === "male" ? candidates.find((voice) => voice !== femaleVoice) ?? englishVoices.find((voice) => voice !== femaleVoice) : undefined)
     ?? candidates.find((voice) => voice.localService)
     ?? candidates[0]
-    ?? voices.find((voice) => /^en-/i.test(voice.lang))
+    ?? englishVoices[0]
     ?? null;
 }
 
@@ -752,7 +753,13 @@ function createIeltsUtterance(text: string, rate = 0.94, pitch = 0.98, role: Iel
   return utterance;
 }
 
-function speak(text: string, rate = 0.94) {
+type SpeechPlaybackHandlers = {
+  onstart?: () => void;
+  onend?: () => void;
+  onerror?: () => void;
+};
+
+function speak(text: string, rate = 0.94, handlers?: SpeechPlaybackHandlers) {
   if (!("speechSynthesis" in window) || !text.trim()) return false;
   const synthesis = window.speechSynthesis;
   // Android Chrome can leave the synthesizer paused after the first utterance.
@@ -764,7 +771,12 @@ function speak(text: string, rate = 0.94) {
     if (started) return;
     started = true;
     const utterance = createIeltsUtterance(text, rate);
-    utterance.onerror = () => synthesis.cancel();
+    utterance.onstart = () => handlers?.onstart?.();
+    utterance.onerror = () => {
+      synthesis.cancel();
+      handlers?.onerror?.();
+    };
+    utterance.onend = () => handlers?.onend?.();
     synthesis.speak(utterance);
   };
   if (synthesis.getVoices().length > 0) speakNow();
@@ -817,7 +829,62 @@ function speakSequence(texts: string[], rate = 0.94) {
   return true;
 }
 
+type DialogueTurn = { role: IeltsVoiceRole; text: string };
+type DialoguePlaybackHandlers = { onend?: () => void; onerror?: () => void };
+
+function speakDialogue(turns: DialogueTurn[], rate = 0.92, handlers?: DialoguePlaybackHandlers) {
+  if (!("speechSynthesis" in window) || turns.length === 0) return false;
+  const synthesis = window.speechSynthesis;
+  synthesis.cancel();
+  synthesis.resume();
+  let index = 0;
+  let started = false;
+  const playNext = () => {
+    if (index >= turns.length) {
+      handlers?.onend?.();
+      return;
+    }
+    const turn = turns[index];
+    index += 1;
+    const utterance = createIeltsUtterance(turn.text, turn.role === "female" ? rate : rate * .96, turn.role === "female" ? 1.06 : .86, turn.role);
+    utterance.onstart = () => { started = true; };
+    utterance.onend = () => window.setTimeout(playNext, turn.text.endsWith("?") ? 170 : 260);
+    utterance.onerror = () => {
+      synthesis.cancel();
+      handlers?.onerror?.();
+    };
+    synthesis.speak(utterance);
+  };
+  const voices = synthesis.getVoices();
+  if (voices.length > 0) playNext();
+  else {
+    const onVoicesChanged = () => {
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      playNext();
+    };
+    synthesis.addEventListener("voiceschanged", onVoicesChanged, { once: true });
+    window.setTimeout(() => {
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      if (!started && !synthesis.speaking) playNext();
+    }, 250);
+  }
+  return true;
+}
+
 let pronunciationAudio: HTMLAudioElement | null = null;
+
+function playRemotePronunciation(text: string, rate = 1, onError?: () => void) {
+  if (typeof window === "undefined" || !text.trim()) return false;
+  pronunciationAudio ??= new Audio();
+  const audio = pronunciationAudio;
+  audio.pause();
+  audio.src = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text.trim())}&type=1`;
+  audio.preload = "auto";
+  audio.playbackRate = rate;
+  const playPromise = audio.play();
+  playPromise.catch(() => onError?.());
+  return true;
+}
 
 function playPronunciation(text: string, rate = 1) {
   if (typeof window === "undefined" || !text.trim()) return false;
@@ -828,18 +895,10 @@ function playPronunciation(text: string, rate = 1) {
   // Android WebViews (including in-app browsers) may expose speechSynthesis
   // without installing an English voice. Use a regular MP3 pronunciation
   // first, then fall back to the device TTS when that service is unavailable.
-  pronunciationAudio ??= new Audio();
-  const audio = pronunciationAudio;
-  audio.pause();
   // type=1 requests the British-English pronunciation used for IELTS practice.
-  audio.src = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text.trim())}&type=1`;
-  audio.preload = "auto";
-  audio.playbackRate = rate;
-  const playPromise = audio.play();
-  playPromise.catch(() => {
+  return playRemotePronunciation(text, rate, () => {
     speak(text, rate);
   });
-  return true;
 }
 
 function autoPronounceDailyVocabularyWord(word: string) {
@@ -3443,10 +3502,31 @@ function ListeningPractice({
   const [audioError, setAudioError] = useState(false);
   const [audioTime, setAudioTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [dialoguePlayback, setDialoguePlayback] = useState<"idle" | "playing" | "paused">("idle");
   const listeningAudio = useRef<HTMLAudioElement | null>(null);
+  const dialogueTurns = useMemo<DialogueTurn[]>(() => {
+    const pattern = /(Coordinator|Caller|Supervisor|Applicant|Receptionist|Student):\s*/g;
+    const turns: DialogueTurn[] = [];
+    let currentRole: IeltsVoiceRole | null = null;
+    let contentStart = 0;
+    for (const match of listeningExercise.script.matchAll(pattern)) {
+      if (currentRole && match.index !== undefined) {
+        const text = listeningExercise.script.slice(contentStart, match.index).trim();
+        if (text) turns.push({ role: currentRole, text });
+      }
+      currentRole = /^(Coordinator|Supervisor|Receptionist):/.test(match[0]) ? "female" : "male";
+      contentStart = (match.index ?? 0) + match[0].length;
+    }
+    if (currentRole) {
+      const text = listeningExercise.script.slice(contentStart).trim();
+      if (text) turns.push({ role: currentRole, text });
+    }
+    return turns;
+  }, [listeningExercise.script]);
 
   useEffect(() => () => {
     listeningAudio.current?.pause();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
   const toggleListening = () => {
@@ -3474,6 +3554,27 @@ function ListeningPractice({
       setAudioError(true);
       setPlayerState("error");
     });
+  };
+
+  const toggleDistinctDialogue = () => {
+    if (!("speechSynthesis" in window)) return;
+    if (dialoguePlayback === "playing") {
+      window.speechSynthesis.pause();
+      setDialoguePlayback("paused");
+      return;
+    }
+    if (dialoguePlayback === "paused") {
+      window.speechSynthesis.resume();
+      setDialoguePlayback("playing");
+      return;
+    }
+    listeningAudio.current?.pause();
+    setDialoguePlayback("playing");
+    const started = speakDialogue(dialogueTurns, .91, {
+      onend: () => setDialoguePlayback("idle"),
+      onerror: () => setDialoguePlayback("idle"),
+    });
+    if (!started) setDialoguePlayback("idle");
   };
 
   const formatAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -3663,6 +3764,8 @@ function ListeningPractice({
             <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放英澳双人完整录音"}</strong><small>{audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
           </div>
           <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
+          <button className={`listening-dialogue-toggle is-${dialoguePlayback}`} onClick={toggleDistinctDialogue}>{dialoguePlayback === "playing" ? "Ⅱ 暂停男女分轨朗读" : dialoguePlayback === "paused" ? "▶ 继续男女分轨朗读" : "♫ 男女分角色朗读"}</button>
+          <small className="listening-dialogue-note">备用朗读：女声 Flo · 男声 Daniel，语速和停顿更接近自然对话</small>
         </div>
         <div className="listening-answer-progress"><i style={{ width: `${answeredCount * 10}%` }} /><span>{answeredCount}/10</span></div>
 
@@ -3767,16 +3870,13 @@ function SpeakingPractice({
   const [showExaminerSubtitles, setShowExaminerSubtitles] = useState(false);
   const [speakingStarted, setSpeakingStarted] = useState(false);
   const [examinerAudioState, setExaminerAudioState] = useState<"idle" | "playing" | "paused">("idle");
-  const examinerUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const examinerPlaybackId = useRef(0);
   const practiceRecognition = useRef<PracticeRecognition | null>(null);
   const questionForDifficulty = (question: string) => question;
   const [activeExaminerPrompt, setActiveExaminerPrompt] = useState(() => questionForDifficulty(speakingScenario.questions[questionIndex]));
 
   useEffect(() => () => {
-    if (examinerUtterance.current) {
-      examinerUtterance.current.onend = null;
-      examinerUtterance.current.onerror = null;
-    }
+    examinerPlaybackId.current += 1;
     if (practiceRecognition.current) {
       practiceRecognition.current.onend = null;
       practiceRecognition.current.abort();
@@ -3786,23 +3886,37 @@ function SpeakingPractice({
   }, []);
 
   const playExaminerPrompt = (text: string) => {
-    if (!("speechSynthesis" in window)) return;
-    if (examinerUtterance.current) {
-      examinerUtterance.current.onend = null;
-      examinerUtterance.current.onerror = null;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = createIeltsUtterance(text, .94, .97);
-    examinerUtterance.current = utterance;
+    if (!text.trim()) return;
+    const playbackId = examinerPlaybackId.current + 1;
+    examinerPlaybackId.current = playbackId;
     setExaminerAudioState("playing");
-    utterance.onend = () => {
-      if (examinerUtterance.current === utterance) {
-        examinerUtterance.current = null;
-        setExaminerAudioState("idle");
-      }
+    const isCurrentPlayback = () => examinerPlaybackId.current === playbackId;
+    let speechStarted = false;
+    let fallbackTriggered = false;
+    const fallbackToRemoteAudio = () => {
+      if (!isCurrentPlayback() || fallbackTriggered) return;
+      fallbackTriggered = true;
+      setExaminerAudioState("idle");
+      playRemotePronunciation(text, .94);
     };
-    utterance.onerror = utterance.onend;
-    window.speechSynthesis.speak(utterance);
+    const didSpeak = speak(text, .94, {
+      onstart: () => { speechStarted = true; },
+      onend: () => {
+        if (isCurrentPlayback()) setExaminerAudioState("idle");
+      },
+      onerror: fallbackToRemoteAudio,
+    });
+    // A few desktop browsers expose speechSynthesis but cannot initialise an
+    // English voice. Start the same remote pronunciation fallback immediately.
+    if (!didSpeak) {
+      fallbackToRemoteAudio();
+    } else {
+      // Some desktop WebViews expose speechSynthesis but never start the
+      // utterance; avoid leaving the learner with a silent “playing” state.
+      window.setTimeout(() => {
+        if (!speechStarted) fallbackToRemoteAudio();
+      }, 900);
+    }
   };
 
   const toggleExaminerPause = () => {
@@ -3999,6 +4113,9 @@ function ReadingPractice({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [score, setScore] = useState<number | null>(null);
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
+  const [personalHighlights, setPersonalHighlights] = useState<string[]>([]);
+  const [selectedPassageText, setSelectedPassageText] = useState("");
+  const readingPassageRef = useRef<HTMLElement | null>(null);
   const [readingSeconds, setReadingSeconds] = useState(difficulty.reading.minutes * 60);
   const [readingTimerState, setReadingTimerState] = useState<"idle" | "running" | "paused" | "finished">("idle");
   const answerKey = Object.fromEntries([
@@ -4052,13 +4169,40 @@ function ReadingPractice({
   const activeEvidence = activeReviewId ? readingReviewEvidence[activeReviewId as keyof typeof readingReviewEvidence] : null;
   const evidencePhrasesForParagraph = (paragraph: string) => activeEvidence?.quotes.filter((quote) => quote.paragraph === paragraph).map((quote) => quote.text) ?? [];
   const renderPassageText = (paragraph: string, text: string) => {
-    const phrases = evidencePhrasesForParagraph(paragraph);
+    const evidencePhrases = evidencePhrasesForParagraph(paragraph);
+    const personalPhrases = personalHighlights.filter((phrase) => text.toLocaleLowerCase().includes(phrase.toLocaleLowerCase()));
+    const phrases = Array.from(new Set([...evidencePhrases, ...personalPhrases])).sort((a, b) => b.length - a.length);
     if (!phrases.length) return text;
     const escaped = phrases.map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-    const pattern = new RegExp(`(${escaped.join("|")})`, "g");
-    return text.split(pattern).map((part, index) => phrases.includes(part)
-      ? <mark key={`${paragraph}-mark-${index}`}>{part}</mark>
-      : part);
+    const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+    return text.split(pattern).map((part, index) => {
+      const isPersonal = personalPhrases.some((phrase) => phrase.toLocaleLowerCase() === part.toLocaleLowerCase());
+      const isEvidence = evidencePhrases.some((phrase) => phrase.toLocaleLowerCase() === part.toLocaleLowerCase());
+      if (!isPersonal && !isEvidence) return part;
+      return <mark className={isPersonal ? "personal-highlight" : undefined} key={`${paragraph}-mark-${index}`}>{part}</mark>;
+    });
+  };
+  const capturePassageSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !readingPassageRef.current?.contains(selection.anchorNode) || !readingPassageRef.current.contains(selection.focusNode)) {
+      setSelectedPassageText("");
+      return;
+    }
+    const sectionForNode = (node: Node | null) => {
+      const element = node instanceof Element ? node : node?.parentElement;
+      return element?.closest<HTMLElement>("[data-reading-paragraph]");
+    };
+    const startSection = sectionForNode(selection.anchorNode);
+    const endSection = sectionForNode(selection.focusNode);
+    const selectedText = selection.toString().trim().replace(/\s+/g, " ");
+    // Keep a highlight tied to one paragraph so it remains precise after reflow.
+    setSelectedPassageText(startSection && startSection === endSection && selectedText.length >= 2 ? selectedText : "");
+  };
+  const addPassageHighlight = () => {
+    if (!selectedPassageText) return;
+    setPersonalHighlights((current) => current.includes(selectedPassageText) ? current : [...current, selectedPassageText]);
+    setSelectedPassageText("");
+    window.getSelection()?.removeAllRanges();
   };
   const showEvidence = (id: string) => {
     setActiveReviewId(id);
@@ -4117,11 +4261,16 @@ function ReadingPractice({
 
   return (
     <div className="reading-layout">
-      <article className="reading-passage">
+      <article className="reading-passage" ref={readingPassageRef} onMouseUp={capturePassageSelection} onTouchEnd={capturePassageSelection}>
         <div className="exercise-kicker"><span>Academic Reading · Band {difficulty.band}.0</span><span>{exerciseDate} · 约 500 词</span></div>
         <h2>{readingExercise.title}</h2><span className="reading-subtitle">{readingExercise.subtitle}</span>
+        <div className="reading-annotation-toolbar" aria-label="文章划线工具">
+          <div><strong>文章划线</strong><small>{selectedPassageText ? `已选择 ${selectedPassageText.length} 个字符` : personalHighlights.length ? `已标记 ${personalHighlights.length} 处` : "拖选一段文字后点击“标记”"}</small></div>
+          <button type="button" disabled={!selectedPassageText} onMouseDown={(event) => event.preventDefault()} onClick={addPassageHighlight}>标记选中内容</button>
+          <button type="button" className="is-secondary" disabled={!personalHighlights.length} onClick={() => setPersonalHighlights([])}>清除划线</button>
+        </div>
         <div className="reading-paragraphs">
-          {readingExercise.paragraphs.map((paragraph) => <section id={`reading-paragraph-${paragraph.label}`} className={evidencePhrasesForParagraph(paragraph.label).length ? "is-evidence-active" : ""} key={paragraph.label}><strong>{paragraph.label}</strong><p>{renderPassageText(paragraph.label, paragraph.text)}</p></section>)}
+          {readingExercise.paragraphs.map((paragraph) => <section id={`reading-paragraph-${paragraph.label}`} data-reading-paragraph={paragraph.label} className={evidencePhrasesForParagraph(paragraph.label).length ? "is-evidence-active" : ""} key={paragraph.label}><strong>{paragraph.label}</strong><p>{renderPassageText(paragraph.label, paragraph.text)}</p></section>)}
         </div>
       </article>
       <section className="reading-questions">

@@ -134,9 +134,11 @@ function synthesizeTurn({ role, text, index, directory }) {
     const fileStem = `${index}-${chunkIndex}`;
     const aiffPath = join(directory, `${fileStem}.aiff`);
     const wavPath = join(directory, `${fileStem}.wav`);
-    const voice = role === "female" ? "Flo (English (UK))" : "Reed (English (UK))";
-    const baseRate = role === "female" ? 168 : 174;
-    const naturalVariation = [-3, 1, 0, 3, -1][index % 5];
+    // Keep the two speakers unmistakably different: Flo is a clear UK
+    // female voice, while Daniel has a noticeably deeper UK male timbre.
+    const voice = role === "female" ? "Flo (English (UK))" : "Daniel";
+    const baseRate = role === "female" ? 166 : 171;
+    const naturalVariation = [-3, 1, 0, 2, -1][index % 5];
     const rate = String(chunks.length > 1 && chunkIndex > 0 ? 148 : baseRate + naturalVariation);
     execFileSync("/usr/bin/say", ["-v", voice, "-r", rate, "-o", aiffPath, chunk]);
     execFileSync("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@44100", aiffPath, wavPath]);

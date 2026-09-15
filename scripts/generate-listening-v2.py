@@ -16,7 +16,7 @@ CAPTIONS = ROOT / "public" / "listening-section-1.vtt"
 SAMPLE_RATE = 44_100
 
 FEMALE_VOICE = "Flo (English (UK))"
-MALE_VOICE = "Reed (English (UK))"
+MALE_VOICE = "Daniel"
 
 TURNS = [
     ("Receptionist (British female)", FEMALE_VOICE, 167, "Good morning, Westbridge University Residence. How can I help?", 340),
