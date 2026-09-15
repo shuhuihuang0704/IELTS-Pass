@@ -1511,12 +1511,12 @@ button { cursor: pointer; }
 @media (max-width:680px) {
   .reading-layout { grid-template-columns:1fr; }
   .reading-passage,.reading-questions { max-height:none; overflow:visible; position:static; }
-  .reading-questions { order:-1; }
+  .reading-questions { order:0; }
   .reading-annotation-toolbar { align-items:stretch; flex-wrap:wrap; }
   .reading-annotation-toolbar>div { flex:1 1 100%; }
   .reading-annotation-toolbar button { flex:1; }
   .official-full-reading-body { display:flex; flex-direction:column; }
-  .official-full-reading-body>.official-answer-sheet { width:100%; max-height:none; overflow:visible; order:10; position:static; }
+  .official-full-reading-body>.official-answer-sheet { width:100%; max-height:none; overflow:visible; order:-1; position:static; }
   .official-full-reading-body>.official-answer-sheet>header,.official-full-reading-body>.official-answer-sheet>footer { padding:0; position:static; box-shadow:none; }
   .official-reading-booklet { max-height:none; padding-right:0; overflow:visible; position:static; }
   .official-standard-paper-body.is-listening-workspace,.official-standard-paper-body.is-writing-workspace { display:flex; flex-direction:column; }
@@ -1556,7 +1556,8 @@ button { cursor: pointer; }
   .official-writing-model>header { flex-direction:column; }
   .official-writing-model-note { grid-template-columns:1fr; }
   .official-full-reading-body,.official-standard-paper-body { display:flex; flex-direction:column; }
-  .official-full-reading-body>.official-answer-sheet,.official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { width:100%; max-height:none; overflow:visible; order:10; position:static; }
+  .official-full-reading-body>.official-answer-sheet { width:100%; max-height:none; overflow:visible; order:-1; position:static; }
+  .official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { width:100%; max-height:none; overflow:visible; order:10; position:static; }
   .official-full-reading-body>.official-answer-sheet>header,.official-full-reading-body>.official-answer-sheet>footer { padding:0; position:static; box-shadow:none; }
   .official-standard-paper-body>.official-material-column { max-height:none; padding-right:0; overflow:visible; position:static; }
   .official-reading-booklet { max-height:none; grid-column:1; grid-row:1; padding-right:0; overflow:visible; position:static; }
