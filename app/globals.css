@@ -584,6 +584,15 @@ button { cursor: pointer; }
 .official-reading-questions-panel>header b { color:#29242d; font-size:12px; }
 .official-reading-questions-panel>header small,.official-reading-questions-panel>header span { color:var(--muted); font-size:8px; }
 .official-reading-question-scroll { max-height:min(72vh,760px); margin-top:10px; padding-right:3px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.official-reading-question-list { display:grid; gap:16px; padding:2px 2px 4px 0; }
+.official-reading-question-list>section { padding-bottom:14px; border-bottom:1px solid #ece7ee; }
+.official-reading-question-list>section:last-child { padding-bottom:0; border-bottom:0; }
+.official-reading-question-instruction { margin:0; color:#4f4655; font-size:10px; font-weight:700; line-height:1.55; }
+.official-reading-question-options { margin-top:8px; display:grid; gap:4px; }
+.official-reading-question-options span { display:block; padding:5px 7px; border-radius:7px; color:#6a616e; background:#f6f3f7; font-size:9px; line-height:1.4; }
+.official-reading-question-items { margin-top:8px; display:grid; gap:6px; }
+.official-reading-question-items article { display:grid; grid-template-columns:25px minmax(0,1fr); gap:7px; align-items:start; padding:7px 8px; border:1px solid #eee9f0; border-radius:8px; color:#332c38; background:#fff; font-family:Georgia,"Times New Roman",serif; font-size:10px; line-height:1.55; }
+.official-reading-question-items article>b { color:#5a4bb8; font-family:inherit; font-size:9px; }
 .official-reading-question-scroll .official-reading-page-stack { gap:0; padding-right:2px; }
 .official-reading-question-scroll .official-pdf-page-lock { border-radius:0; }
 .official-reading-question-scroll .official-paper-frame { margin:0; border-radius:0; }

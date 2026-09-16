@@ -140,6 +140,13 @@ type OfficialAnswer = {
   choices?: string[];
   group?: string;
 };
+type OfficialReadingQuestion = { number: string; prompt: string };
+type OfficialReadingQuestionSection = {
+  instruction: string;
+  options?: string[];
+  questions: OfficialReadingQuestion[];
+};
+type OfficialReadingQuestionSet = { sections: OfficialReadingQuestionSection[] };
 type ReadingSourceEvidence = {
   location: string;
   excerpt: string;
@@ -401,6 +408,127 @@ const officialReadingPassages: Record<string, OfficialReadingPassage> = {
       { label: "F", text: "Few of us are strangers to nervous anxiety before a significant event. Job interviews, performance reviews and even first dates can all create stomach-churning tension. Dr Clark Perry, a former senior Australian sports psychologist and now managing director of a corporate training company, suggests diverting our attention. 'The technique of centred breathing makes you concentrate on the rise and fall of your breath. Focus on the present moment, not what you're about to do. Tennis players often do this before a serve.' While dealing with success is challenging, confronting a lack of it is even more so. Perry believes we need to train ourselves not to be afraid of failure. 'Look in the mirror and say, “I'm not afraid to fail. If I become bankrupt tomorrow, I'm OK. I'll do whatever I need to do,”' he says. 'Success will then fly to you. The best athletes focus on being their best, not on the end result.'" },
       { label: "G", text: "Sometimes when things go continuously awry, they are known in sport as 'losing streaks'. They affect our confidence and our ability to bounce back. Jeff Bond, a sports psychology pioneer who has worked in corporate training, believes slumps should be critically evaluated. 'Examine what's happened: if events have been imposed on you – for example, your company was taken over and you were made redundant – you can't do much about it. However, if you weren't working to the best of your ability, then you had some control. Look at your contributions and make changes based on that.' Bond doesn't believe there is a significant difference between elite sports people and the rest of us. 'They're certainly not different from high achievers in other areas,' he says. 'High achievers create opportunities. They expose themselves to the training, the people and the materials that help them reach their potential. They begin with a vision and establish a framework to achieve it.'" },
       { label: "H", text: "Despite the fact that many of us will strive, not all of us will achieve what we set out to do. So how can we reconcile ourselves to the fact that our best effort wasn't enough? The experts say we should acknowledge we did our best, recognise what we learned and, hopefully, enjoy ourselves along the way." },
+    ],
+  },
+};
+// The official question PDF contains all three passages. Rendering it in an
+// iframe means that a browser PDF viewer can still expose the whole document,
+// even when the iframe URL points at one page. Keep the question text as
+// structured HTML so the active Passage can show only its own questions.
+const officialReadingQuestionSets: Record<string, OfficialReadingQuestionSet> = {
+  "reading-passage-1": {
+    sections: [
+      {
+        instruction: "Questions 1–6 · Do the statements agree with the information given in Reading Passage 1? Choose TRUE, FALSE or NOT GIVEN.",
+        options: ["TRUE", "FALSE", "NOT GIVEN"],
+        questions: [
+          { number: "1", prompt: "The natural world is often the first place people think about with regard to new engineering materials." },
+          { number: "2", prompt: "Spider-silk is a natural substance that can be used in the production of certain types of specialist clothing." },
+          { number: "3", prompt: "According to fishermen, ragworm numbers in the North Atlantic have increased." },
+          { number: "4", prompt: "Apart from its jaw, the rest of a ragworm is soft." },
+          { number: "5", prompt: "Some synthetic plastics are weaker than ragworm jaws." },
+          { number: "6", prompt: "Ragworms that live in clean water have less zinc in their jaws than those that live in dirty water." },
+        ],
+      },
+      {
+        instruction: "Questions 7–10 · Complete the notes. Choose ONE WORD ONLY from the passage for each answer.",
+        questions: [
+          { number: "7", prompt: "They found the jaws were very strong but also very _____." },
+          { number: "8", prompt: "They realised the jaws were unlike other hard body parts such as _____." },
+          { number: "9", prompt: "Closer X-ray analysis indicated that no _____ had taken place." },
+          { number: "10", prompt: "In addition to zinc, they discovered large quantities of _____ in the protein mix." },
+        ],
+      },
+      {
+        instruction: "Questions 11–13 · Choose ONE WORD ONLY from the passage for each answer.",
+        questions: [
+          { number: "11", prompt: "Which parts of their body do ragworms use to move across beaches?" },
+          { number: "12", prompt: "Which parts of their body do ragworms use to attack other creatures?" },
+          { number: "13", prompt: "What type of object does NASA hope worm-jaw protein will help them make?" },
+        ],
+      },
+    ],
+  },
+  "reading-passage-2": {
+    sections: [
+      {
+        instruction: "Questions 14–18 · Do the statements agree with the claims of the writer? Choose YES, NO or NOT GIVEN.",
+        options: ["YES", "NO", "NOT GIVEN"],
+        questions: [
+          { number: "14", prompt: "Archaeology involves creativity as well as careful investigative work." },
+          { number: "15", prompt: "Archaeologists must be able to translate texts from ancient languages." },
+          { number: "16", prompt: "Movies give a realistic picture of the work of archaeologists." },
+          { number: "17", prompt: "Archaeology is a more demanding study than anthropology." },
+          { number: "18", prompt: "The history of Europe has been documented since 3000 BC." },
+        ],
+      },
+      {
+        instruction: "Questions 19–20 · Which TWO statements about anthropology are made by the writer? Choose TWO letters, A–E.",
+        options: ["A · It is important for government planners.", "B · It is a continually growing field of study.", "C · It often involves long periods of fieldwork.", "D · It is subdivided for study purposes.", "E · It studies human evolutionary patterns."],
+        questions: [
+          { number: "19", prompt: "Choose one of the statements above." },
+          { number: "20", prompt: "Choose one of the statements above." },
+        ],
+      },
+      {
+        instruction: "Questions 21–22 · Which TWO tasks of an archaeologist are mentioned by the writer? Choose TWO letters, A–E.",
+        options: ["A · examining ancient waste sites to investigate diet", "B · studying cave art to determine its significance", "C · deducing reasons for the shape of domestic buildings", "D · investigating the way different cultures make and use objects", "E · examining evidence for past climate changes"],
+        questions: [
+          { number: "21", prompt: "Choose one of the tasks above." },
+          { number: "22", prompt: "Choose one of the tasks above." },
+        ],
+      },
+      {
+        instruction: "Questions 23–26 · Complete the summary. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+        questions: [
+          { number: "23", prompt: "Much of the work of archaeologists can be done using written records but they find _____ equally valuable." },
+          { number: "24", prompt: "The writer describes archaeology as both a _____." },
+          { number: "25", prompt: "The writer describes archaeology as both a _____ ." },
+          { number: "26", prompt: "The writer compares the archaeologist's style of working to that of a _____." },
+        ],
+      },
+    ],
+  },
+  "reading-passage-3": {
+    sections: [
+      {
+        instruction: "Questions 27–33 · Match each statement with the correct person, A–D. You may use any letter more than once.",
+        options: ["A · Gavin Freeman", "B · Jocelyn Penna", "C · Clark Perry", "D · Jeff Bond"],
+        questions: [
+          { number: "27", prompt: "You need to focus on exactly what you want to achieve as well as all the steps needed to achieve it." },
+          { number: "28", prompt: "You are more likely to succeed if you recognise that you have prepared well." },
+          { number: "29", prompt: "Some people want to win and others don't want to lose." },
+          { number: "30", prompt: "A fear of losing should be faced." },
+          { number: "31", prompt: "Some people only attempt to do things they know they will achieve." },
+          { number: "32", prompt: "Successful people actively use available resources." },
+          { number: "33", prompt: "It is better to think about the here and now rather than what you will do next." },
+        ],
+      },
+      {
+        instruction: "Questions 34–37 · Which paragraph contains the following information? Choose a letter A–H.",
+        options: ["A", "B", "C", "D", "E", "F", "G", "H"],
+        questions: [
+          { number: "34", prompt: "An account of how someone dealt with an injury in a positive way." },
+          { number: "35", prompt: "An expression which means periods of failure." },
+          { number: "36", prompt: "A step-by-step process showing how to benefit from talking to yourself." },
+          { number: "37", prompt: "A list of stressful work-related and social occasions which cause a physical reaction." },
+        ],
+      },
+      {
+        instruction: "Questions 38–39 · Which TWO statements does Gavin Freeman make about successful people? Choose TWO letters, A–E.",
+        options: ["A · Top-level athletes think quite differently to ordinary people.", "B · Staying enthusiastic in trying to achieve your goals is very difficult.", "C · The kind of person we are determines whether we are likely to succeed.", "D · Successful people have more accidents because they try harder.", "E · There are more people who try to avoid failure than try to succeed."],
+        questions: [
+          { number: "38", prompt: "Choose one of the statements above." },
+          { number: "39", prompt: "Choose one of the statements above." },
+        ],
+      },
+      {
+        instruction: "Question 40 · Choose the correct letter, A–D. Which is the most suitable subtitle for Reading Passage 3?",
+        options: ["A · Motivational techniques for business success", "B · How facing difficulties can lead to success", "C · Sports psychologists describe what we can learn from the minds of champions", "D · Psychologists disagree on why some talented athletes fail while others succeed"],
+        questions: [
+          { number: "40", prompt: "Choose the most suitable subtitle for Reading Passage 3." },
+        ],
+      },
     ],
   },
 };
@@ -1959,6 +2087,7 @@ function OfficialTestRunner({
   const recordId = officialPracticeRecordId(session);
   const taskOfficialHighlights = officialHighlights[taskKey] ?? [];
   const officialReadingPassage = material.passagePdfUrl ? officialReadingPassages[task.id] : undefined;
+  const officialReadingQuestionSet = material.passagePdfUrl ? officialReadingQuestionSets[task.id] : undefined;
 
   useEffect(() => {
     if (timerState !== "running") return;
@@ -2227,7 +2356,13 @@ function OfficialTestRunner({
                 <section className="official-reading-questions-panel" aria-label={`${task.label} 对应题目`}>
                   <header><b>{task.questionLabel.split(" · ").pop()}</b><span>仅当前 Passage</span></header>
                   <div className="official-reading-question-scroll" aria-label={`${task.label} 完整题目，可滚动查看`}>
-                    <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
+                    {officialReadingQuestionSet ? <div className="official-reading-question-list">
+                      {officialReadingQuestionSet.sections.map((section, sectionIndex) => <section key={`${task.id}-question-section-${sectionIndex}`}>
+                        <p className="official-reading-question-instruction">{section.instruction}</p>
+                        {section.options && <div className="official-reading-question-options" aria-label="题目选项">{section.options.map((option) => <span key={option}>{option}</span>)}</div>}
+                        <div className="official-reading-question-items">{section.questions.map((question) => <article key={`${task.id}-question-${question.number}`}><b>{question.number}</b><span>{question.prompt}</span></article>)}</div>
+                      </section>)}
+                    </div> : <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>}
                   </div>
                 </section>
               )}
