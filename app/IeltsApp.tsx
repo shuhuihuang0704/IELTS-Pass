@@ -3678,7 +3678,7 @@ function DailyVocabularySprint({
       <aside className="exercise-context daily-vocabulary-context">
         <span>今天的目标</span>
         <strong>{knownCount}<small>/{total}</small></strong>
-        <p>先核对中文含义再确认认识；若点了“记错了”，该词会回到本轮并进入遗忘曲线复习。</p>
+        <p>模糊或不熟悉的词会回到本轮，并在后续每日按遗忘曲线复习；再次认识也不会立刻移除。</p>
         <div><b>{dailyVocabulary.length}</b><small>高频核心词库</small></div>
         <div><b>{fuzzyCount}</b><small>本轮模糊</small></div>
         <div><b>{unfamiliarCount}</b><small>本轮不熟悉</small></div>
