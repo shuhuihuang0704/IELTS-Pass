@@ -147,6 +147,14 @@ type OfficialReadingQuestionSection = {
   questions: OfficialReadingQuestion[];
 };
 type OfficialReadingQuestionSet = { sections: OfficialReadingQuestionSection[] };
+type OfficialHighlightColor = "yellow" | "green" | "blue" | "pink";
+type OfficialHighlight = { text: string; color: OfficialHighlightColor };
+const officialHighlightColors: Array<{ id: OfficialHighlightColor; label: string }> = [
+  { id: "yellow", label: "黄色" },
+  { id: "green", label: "绿色" },
+  { id: "blue", label: "蓝色" },
+  { id: "pink", label: "粉色" },
+];
 type ReadingSourceEvidence = {
   location: string;
   excerpt: string;
@@ -1118,12 +1126,14 @@ function speakDialogue(turns: DialogueTurn[], rate = 0.92, handlers?: DialoguePl
     }
     const turn = turns[index];
     index += 1;
-    const utterance = createIeltsUtterance(turn.text, turn.role === "female" ? rate : rate * .96, turn.role === "female" ? 1.06 : .86, turn.role);
+    // Keep the same comfortable ~0.90× pace used by Daily Vocabulary while
+    // preserving a clear female/male contrast for the listening dialogue.
+    const utterance = createIeltsUtterance(turn.text, rate, turn.role === "female" ? 1.02 : .92, turn.role);
     utterance.onstart = () => { started = true; };
     // Keep a small, uneven turn-taking gap. Official sample conversations
     // leave room for brief acknowledgements and self-corrections rather than
     // cutting directly from one voice into the next.
-    utterance.onend = () => window.setTimeout(playNext, turn.text.endsWith("?") ? 320 : 420);
+    utterance.onend = () => window.setTimeout(playNext, turn.text.endsWith("?") ? 520 : 620);
     utterance.onerror = () => {
       synthesis.cancel();
       handlers?.onerror?.();
@@ -2161,8 +2171,10 @@ function OfficialTestRunner({
   const [showAttemptHistory, setShowAttemptHistory] = useState(false);
   const [taskAttemptVersions, setTaskAttemptVersions] = useState<Record<string, number>>({});
   const [activeReadingQuestion, setActiveReadingQuestion] = useState<string | null>(null);
-  const [officialHighlights, setOfficialHighlights] = useState<Record<string, string[]>>({});
+  const [officialHighlights, setOfficialHighlights] = useState<Record<string, OfficialHighlight[]>>({});
   const [selectedOfficialText, setSelectedOfficialText] = useState("");
+  const [selectedHighlightColor, setSelectedHighlightColor] = useState<OfficialHighlightColor>("yellow");
+  const [selectionToolbarPosition, setSelectionToolbarPosition] = useState<{ top: number; left: number } | null>(null);
   const readingBookletRef = useRef<HTMLDivElement>(null);
   const officialArticleRef = useRef<HTMLElement>(null);
   const task = material.tasks[taskIndex];
@@ -2317,38 +2329,58 @@ function OfficialTestRunner({
     setShowAttemptHistory(false);
     setActiveReadingQuestion(null);
     setSelectedOfficialText("");
+    setSelectionToolbarPosition(null);
     setAudioTrackIndex(nextTask.audioTrackIndex ?? 0);
   };
   const captureOfficialSelection = () => {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !officialArticleRef.current?.contains(selection.anchorNode) || !officialArticleRef.current.contains(selection.focusNode)) {
       setSelectedOfficialText("");
+      setSelectionToolbarPosition(null);
       return;
     }
     const selected = selection.toString().trim().replace(/\s+/g, " ");
-    setSelectedOfficialText(selected.length >= 2 ? selected : "");
+    if (selected.length < 2) {
+      setSelectedOfficialText("");
+      setSelectionToolbarPosition(null);
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    const selectionRect = range.getBoundingClientRect();
+    const toolbarWidth = Math.min(330, Math.max(250, window.innerWidth - 20));
+    const left = Math.min(Math.max(10, selectionRect.left + (selectionRect.width / 2) - (toolbarWidth / 2)), Math.max(10, window.innerWidth - toolbarWidth - 10));
+    const top = selectionRect.top > 78 ? selectionRect.top - 66 : selectionRect.bottom + 10;
+    setSelectedOfficialText(selected);
+    setSelectionToolbarPosition({ top: Math.max(10, top), left });
   };
   const addOfficialHighlight = () => {
     if (!selectedOfficialText) return;
     setOfficialHighlights((current) => ({
       ...current,
-      [taskKey]: Array.from(new Set([...(current[taskKey] ?? []), selectedOfficialText])),
+      [taskKey]: [
+        ...(current[taskKey] ?? []).filter((highlight) => highlight.text !== selectedOfficialText),
+        { text: selectedOfficialText, color: selectedHighlightColor },
+      ],
     }));
     setSelectedOfficialText("");
+    setSelectionToolbarPosition(null);
     window.getSelection()?.removeAllRanges();
   };
   const renderOfficialArticleText = (text: string) => {
     const evidencePhrase = activeReadingQuestion ? readingSourceEvidence[`${task.id}:${activeReadingQuestion}`]?.excerpt.split(" ... ")[0] : "";
-    const phrases = [...taskOfficialHighlights, evidencePhrase]
-      .filter((phrase) => phrase && text.toLocaleLowerCase().includes(phrase.toLocaleLowerCase()))
-      .sort((a, b) => b.length - a.length);
+    const phrases = [
+      ...taskOfficialHighlights.map((highlight) => ({ text: highlight.text, color: highlight.color })),
+      ...(evidencePhrase ? [{ text: evidencePhrase, color: "green" as OfficialHighlightColor }] : []),
+    ]
+      .filter((phrase) => text.toLocaleLowerCase().includes(phrase.text.toLocaleLowerCase()))
+      .sort((a, b) => b.text.length - a.text.length);
     if (!phrases.length) return text;
-    const escaped = phrases.map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const escaped = phrases.map((phrase) => phrase.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
     return text.split(pattern).map((part, index) => {
       const isEvidence = Boolean(evidencePhrase && evidencePhrase.toLocaleLowerCase() === part.toLocaleLowerCase());
-      const isPersonal = taskOfficialHighlights.some((phrase) => phrase.toLocaleLowerCase() === part.toLocaleLowerCase());
-      return isEvidence || isPersonal ? <mark className={isEvidence ? "official-evidence-highlight" : "personal-highlight"} key={`${taskKey}-article-${index}`}>{part}</mark> : part;
+      const personalHighlight = taskOfficialHighlights.find((highlight) => highlight.text.toLocaleLowerCase() === part.toLocaleLowerCase());
+      return isEvidence || personalHighlight ? <mark className={isEvidence ? "official-evidence-highlight" : `personal-highlight highlight-${personalHighlight?.color ?? "yellow"}`} key={`${taskKey}-article-${index}`}>{part}</mark> : part;
     });
   };
   const showReadingEvidence = (questionNumber: string) => {
@@ -2366,6 +2398,8 @@ function OfficialTestRunner({
   const continueEditingCurrentTask = () => {
     setSubmittedTasks((current) => ({ ...current, [taskKey]: false }));
     setPaperMode("questions");
+    setSelectedOfficialText("");
+    setSelectionToolbarPosition(null);
     updateProgress((current) => ({
       ...current,
       officialTaskResults: Object.fromEntries(Object.entries(current.officialTaskResults).filter(([key]) => key !== taskRecordKey)),
@@ -2378,6 +2412,8 @@ function OfficialTestRunner({
     setPaperMode("questions");
     setShowAttemptHistory(false);
     setActiveReadingQuestion(null);
+    setSelectedOfficialText("");
+    setSelectionToolbarPosition(null);
     setOfficialResponses((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${taskKey}:`))));
     updateProgress((current) => {
       const previousResult = current.officialTaskResults[taskRecordKey];
@@ -2551,12 +2587,22 @@ function OfficialTestRunner({
                   {officialReadingPassage ? <>
                     <section className="official-reading-annotation">
                       <div className="official-reading-annotation-toolbar">
-                        <div><strong>文章划线</strong><small>{selectedOfficialText ? `已选择 ${selectedOfficialText.length} 个字符` : taskOfficialHighlights.length ? `已标记 ${taskOfficialHighlights.length} 处` : "在下面文章正文中拖选文字后点击“标记”"}</small></div>
+                        <div><strong>文章划线</strong><small>{selectedOfficialText ? `已选择 ${selectedOfficialText.length} 个字符；可在选区旁直接操作` : taskOfficialHighlights.length ? `已标记 ${taskOfficialHighlights.length} 处` : "在文章正文中拖选文字，选区旁会出现工具条"}</small></div>
+                        <div className="official-reading-color-picker" role="toolbar" aria-label="选择荧光笔颜色">
+                          {officialHighlightColors.map((color) => <button type="button" className={`official-reading-color-swatch is-${color.id}${selectedHighlightColor === color.id ? " is-active" : ""}`} aria-label={`选择${color.label}荧光笔`} aria-pressed={selectedHighlightColor === color.id} onClick={() => setSelectedHighlightColor(color.id)} key={color.id}><i aria-hidden="true" />{color.label}</button>)}
+                        </div>
                         <button type="button" disabled={!selectedOfficialText} onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()} onClick={addOfficialHighlight}>标记选中内容</button>
                         <button type="button" className="is-secondary" disabled={!taskOfficialHighlights.length} onClick={() => setOfficialHighlights((current) => ({ ...current, [taskKey]: [] }))}>清除划线</button>
                       </div>
-                      <small className="official-reading-annotation-note">请直接在文章正文中拖选任意词句；标记会保留在本设备，点击“荧光笔定位原文”也会滚动到对应句子。</small>
+                      <small className="official-reading-annotation-note">直接拖选任意词句后，在选区附近选择颜色并点击“标记”；不用再滑回顶部。标记会保留在本设备，点击“荧光笔定位原文”也会滚动到对应句子。</small>
                     </section>
+                    {selectedOfficialText && selectionToolbarPosition && <div className="official-reading-selection-toolbar" role="toolbar" aria-label="选中文字标记工具" style={{ top: selectionToolbarPosition.top, left: selectionToolbarPosition.left }} onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()}>
+                      <span>已选 {selectedOfficialText.length} 字</span>
+                      <div className="official-reading-color-picker" role="group" aria-label="选择荧光笔颜色">
+                        {officialHighlightColors.map((color) => <button type="button" className={`official-reading-color-swatch is-${color.id}${selectedHighlightColor === color.id ? " is-active" : ""}`} aria-label={`选择${color.label}荧光笔`} aria-pressed={selectedHighlightColor === color.id} onClick={() => setSelectedHighlightColor(color.id)} key={color.id}><i aria-hidden="true" /></button>)}
+                      </div>
+                      <button type="button" className="official-reading-selection-apply" onClick={addOfficialHighlight}>标记</button>
+                    </div>}
                     <article className="official-reading-article" ref={officialArticleRef} onMouseUp={captureOfficialSelection} onTouchEnd={captureOfficialSelection}>
                       <h2>{officialReadingPassage.title}</h2>
                       {officialReadingPassage.subtitle && <p className="official-reading-article-subtitle">{officialReadingPassage.subtitle}</p>}
@@ -3983,11 +4029,13 @@ function ListeningPractice({
   const [audioDuration, setAudioDuration] = useState(0);
   const [dialoguePlayback, setDialoguePlayback] = useState<"idle" | "playing" | "paused">("idle");
   const [longDialogueMode, setLongDialogueMode] = useState(false);
+  const [naturalDialoguePreferred, setNaturalDialoguePreferred] = useState(true);
   const [dialogueAudioTime, setDialogueAudioTime] = useState(0);
   const listeningAudio = useRef<HTMLAudioElement | null>(null);
   const dialogueAudioTimeRef = useRef(0);
   const dialogueAnchorTimeRef = useRef(0);
   const dialogueAnchorStartedRef = useRef(0);
+  const naturalSpeechAvailable = typeof window !== "undefined" && "speechSynthesis" in window;
   const dialogueTurns = useMemo<DialogueTurn[]>(() => {
     const pattern = /(Coordinator|Caller|Supervisor|Applicant|Receptionist|Student):\s*/g;
     const turns: DialogueTurn[] = [];
@@ -4037,6 +4085,13 @@ function ListeningPractice({
   }, []);
 
   const toggleListening = () => {
+    // Daily Vocabulary uses the device's natural speech path on iOS. Use the
+    // same speech-synthesis path for the daily listening dialogue by default;
+    // the bundled WAV remains available as a compatibility fallback/toggle.
+    if (naturalDialoguePreferred && naturalSpeechAvailable) {
+      toggleDistinctDialogue();
+      return;
+    }
     if (longDialogueMode) {
       toggleDistinctDialogue();
       return;
@@ -4058,8 +4113,18 @@ function ListeningPractice({
   };
 
   const restartListening = () => {
+    if (naturalDialoguePreferred && naturalSpeechAvailable) {
+      window.speechSynthesis.cancel();
+      setDialoguePlayback("idle");
+      setLongDialogueMode(false);
+      dialogueAudioTimeRef.current = 0;
+      dialogueAnchorTimeRef.current = 0;
+      setDialogueAudioTime(0);
+      window.setTimeout(() => toggleDistinctDialogue(), 0);
+      return;
+    }
     if (longDialogueMode) {
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (naturalSpeechAvailable) window.speechSynthesis.cancel();
       setDialoguePlayback("idle");
       setLongDialogueMode(false);
       dialogueAudioTimeRef.current = 0;
@@ -4114,6 +4179,20 @@ function ListeningPractice({
       setDialoguePlayback("idle");
       setLongDialogueMode(false);
     }
+  };
+
+  const toggleListeningVoiceMode = () => {
+    if (naturalDialoguePreferred) {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      setDialoguePlayback("idle");
+      setLongDialogueMode(false);
+      dialogueAudioTimeRef.current = 0;
+      setDialogueAudioTime(0);
+      setNaturalDialoguePreferred(false);
+      return;
+    }
+    setNaturalDialoguePreferred(naturalSpeechAvailable);
+    setAudioError(false);
   };
 
   const formatAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -4291,7 +4370,7 @@ function ListeningPractice({
   };
 
   const longDialogueActive = longDialogueMode && dialoguePlayback !== "idle";
-  const longDialogueVoiceLabel = "澳大利亚女声 Karen × 英国男声 Daniel";
+  const longDialogueVoiceLabel = "自然英式语速 · 女声 × 男声";
   const displayedPlayerTime = longDialogueActive ? dialogueAudioTime : audioTime;
   const displayedPlayerDuration = longDialogueActive ? dialogueDuration : audioDuration;
   const displayedPlayerState = longDialogueActive ? dialoguePlayback : playerState;
@@ -4304,13 +4383,14 @@ function ListeningPractice({
         <div className="listening-controls">
           <audio key={listeningSet.audioSrc} ref={listeningAudio} src={listeningSet.audioSrc} preload="auto" playsInline onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); setAudioError(false); }} onError={() => { setAudioError(true); setPlayerState("error"); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => { setAudioError(false); setPlayerState("playing"); }} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${displayedPlayerState}`}>
-            <button className="listening-toggle" onClick={toggleListening} aria-label={longDialogueActive ? displayedPlayerState === "playing" ? "暂停长版男女分轨" : "继续长版男女分轨" : playerState === "playing" ? "暂停录音" : "播放录音"}>{displayedPlayerState === "playing" ? "Ⅱ" : "▶"}</button>
+            <button className="listening-toggle" onClick={toggleListening} aria-label={longDialogueActive ? displayedPlayerState === "playing" ? "暂停自然角色朗读" : "继续自然角色朗读" : naturalDialoguePreferred ? displayedPlayerState === "playing" ? "暂停自然角色朗读" : "播放自然角色朗读" : playerState === "playing" ? "暂停基础录音" : "播放基础录音"}>{displayedPlayerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(displayedPlayerDuration, 1)} step="0.1" value={displayedPlayerTime} disabled={longDialogueActive} onChange={(event) => { if (longDialogueActive) return; const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label={longDialogueActive ? "长版角色朗读进度（不可拖动）" : "拖动听力录音进度"} />
-            <span className="listening-player-copy"><strong>{longDialogueActive ? displayedPlayerState === "playing" ? `正在播放长版 · ${longDialogueVoiceLabel}` : `已暂停长版 · ${longDialogueVoiceLabel}` : playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放双人基础录音"}</strong><small>{longDialogueActive ? `${formatAudioTime(displayedPlayerTime)} / ${formatAudioTime(displayedPlayerDuration)} · 角色朗读进度（不可拖动）` : audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
+            <span className="listening-player-copy"><strong>{longDialogueActive ? displayedPlayerState === "playing" ? `正在播放自然角色朗读 · ${longDialogueVoiceLabel}` : `已暂停自然角色朗读 · ${longDialogueVoiceLabel}` : naturalDialoguePreferred ? displayedPlayerState === "playing" ? `正在播放自然角色朗读 · ${longDialogueVoiceLabel}` : displayedPlayerState === "paused" ? `已暂停自然角色朗读 · ${longDialogueVoiceLabel}` : "播放自然角色朗读" : playerState === "playing" ? `正在播放基础录音 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停基础录音 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放双人基础录音"}</strong><small>{longDialogueActive || naturalDialoguePreferred ? `${formatAudioTime(displayedPlayerTime)} / ${formatAudioTime(displayedPlayerDuration)} · 与每日词汇相同的约 0.90× 训练语速` : audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
           </div>
           <button className="listening-replay" disabled={!longDialogueActive && audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
-          <button className={`listening-dialogue-toggle is-${dialoguePlayback}`} onClick={toggleDistinctDialogue}>{dialoguePlayback === "playing" ? "Ⅱ 暂停长版男女分轨" : dialoguePlayback === "paused" ? "▶ 继续长版男女分轨" : "♫ 播放长版男女分轨"}</button>
-          <small className="listening-dialogue-note">长版约 3–4 分钟：按 IELTS Part 1 的自然确认、改口和细节展开；女声 Karen（澳洲英语）· 男声 Daniel（英国英语）。</small>
+          <button className={`listening-dialogue-toggle is-${dialoguePlayback}`} onClick={() => { setNaturalDialoguePreferred(true); toggleDistinctDialogue(); }}>{dialoguePlayback === "playing" ? "Ⅱ 暂停自然角色朗读" : dialoguePlayback === "paused" ? "▶ 继续自然角色朗读" : "♫ 播放自然角色朗读"}</button>
+          <button className="listening-voice-mode" type="button" onClick={toggleListeningVoiceMode}>{naturalDialoguePreferred ? "切换基础录音" : "使用自然角色朗读"}</button>
+          <small className="listening-dialogue-note">默认使用与每日词汇一致的约 0.90× 自然语速；女声与男声分别选用设备可用的英式英语声音。需要时可切回基础录音。</small>
         </div>
         <div className="listening-answer-progress"><i style={{ width: `${answeredCount * 10}%` }} /><span>{answeredCount}/10</span></div>
 
