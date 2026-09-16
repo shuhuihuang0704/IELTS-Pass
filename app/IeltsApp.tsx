@@ -960,6 +960,51 @@ function autoPronounceDailyVocabularyWord(word: string) {
   return playPronunciation(word, .9);
 }
 
+type DailyWordDictionaryEntry = {
+  phonetic?: unknown;
+  phonetics?: Array<{ text?: unknown }>;
+};
+
+const dailyWordPhoneticCache = new Map<string, string>();
+const dailyWordPhoneticRequests = new Map<string, Promise<string>>();
+
+function cleanDailyWordPhonetic(value: unknown) {
+  return typeof value === "string" ? value.replace(/^\/+|\/+$/g, "").trim() : "";
+}
+
+async function fetchDailyWordPhonetic(word: string) {
+  const normalized = word.trim().toLowerCase();
+  if (!normalized || typeof window === "undefined") return "";
+  if (dailyWordPhoneticCache.has(normalized)) return dailyWordPhoneticCache.get(normalized) ?? "";
+  const existingRequest = dailyWordPhoneticRequests.get(normalized);
+  if (existingRequest) return existingRequest;
+
+  const request = (async () => {
+    let phonetic = "";
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(normalized)}`, { signal: controller.signal });
+      if (response.ok) {
+        const entries = await response.json() as DailyWordDictionaryEntry[];
+        const firstEntry = entries.find((entry) => cleanDailyWordPhonetic(entry.phonetic))
+          ?? entries.find((entry) => entry.phonetics?.some((item) => cleanDailyWordPhonetic(item.text)));
+        phonetic = cleanDailyWordPhonetic(firstEntry?.phonetic)
+          || cleanDailyWordPhonetic(firstEntry?.phonetics?.find((item) => cleanDailyWordPhonetic(item.text))?.text);
+      }
+    } catch {
+      phonetic = "";
+    } finally {
+      window.clearTimeout(timeout);
+    }
+    dailyWordPhoneticCache.set(normalized, phonetic);
+    dailyWordPhoneticRequests.delete(normalized);
+    return phonetic;
+  })();
+  dailyWordPhoneticRequests.set(normalized, request);
+  return request;
+}
+
 function normalizeOfficialAnswer(value: string) {
   return value
     .normalize("NFKC")
@@ -3489,13 +3534,27 @@ function DailyVocabularySprint({
   updateProgress: (updater: (current: LearningProgress) => LearningProgress) => void;
 }) {
   const dailyTarget = dailyVocabularyTarget(progress.studyPlanDays, progress.targetBandScore);
-  const dailyWords = useMemo(() => getDailyVocabulary(contentDate, dailyTarget), [contentDate, dailyTarget]);
+  const dailyReviewWords = useMemo(() => {
+    const vocabularyByWord = new Map(dailyVocabulary.map((item) => [item.word, item]));
+    const seenToday = new Set(progress.dailyVocabularySeen);
+    return progress.reviewWords
+      .filter((reviewWord) => seenToday.has(reviewWord) || (progress.reviewSchedule[reviewWord]?.dueDate ?? contentDate) <= contentDate)
+      .map((reviewWord) => vocabularyByWord.get(reviewWord))
+      .filter((item): item is typeof dailyVocabulary[number] => Boolean(item));
+  }, [contentDate, progress.dailyVocabularySeen, progress.reviewSchedule, progress.reviewWords]);
+  const dailyWords = useMemo(() => {
+    const scheduledWords = new Set(dailyReviewWords.map((item) => item.word));
+    const newWords = getDailyVocabulary(contentDate, dailyTarget).filter((item) => !scheduledWords.has(item.word));
+    return [...dailyReviewWords, ...newWords];
+  }, [contentDate, dailyReviewWords, dailyTarget]);
   const total = dailyWords.length;
   const groupSize = 20;
   const roundCount = Math.ceil(total / groupSize);
   const dailyWordSet = useMemo(() => new Set(dailyWords.map((item) => item.word)), [dailyWords]);
   const [queue, setQueue] = useState(() => dailyWords.filter((item) => !progress.dailyVocabularyKnown.includes(item.word)));
   const [pendingRating, setPendingRating] = useState<WordRating | null>(null);
+  const [wordPhonetic, setWordPhonetic] = useState("");
+  const [phoneticLoading, setPhoneticLoading] = useState(false);
   const knownCount = progress.dailyVocabularyKnown.filter((item) => dailyWordSet.has(item)).length;
   const finished = queue.length === 0;
   const word = queue[0];
@@ -3503,6 +3562,23 @@ function DailyVocabularySprint({
   const wordSaved = Boolean(word && progress.notebook.some((entry) => entry.id === wordNoteId));
   const fuzzyCount = dailyWords.filter((item) => progress.dailyVocabularyRatings[item.word] === "fuzzy").length;
   const unfamiliarCount = dailyWords.filter((item) => progress.dailyVocabularyRatings[item.word] === "unfamiliar").length;
+
+  useEffect(() => {
+    if (!word?.word) {
+      setWordPhonetic("");
+      setPhoneticLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setWordPhonetic(dailyWordPhoneticCache.get(word.word.toLowerCase()) ?? "");
+    setPhoneticLoading(!dailyWordPhoneticCache.has(word.word.toLowerCase()));
+    fetchDailyWordPhonetic(word.word).then((phonetic) => {
+      if (cancelled) return;
+      setWordPhonetic(phonetic);
+      setPhoneticLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [word?.word]);
 
   useEffect(() => {
     if (!word || pendingRating !== null) return;
@@ -3518,7 +3594,7 @@ function DailyVocabularySprint({
 
   const commitRating = (rating: WordRating) => {
     updateProgress((current) => {
-      const next = {
+      let next: LearningProgress = {
         ...current,
         dailyVocabularySeen: Array.from(new Set([...current.dailyVocabularySeen, word.word])),
         dailyVocabularyKnown: rating === "known"
@@ -3528,7 +3604,14 @@ function DailyVocabularySprint({
         dailyVocabularyAttempts: { ...current.dailyVocabularyAttempts, [word.word]: (current.dailyVocabularyAttempts[word.word] ?? 0) + 1 },
         masteredWords: rating === "known" ? Array.from(new Set([...current.masteredWords, word.word])) : current.masteredWords,
       };
-      return rating === "known" ? next : scheduleWordForReview(next, word.word, rating, 1);
+      if (rating === "known" && current.reviewWords.includes(word.word)) {
+        // A successful recall advances the existing forgetting-curve review
+        // instead of graduating the word immediately.
+        next = rateReviewWord(next, word.word, "known");
+      } else if (rating !== "known") {
+        next = scheduleWordForReview(next, word.word, rating, 1);
+      }
+      return next;
     });
 
     setQueue((current) => {
@@ -3560,7 +3643,7 @@ function DailyVocabularySprint({
   return (
     <div className="exercise-layout daily-vocabulary-layout">
       <div className="exercise-main daily-vocabulary-main">
-        <div className="exercise-kicker"><span>每日 {total} 词 · 第 {round} / {roundCount} 组</span><span>已确认 {knownCount} / {total}</span></div>
+        <div className="exercise-kicker"><span>每日 {dailyTarget} 词{dailyReviewWords.length > 0 ? ` · 遗忘曲线复习 ${dailyReviewWords.length} 词` : ""} · 第 {round} / {roundCount} 组</span><span>已确认 {knownCount} / {total}</span></div>
         <div className="word-rounds" style={{ gridTemplateColumns: `repeat(${roundCount},1fr)` }} aria-label={`已认识 ${knownCount} / ${total} 个词`}>
           {Array.from({ length: roundCount }, (_, index) => {
             const groupTarget = Math.min(groupSize, total - index * groupSize);
@@ -3569,8 +3652,9 @@ function DailyVocabularySprint({
           })}
         </div>
         <section className={`daily-word-card ${pendingRating ? "is-revealed" : ""}`}>
-          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button onClick={() => playPronunciation(word.word, .9)} aria-label={`重新播放 ${word.word} 的发音`}>▶ 重播发音</button><button className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
+          <div><span className="word-source"><b>{word.category}</b><small>{word.source}</small></span><div className="word-card-tools"><button type="button" onClick={() => playPronunciation(word.word, .9)} aria-label={`播放 ${word.word} 的发音`}>▶ 播放发音</button><button type="button" className={wordSaved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: wordNoteId, kind: "word", title: word.word, detail: `${word.meaning}\n${word.collocation}`, source: `${word.category} · ${word.source}` }))}>{wordSaved ? "★ 已加入笔记" : "☆ 加入笔记"}</button></div></div>
           <h2>{word.word}</h2>
+          <div className="daily-word-pronunciation" aria-label={`${word.word} 的词性和英式发音`}><span className="daily-word-part-of-speech">{word.partOfSpeech}</span><span className={`daily-word-phonetic${phoneticLoading ? " is-loading" : ""}`}>{wordPhonetic ? `/${wordPhonetic}/` : phoneticLoading ? "音标加载中…" : "英式发音"}</span></div>
           <p className="word-collocation">{pendingRating ? word.collocation : "看到单词后，凭第一反应选择熟悉程度"}</p>
           <div className="daily-word-answer" aria-live="polite">
             {pendingRating ? <strong>{word.meaning}</strong> : <span>本轮已出现 {progress.dailyVocabularyAttempts[word.word] ?? 0} 次</span>}

@@ -968,6 +968,10 @@ button { cursor: pointer; }
 .word-card-tools button { padding:7px 10px; border:0; border-radius:10px; color:#4e43b4; background:#ece8f8; font-size:10px; }
 .word-card-tools button.is-saved { color:#fff; background:#5b4ec3; }
 .daily-word-card h2 { margin:31px 0 5px; font-size:clamp(46px,7vw,72px); line-height:1; letter-spacing:-3px; }
+.daily-word-pronunciation { display:flex; align-items:center; gap:10px; min-height:25px; margin:0 0 3px; }
+.daily-word-part-of-speech { padding:4px 8px; border-radius:7px; color:#5148b5; background:#ece9fa; font-size:11px; font-weight:750; letter-spacing:.2px; }
+.daily-word-phonetic { color:#716a78; font-family:Georgia,"Times New Roman",serif; font-size:15px; letter-spacing:.2px; }
+.daily-word-phonetic.is-loading { color:#a19ba6; font-family:inherit; font-size:10px; }
 .daily-word-card .word-collocation { margin:4px 0 26px; color:#7a747c; font-family:Georgia,"Times New Roman",serif; font-size:16px; }
 .daily-word-answer { min-height:49px; padding-top:17px; border-top:1px solid #e8e3ea; }
 .daily-word-answer strong { font-size:18px; }

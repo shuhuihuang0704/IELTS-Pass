@@ -563,7 +563,15 @@ export function rateReviewWord(progress: LearningProgress, word: string, rating:
     };
   }
 
-  const nextStage = rating === "known" ? Math.min(existing.stage + 1, reviewIntervals.length - 1) : rating === "fuzzy" ? Math.max(0, existing.stage - 1) : 0;
+  // The first successful recall after a fuzzy/unfamiliar result should still
+  // come back tomorrow. Only the next successful recall advances to the
+  // three-day interval, then 7, 14, 30 and 60 days.
+  const recoveredFromLapse = rating === "known"
+    && existing.stage === 0
+    && (existing.lastRating === "fuzzy" || existing.lastRating === "unfamiliar");
+  const nextStage = rating === "known"
+    ? recoveredFromLapse ? 0 : Math.min(existing.stage + 1, reviewIntervals.length - 1)
+    : rating === "fuzzy" ? Math.max(0, existing.stage - 1) : 0;
   const dueInDays = rating === "known" ? reviewIntervals[nextStage] : rating === "fuzzy" ? 1 : 0;
   return {
     ...progress,
