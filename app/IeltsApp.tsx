@@ -2179,7 +2179,7 @@ function OfficialTestRunner({
               submitCurrentTask();
             }}>
               <header>
-                <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>{material.passagePdfUrl ? "右侧并列显示 · 随页面同步滚动完成当前 Passage" : "右侧并列显示 · 随页面同步滚动填写当前 Task"}</small></div>
+                <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>{material.passagePdfUrl ? "右侧作答 · 下方显示当前 Passage 完整题目" : "右侧并列显示 · 随页面同步滚动填写当前 Task"}</small></div>
                 <b className={taskSubmitted ? "is-scored" : ""}>{taskSubmitted ? `${correctAnswerCount} / ${taskAnswers.length}` : `${answeredCount} / ${taskAnswers.length}`}</b>
               </header>
               <div className="official-answer-grid">
@@ -2221,6 +2221,14 @@ function OfficialTestRunner({
                       })}</div>
                     </article>;
                   })}</div>}
+                </section>
+              )}
+              {material.passagePdfUrl && paperMode === "questions" && (
+                <section className="official-reading-questions-panel" aria-label={`${task.label} 对应题目`}>
+                  <header><b>{task.questionLabel.split(" · ").pop()}</b><span>仅当前 Passage</span></header>
+                  <div className="official-reading-question-scroll" aria-label={`${task.label} 完整题目，可滚动查看`}>
+                    <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
+                  </div>
                 </section>
               )}
             </form>
@@ -2275,33 +2283,32 @@ function OfficialTestRunner({
             </div>
           )}
           {material.passagePdfUrl && paperMode === "questions" ? (
-            <div className="official-reading-booklet" ref={readingBookletRef}>
-              <header>
-                <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? allAnswersFilled ? "✓ 本 Passage 已完成" : "已提交查看答案 · 尚未完成" : "独立作答 · 不影响其他 Passage"}</small></div>
-                <span>{task.questionLabel}</span>
-              </header>
-              <section className="official-reading-pair" key={task.id}>
-                <header><b>{task.label} · 阅读文章</b><small>仅显示当前 Passage</small></header>
-                {officialReadingPassage ? <>
-                  <section className="official-reading-annotation">
-                    <div className="official-reading-annotation-toolbar">
-                      <div><strong>文章划线</strong><small>{selectedOfficialText ? `已选择 ${selectedOfficialText.length} 个字符` : taskOfficialHighlights.length ? `已标记 ${taskOfficialHighlights.length} 处` : "在下面文章正文中拖选文字后点击“标记”"}</small></div>
-                      <button type="button" disabled={!selectedOfficialText} onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()} onClick={addOfficialHighlight}>标记选中内容</button>
-                      <button type="button" className="is-secondary" disabled={!taskOfficialHighlights.length} onClick={() => setOfficialHighlights((current) => ({ ...current, [taskKey]: [] }))}>清除划线</button>
-                    </div>
-                    <small className="official-reading-annotation-note">请直接在文章正文中拖选任意词句；标记会保留在本设备，点击“荧光笔定位原文”也会滚动到对应句子。</small>
-                  </section>
-                  <article className="official-reading-article" ref={officialArticleRef} onMouseUp={captureOfficialSelection} onTouchEnd={captureOfficialSelection}>
-                    <h2>{officialReadingPassage.title}</h2>
-                    {officialReadingPassage.subtitle && <p className="official-reading-article-subtitle">{officialReadingPassage.subtitle}</p>}
-                    {officialReadingPassage.paragraphs.map((paragraph, index) => { const evidenceText = activeReadingQuestion ? readingSourceEvidence[`${task.id}:${activeReadingQuestion}`]?.excerpt.split(" ... ")[0] : ""; const evidenceTarget = evidenceText && paragraph.text.toLocaleLowerCase().includes(evidenceText.toLocaleLowerCase()) ? `${task.id}:${activeReadingQuestion}` : undefined; return <p id={`official-reading-article-paragraph-${task.id}-${index}`} data-official-reading-evidence={evidenceTarget} key={`${task.id}-article-${index}`}>{paragraph.label && <b className="official-reading-paragraph-label">{paragraph.label}</b>}{renderOfficialArticleText(paragraph.text)}</p>; })}
-                  </article>
-                </> : <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingHighlight); return <div id={`official-reading-passage-page-${page}`} className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />{isEvidencePage && <span className="official-reading-highlight-layer" aria-hidden="true">{activeReadingHighlight.rects.map(([x, y, width, height], index) => <i key={`${activeReadingQuestion}-${index}`} style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }} />)}</span>}</div>; })}</div>}
-                <div className="official-reading-continue"><span>接着完成</span><b>{task.questionLabel}</b></div>
-                <header><b>{task.label} · 对应题目</b><small>只包含本 Passage 的题目页</small></header>
-                <div className="official-reading-page-stack">{(task.questionPages ?? [task.questionPage]).map((page) => <div className="official-pdf-page-lock" key={`questions-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 对应题目 · P${page}`} src={`${material.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} /></div>)}</div>
-              </section>
-            </div>
+            <>
+              <div className="official-reading-booklet" ref={readingBookletRef}>
+                <header>
+                  <div className="official-reading-task-status"><strong>{task.label}</strong><small>{taskSubmitted ? allAnswersFilled ? "✓ 本 Passage 已完成" : "已提交查看答案 · 尚未完成" : "独立作答 · 不影响其他 Passage"}</small></div>
+                  <span>{task.questionLabel}</span>
+                </header>
+                <section className="official-reading-pair" key={task.id}>
+                  <header><b>{task.label} · 阅读文章</b><small>仅显示当前 Passage</small></header>
+                  {officialReadingPassage ? <>
+                    <section className="official-reading-annotation">
+                      <div className="official-reading-annotation-toolbar">
+                        <div><strong>文章划线</strong><small>{selectedOfficialText ? `已选择 ${selectedOfficialText.length} 个字符` : taskOfficialHighlights.length ? `已标记 ${taskOfficialHighlights.length} 处` : "在下面文章正文中拖选文字后点击“标记”"}</small></div>
+                        <button type="button" disabled={!selectedOfficialText} onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()} onClick={addOfficialHighlight}>标记选中内容</button>
+                        <button type="button" className="is-secondary" disabled={!taskOfficialHighlights.length} onClick={() => setOfficialHighlights((current) => ({ ...current, [taskKey]: [] }))}>清除划线</button>
+                      </div>
+                      <small className="official-reading-annotation-note">请直接在文章正文中拖选任意词句；标记会保留在本设备，点击“荧光笔定位原文”也会滚动到对应句子。</small>
+                    </section>
+                    <article className="official-reading-article" ref={officialArticleRef} onMouseUp={captureOfficialSelection} onTouchEnd={captureOfficialSelection}>
+                      <h2>{officialReadingPassage.title}</h2>
+                      {officialReadingPassage.subtitle && <p className="official-reading-article-subtitle">{officialReadingPassage.subtitle}</p>}
+                      {officialReadingPassage.paragraphs.map((paragraph, index) => { const evidenceText = activeReadingQuestion ? readingSourceEvidence[`${task.id}:${activeReadingQuestion}`]?.excerpt.split(" ... ")[0] : ""; const evidenceTarget = evidenceText && paragraph.text.toLocaleLowerCase().includes(evidenceText.toLocaleLowerCase()) ? `${task.id}:${activeReadingQuestion}` : undefined; return <p id={`official-reading-article-paragraph-${task.id}-${index}`} data-official-reading-evidence={evidenceTarget} key={`${task.id}-article-${index}`}>{paragraph.label && <b className="official-reading-paragraph-label">{paragraph.label}</b>}{renderOfficialArticleText(paragraph.text)}</p>; })}
+                    </article>
+                  </> : <div className="official-reading-page-stack">{(task.passagePages ?? [2]).map((page) => { const isEvidencePage = activeReadingEvidencePage === page && Boolean(activeReadingHighlight); return <div id={`official-reading-passage-page-${page}`} className="official-pdf-page-lock" key={`passage-${page}`}><iframe className="official-paper-frame" tabIndex={-1} title={`${task.label} · 阅读文章 · P${page}`} src={`${material.passagePdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />{isEvidencePage && <span className="official-reading-highlight-layer" aria-hidden="true">{activeReadingHighlight.rects.map(([x, y, width, height], index) => <i key={`${activeReadingQuestion}-${index}`} style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }} />)}</span>}</div>; })}</div>}
+                </section>
+              </div>
+            </>
           ) : task.speakingPrompt && !taskSubmitted ? (
             <section className="official-speaking-material-lock">
               <span>REVIEW MATERIAL LOCKED</span>
