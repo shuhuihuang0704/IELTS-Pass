@@ -771,8 +771,8 @@ function weeklyOpeningTask(session: OfficialTestSession, weekKey = localWeekKey(
 type IeltsVoiceRole = "examiner" | "female" | "male";
 
 const preferredIeltsVoiceNames: Record<IeltsVoiceRole, string[]> = {
-  examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Flo (English (UK))", "Shelley (English (UK))", "Karen", "Moira", "Serena", "Kate", "Daniel"],
-  female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Flo (English (UK))", "Shelley (English (UK))", "Karen", "Moira", "Serena", "Kate"],
+  examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Flo (English (UK))", "Shelley (English (UK))", "Moira", "Serena", "Kate", "Daniel"],
+  female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Flo (English (UK))", "Shelley (English (UK))", "Moira", "Serena", "Kate"],
   male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Daniel", "Oliver", "Arthur", "George", "Reed (English (UK))", "Eddy (English (UK))", "Ryan"],
 };
 
@@ -875,7 +875,10 @@ function speakDialogue(turns: DialogueTurn[], rate = 0.92, handlers?: DialoguePl
     index += 1;
     const utterance = createIeltsUtterance(turn.text, turn.role === "female" ? rate : rate * .96, turn.role === "female" ? 1.06 : .86, turn.role);
     utterance.onstart = () => { started = true; };
-    utterance.onend = () => window.setTimeout(playNext, turn.text.endsWith("?") ? 170 : 260);
+    // Keep a small, uneven turn-taking gap. Official sample conversations
+    // leave room for brief acknowledgements and self-corrections rather than
+    // cutting directly from one voice into the next.
+    utterance.onend = () => window.setTimeout(playNext, turn.text.endsWith("?") ? 320 : 420);
     utterance.onerror = () => {
       synthesis.cancel();
       handlers?.onerror?.();
@@ -3709,7 +3712,12 @@ function ListeningPractice({
   const [audioTime, setAudioTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [dialoguePlayback, setDialoguePlayback] = useState<"idle" | "playing" | "paused">("idle");
+  const [longDialogueMode, setLongDialogueMode] = useState(false);
+  const [dialogueAudioTime, setDialogueAudioTime] = useState(0);
   const listeningAudio = useRef<HTMLAudioElement | null>(null);
+  const dialogueAudioTimeRef = useRef(0);
+  const dialogueAnchorTimeRef = useRef(0);
+  const dialogueAnchorStartedRef = useRef(0);
   const dialogueTurns = useMemo<DialogueTurn[]>(() => {
     const pattern = /(Coordinator|Caller|Supervisor|Applicant|Receptionist|Student):\s*/g;
     const turns: DialogueTurn[] = [];
@@ -3730,15 +3738,44 @@ function ListeningPractice({
     return turns;
   }, [listeningExercise.script]);
 
+  // The long-form role-play follows the official Part 1 pattern: short
+  // confirmations, clarifications and corrections between the ten scored
+  // details. This gives the speech-synthesis version a useful 3–4 minute
+  // practice length even when the bundled fallback recording is unavailable.
+  const dialogueDuration = useMemo(() => {
+    const wordCount = dialogueTurns.reduce((total, turn) => total + turn.text.split(/\s+/).filter(Boolean).length, 0);
+    return Math.max(60, wordCount / 2.45 + dialogueTurns.length * .42);
+  }, [dialogueTurns]);
+
+  useEffect(() => {
+    if (dialoguePlayback !== "playing") return;
+    const updateDialogueTime = () => {
+      const elapsed = (performance.now() - dialogueAnchorStartedRef.current) / 1000;
+      const nextTime = Math.min(dialogueDuration, dialogueAnchorTimeRef.current + elapsed);
+      dialogueAudioTimeRef.current = nextTime;
+      setDialogueAudioTime(nextTime);
+      if (nextTime >= dialogueDuration) setLongDialogueMode(false);
+    };
+    updateDialogueTime();
+    const timer = window.setInterval(updateDialogueTime, 100);
+    return () => window.clearInterval(timer);
+  }, [dialogueDuration, dialoguePlayback]);
+
   useEffect(() => () => {
     listeningAudio.current?.pause();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
   const toggleListening = () => {
+    if (longDialogueMode) {
+      toggleDistinctDialogue();
+      return;
+    }
     const audio = listeningAudio.current;
     if (!audio) return;
     if (audio.paused) {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      setDialoguePlayback("idle");
       setAudioError(false);
       // Calling load() immediately before play() can cancel Safari's pending
       // resource request. play() itself starts loading and preserves the
@@ -3751,6 +3788,13 @@ function ListeningPractice({
   };
 
   const restartListening = () => {
+    if (longDialogueMode) {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      setDialoguePlayback("idle");
+      setLongDialogueMode(false);
+      dialogueAudioTimeRef.current = 0;
+      setDialogueAudioTime(0);
+    }
     const audio = listeningAudio.current;
     if (!audio) return;
     audio.currentTime = 0;
@@ -3771,16 +3815,35 @@ function ListeningPractice({
     }
     if (dialoguePlayback === "paused") {
       window.speechSynthesis.resume();
+      dialogueAnchorTimeRef.current = dialogueAudioTimeRef.current;
+      dialogueAnchorStartedRef.current = performance.now();
       setDialoguePlayback("playing");
       return;
     }
     listeningAudio.current?.pause();
+    setPlayerState("idle");
+    dialogueAudioTimeRef.current = 0;
+    dialogueAnchorTimeRef.current = 0;
+    dialogueAnchorStartedRef.current = performance.now();
+    setDialogueAudioTime(0);
+    setLongDialogueMode(true);
     setDialoguePlayback("playing");
     const started = speakDialogue(dialogueTurns, .91, {
-      onend: () => setDialoguePlayback("idle"),
-      onerror: () => setDialoguePlayback("idle"),
+      onend: () => {
+        dialogueAudioTimeRef.current = dialogueDuration;
+        setDialogueAudioTime(dialogueDuration);
+        setDialoguePlayback("idle");
+        setLongDialogueMode(false);
+      },
+      onerror: () => {
+        setDialoguePlayback("idle");
+        setLongDialogueMode(false);
+      },
     });
-    if (!started) setDialoguePlayback("idle");
+    if (!started) {
+      setDialoguePlayback("idle");
+      setLongDialogueMode(false);
+    }
   };
 
   const formatAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -3957,6 +4020,12 @@ function ListeningPractice({
     setPlayerState("idle");
   };
 
+  const longDialogueActive = longDialogueMode && dialoguePlayback !== "idle";
+  const longDialogueVoiceLabel = "澳大利亚女声 Karen × 英国男声 Daniel";
+  const displayedPlayerTime = longDialogueActive ? dialogueAudioTime : audioTime;
+  const displayedPlayerDuration = longDialogueActive ? dialogueDuration : audioDuration;
+  const displayedPlayerState = longDialogueActive ? dialoguePlayback : playerState;
+
   return (
     <div className="exercise-layout listening-exam-layout">
       <div className="exercise-main listening-exam-main">
@@ -3964,14 +4033,14 @@ function ListeningPractice({
         <h2>{listeningExercise.title}</h2><p>Band {difficulty.band}.0 · {difficulty.listening.focus} · 达标 {difficulty.listening.passScore}/10</p>
         <div className="listening-controls">
           <audio key={listeningSet.audioSrc} ref={listeningAudio} src={listeningSet.audioSrc} preload="auto" playsInline onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); setAudioError(false); }} onError={() => { setAudioError(true); setPlayerState("error"); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => { setAudioError(false); setPlayerState("playing"); }} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
-          <div className={`listening-player is-${playerState}`}>
-            <button className="listening-toggle" onClick={toggleListening} aria-label={playerState === "playing" ? "暂停录音" : "播放录音"}>{playerState === "playing" ? "Ⅱ" : "▶"}</button>
-            <input className="listening-scrubber" type="range" min="0" max={Math.max(audioDuration, 1)} step="0.1" value={audioTime} onChange={(event) => { const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label="拖动听力录音进度" />
-            <span className="listening-player-copy"><strong>{playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放英澳双人完整录音"}</strong><small>{audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
+          <div className={`listening-player is-${displayedPlayerState}`}>
+            <button className="listening-toggle" onClick={toggleListening} aria-label={longDialogueActive ? displayedPlayerState === "playing" ? "暂停长版男女分轨" : "继续长版男女分轨" : playerState === "playing" ? "暂停录音" : "播放录音"}>{displayedPlayerState === "playing" ? "Ⅱ" : "▶"}</button>
+            <input className="listening-scrubber" type="range" min="0" max={Math.max(displayedPlayerDuration, 1)} step="0.1" value={displayedPlayerTime} disabled={longDialogueActive} onChange={(event) => { if (longDialogueActive) return; const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label={longDialogueActive ? "长版角色朗读进度（不可拖动）" : "拖动听力录音进度"} />
+            <span className="listening-player-copy"><strong>{longDialogueActive ? displayedPlayerState === "playing" ? `正在播放长版 · ${longDialogueVoiceLabel}` : `已暂停长版 · ${longDialogueVoiceLabel}` : playerState === "playing" ? `正在播放 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放双人基础录音"}</strong><small>{longDialogueActive ? `${formatAudioTime(displayedPlayerTime)} / ${formatAudioTime(displayedPlayerDuration)} · 角色朗读进度（不可拖动）` : audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
           </div>
-          <button className="listening-replay" disabled={audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
-          <button className={`listening-dialogue-toggle is-${dialoguePlayback}`} onClick={toggleDistinctDialogue}>{dialoguePlayback === "playing" ? "Ⅱ 暂停男女分轨朗读" : dialoguePlayback === "paused" ? "▶ 继续男女分轨朗读" : "♫ 男女分角色朗读"}</button>
-          <small className="listening-dialogue-note">备用朗读：女声 Flo · 男声 Daniel，语速和停顿更接近自然对话</small>
+          <button className="listening-replay" disabled={!longDialogueActive && audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
+          <button className={`listening-dialogue-toggle is-${dialoguePlayback}`} onClick={toggleDistinctDialogue}>{dialoguePlayback === "playing" ? "Ⅱ 暂停长版男女分轨" : dialoguePlayback === "paused" ? "▶ 继续长版男女分轨" : "♫ 播放长版男女分轨"}</button>
+          <small className="listening-dialogue-note">长版约 3–4 分钟：按 IELTS Part 1 的自然确认、改口和细节展开；女声 Karen（澳洲英语）· 男声 Daniel（英国英语）。</small>
         </div>
         <div className="listening-answer-progress"><i style={{ width: `${answeredCount * 10}%` }} /><span>{answeredCount}/10</span></div>
 
@@ -4472,7 +4541,7 @@ function ReadingPractice({
         <h2>{readingExercise.title}</h2><span className="reading-subtitle">{readingExercise.subtitle}</span>
         <div className="reading-annotation-toolbar" aria-label="文章划线工具">
           <div><strong>文章划线</strong><small>{selectedPassageText ? `已选择 ${selectedPassageText.length} 个字符` : personalHighlights.length ? `已标记 ${personalHighlights.length} 处` : "拖选一段文字后点击“标记”"}</small></div>
-          <button type="button" disabled={!selectedPassageText} onMouseDown={(event) => event.preventDefault()} onClick={addPassageHighlight}>标记选中内容</button>
+          <button type="button" disabled={!selectedPassageText} onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()} onClick={addPassageHighlight}>标记选中内容</button>
           <button type="button" className="is-secondary" disabled={!personalHighlights.length} onClick={() => setPersonalHighlights([])}>清除划线</button>
         </div>
         <div className="reading-paragraphs">

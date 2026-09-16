@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the bundled IELTS-style Section 1 dialogue with natural UK voices."""
+"""Generate the bundled IELTS-style Section 1 dialogue with natural AU/UK voices."""
 
 from __future__ import annotations
 
@@ -15,27 +15,49 @@ OUTPUT = ROOT / "public" / "listening-section-1-v2.wav"
 CAPTIONS = ROOT / "public" / "listening-section-1.vtt"
 SAMPLE_RATE = 44_100
 
-FEMALE_VOICE = "Flo (English (UK))"
+# Use a clearly different accent and timbre for each speaker. IELTS recordings
+# deliberately include a range of English accents, so the Australian female
+# voice and British male voice make the turn-taking easy to follow without
+# sounding like two versions of the same speaker.
+FEMALE_VOICE = "Karen"
 MALE_VOICE = "Daniel"
 
 TURNS = [
-    ("Receptionist (British female)", FEMALE_VOICE, 167, "Good morning, Westbridge University Residence. How can I help?", 340),
-    ("Student (British male)", MALE_VOICE, 173, "Hello. I'm calling to complete my accommodation application.", 300),
-    ("Receptionist (British female)", FEMALE_VOICE, 170, "Certainly. First, can I take your family name?", 220),
-    ("Student (British male)", MALE_VOICE, 171, "It's Chen. C, H, E, N.", 280),
-    ("Receptionist (British female)", FEMALE_VOICE, 168, "Thank you. And when will you arrive?", 210),
-    ("Student (British male)", MALE_VOICE, 174, "On the fourteenth of October. I originally wrote the twelfth, but my flight changed.", 290),
-    ("Receptionist (British female)", FEMALE_VOICE, 166, "Right, the fourteenth of October. Do you want a shared room?", 210),
-    ("Student (British male)", MALE_VOICE, 176, "No, a single room, please. I need somewhere quiet to study.", 290),
-    ("Receptionist (British female)", FEMALE_VOICE, 171, "Any dietary requirement?", 210),
-    ("Student (British male)", MALE_VOICE, 173, "Yes, vegetarian. I eat dairy products, but no meat or fish.", 360),
-    ("Receptionist (British female)", FEMALE_VOICE, 169, "Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building.", 390),
-    ("Student (British male)", MALE_VOICE, 176, "That's fine. What documents do you need?", 210),
-    ("Receptionist (British female)", FEMALE_VOICE, 168, "Please send a copy of your passport by email. You can show the original at reception when you arrive. The deposit must be paid by bank transfer. We cannot accept cash for that.", 330),
-    ("Student (British male)", MALE_VOICE, 175, "I understand. What time can I collect my key?", 210),
-    ("Receptionist (British female)", FEMALE_VOICE, 166, "Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable.", 320),
-    ("Student (British male)", MALE_VOICE, 173, "Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.", 280),
-    ("Receptionist (British female)", FEMALE_VOICE, 168, "That makes sense. I'll email your confirmation today.", 430),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "Good morning, Westbridge University Residence. How can I help?", 520),
+    ("Student (British male)", MALE_VOICE, 164, "Hello. I'm calling to complete my accommodation application. I started the form online, but I wasn't sure about a couple of details.", 420),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 161, "Of course. We can go through it together. Before we begin, have you already received an application number?", 360),
+    ("Student (British male)", MALE_VOICE, 166, "Yes, it's WR-4086. I wrote it down beside my passport details.", 400),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 159, "That's useful. First, can I take your family name?", 300),
+    ("Student (British male)", MALE_VOICE, 162, "It's Chen. C, H, E, N.", 360),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 157, "Thank you. Let me just check that on the screen: Chen, C-H-E-N. And is this for the autumn intake?", 420),
+    ("Student (British male)", MALE_VOICE, 165, "Yes, for the autumn term. I'm hoping to move in before classes start.", 380),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "Right. When will you arrive?", 300),
+    ("Student (British male)", MALE_VOICE, 164, "On the fourteenth of October. I originally wrote the twelfth, but my flight changed.", 420),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "I see. The fourteenth is fine. Will you need the room for the whole academic year, or only the first term?", 450),
+    ("Student (British male)", MALE_VOICE, 165, "The whole year, if possible. I may stay during the spring break as well, so I wanted to ask about that.", 420),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 160, "You can remain in the residence during the break, although catering hours are reduced. Do you want a shared room?", 500),
+    ("Student (British male)", MALE_VOICE, 163, "No, a single room, please. I need somewhere quiet to study.", 360),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 157, "We have single rooms in two buildings. The older block is nearer the library, while the newer block has larger kitchens. Do you have a preference?", 480),
+    ("Student (British male)", MALE_VOICE, 164, "The library sounds more important. I don't mind using a smaller kitchen.", 390),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 159, "That's noted. Any dietary requirement?", 300),
+    ("Student (British male)", MALE_VOICE, 165, "Yes, vegetarian. I eat dairy products, but no meat or fish.", 380),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "I'll add that to your catering profile. You can change it later through the student portal, but please give us a week's notice.", 420),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 156, "Now, several facilities are included in the weekly fee. Every room has Wi-Fi, and residents can use the bicycle storage without charge. The laundry is available, but each wash costs three pounds. Breakfast is optional, and I'm afraid there is no gym in this building. There is a small common room on each floor, and the study room has to be booked online.", 620),
+    ("Student (British male)", MALE_VOICE, 164, "That's fine. What documents do you need?", 320),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 157, "Please send a copy of your passport by email. You can show the original at reception when you arrive. We also need your university offer letter and an emergency contact number.", 500),
+    ("Student (British male)", MALE_VOICE, 165, "I can email those this evening. Do you need the originals as well?", 330),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 159, "A scanned copy is enough for the application. You can show the original at reception when you arrive, so please keep it in your hand luggage.", 420),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 157, "The deposit must be paid by bank transfer. We cannot accept cash for that, and the reference should include your application number.", 520),
+    ("Student (British male)", MALE_VOICE, 164, "I understand. Is there a deadline for the transfer?", 330),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "We need the deposit by the thirtieth of September. If your bank takes longer, let us know before then and we can make a note on the application.", 460),
+    ("Student (British male)", MALE_VOICE, 165, "Right. What time can I collect my key?", 330),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 157, "Check-in begins at three p.m. You said your flight lands at two, so arriving around half past four should be comfortable. The reception desk stays open until seven on weekdays.", 500),
+    ("Student (British male)", MALE_VOICE, 164, "Great. Is reception open late at the weekend?", 380),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "On Saturdays it's open until five, and on Sundays it closes at four. If you arrive later, email us in advance and the night porter can meet you.", 450),
+    ("Student (British male)", MALE_VOICE, 165, "Great. I chose Westbridge because it is close to the science building. The city centre residence was newer, but it was much farther from my classes.", 520),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 157, "That makes sense. Before I let you go, check that your phone number and email address are still the same as on the online form. I'll email your confirmation today, together with the move-in checklist.", 550),
+    ("Student (British male)", MALE_VOICE, 164, "They are both correct. Thanks for taking the time to go through everything.", 350),
+    ("Receptionist (Australian female)", FEMALE_VOICE, 158, "You're welcome. I'll email your confirmation today, and we'll see you in October.", 450),
 ]
 
 

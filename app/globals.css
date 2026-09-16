@@ -513,7 +513,7 @@ button { cursor: pointer; }
 .official-reading-task-status strong,.official-reading-task-status small { display:block; }
 .official-reading-task-status strong { font-size:10px; }
 .official-reading-task-status small { margin-top:3px; color:#7166d8; font-size:8px; }
-.official-reading-annotation { margin-top:8px; padding:10px; border:1px solid #e1dce9; border-radius:13px; background:#faf9fc; }
+.official-reading-annotation { position:sticky; top:12px; z-index:6; margin-top:8px; padding:10px; border:1px solid #e1dce9; border-radius:13px; background:rgba(250,249,252,.97); box-shadow:0 6px 18px rgba(45,36,55,.08); }
 .official-reading-annotation-toolbar { display:flex; align-items:center; gap:8px; }
 .official-reading-annotation-toolbar>div { min-width:0; flex:1; }
 .official-reading-annotation-toolbar strong,.official-reading-annotation-toolbar small { display:block; }
@@ -1114,7 +1114,7 @@ button { cursor: pointer; }
 .reading-paragraphs section.is-evidence-active>strong { left:12px; }
 .reading-paragraphs p { margin:0; color:#464047; font-family:Georgia,"Times New Roman",serif; font-size:15px; line-height:1.78; }
 .reading-paragraphs mark { padding:2px 1px; color:inherit; background:linear-gradient(transparent 14%,rgba(255,220,76,.68) 14%,rgba(255,220,76,.68) 90%,transparent 90%); border-radius:3px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
-.reading-annotation-toolbar { margin-top:18px; padding:10px 12px; display:flex; align-items:center; gap:8px; border:1px solid #e1dce9; border-radius:12px; background:#faf9fc; }
+.reading-annotation-toolbar { position:sticky; top:12px; z-index:6; margin-top:18px; padding:10px 12px; display:flex; align-items:center; gap:8px; border:1px solid #e1dce9; border-radius:12px; background:rgba(250,249,252,.97); box-shadow:0 6px 18px rgba(45,36,55,.08); }
 .reading-annotation-toolbar>div { min-width:0; flex:1; }
 .reading-annotation-toolbar strong,.reading-annotation-toolbar small { display:block; }
 .reading-annotation-toolbar strong { color:#5143b6; font-size:10px; }
