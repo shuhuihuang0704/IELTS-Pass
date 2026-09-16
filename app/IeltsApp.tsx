@@ -856,34 +856,6 @@ function isAppleMobileBrowser() {
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-function speakSequence(texts: string[], rate = 0.94) {
-  if (!("speechSynthesis" in window)) return false;
-  const queue = texts.map((text) => text.trim()).filter(Boolean);
-  if (queue.length === 0) return false;
-  const synthesis = window.speechSynthesis;
-  synthesis.cancel();
-  synthesis.resume();
-  let started = false;
-  const speakNow = () => {
-    if (started) return;
-    started = true;
-    queue.forEach((text) => synthesis.speak(createIeltsUtterance(text, rate)));
-  };
-  if (synthesis.getVoices().length > 0) speakNow();
-  else {
-    const onVoicesChanged = () => {
-      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
-      speakNow();
-    };
-    synthesis.addEventListener("voiceschanged", onVoicesChanged, { once: true });
-    window.setTimeout(() => {
-      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
-      if (!synthesis.speaking) speakNow();
-    }, 250);
-  }
-  return true;
-}
-
 type DialogueTurn = { role: IeltsVoiceRole; text: string };
 type DialoguePlaybackHandlers = { onend?: () => void; onerror?: () => void };
 
@@ -927,9 +899,16 @@ function speakDialogue(turns: DialogueTurn[], rate = 0.92, handlers?: DialoguePl
 }
 
 let pronunciationAudio: HTMLAudioElement | null = null;
+let pronunciationPlaybackToken = 0;
+
+function stopPronunciationAudio() {
+  pronunciationPlaybackToken += 1;
+  pronunciationAudio?.pause();
+}
 
 function playRemotePronunciation(text: string, rate = 1, onError?: () => void) {
   if (typeof window === "undefined" || !text.trim()) return false;
+  const playbackToken = ++pronunciationPlaybackToken;
   pronunciationAudio ??= new Audio();
   const audio = pronunciationAudio;
   audio.pause();
@@ -937,12 +916,20 @@ function playRemotePronunciation(text: string, rate = 1, onError?: () => void) {
   audio.preload = "auto";
   audio.playbackRate = rate;
   const playPromise = audio.play();
-  playPromise.catch(() => onError?.());
+  playPromise.catch(() => {
+    // A new word may have replaced this request before the browser rejected
+    // the old one. Ignore that stale rejection so it cannot start a second
+    // voice on top of the current pronunciation.
+    if (playbackToken === pronunciationPlaybackToken) onError?.();
+  });
   return true;
 }
 
 function playPronunciation(text: string, rate = 1) {
   if (typeof window === "undefined" || !text.trim()) return false;
+  // Stop any fallback TTS still speaking before starting the next word. This
+  // prevents a rejected/slow network request from leaving two voices audible.
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   // iOS Safari and embedded iOS browsers can reject a newly-created remote
   // audio playback when it is triggered by a timer. Native speech is local
   // and remains available after the initial user gesture.
@@ -3171,9 +3158,10 @@ function VocabularyPractice({
     () => dailyDictationWords.slice(dictationGroup * 10, dictationGroup * 10 + 10),
     [dailyDictationWords, dictationGroup],
   );
-  const dictationSlotSeconds = 5;
+  const dictationSlotSeconds = 8;
   const dictationSpeechWindowSeconds = 1.6;
   const dictationAudioDuration = dictationWords.length * dictationSlotSeconds;
+  const formatDictationAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
   const filledDictationCount = dictationAnswers.filter((answer) => answer.trim()).length;
   const dictationCorrectCount = dictationWords.filter((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word.toLowerCase()).length;
 
@@ -3193,8 +3181,9 @@ function VocabularyPractice({
       const slotOffset = nextTime % dictationSlotSeconds;
       setActiveDictationItem(itemIndex);
       if (dictationLastSpokenRef.current !== itemIndex) {
-        dictationInputRefs.current[itemIndex]?.focus();
-        if (!isAppleMobileBrowser() && slotOffset <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
+        if (slotOffset <= dictationSpeechWindowSeconds) {
+          playPronunciation(dictationWords[itemIndex].word, .9);
+        }
         dictationLastSpokenRef.current = itemIndex;
       }
     };
@@ -3204,12 +3193,12 @@ function VocabularyPractice({
   }, [dictationAudioDuration, dictationPlayback, dictationWords]);
 
   useEffect(() => () => {
-    pronunciationAudio?.pause();
+    stopPronunciationAudio();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
   const resetDictationPlayer = (time = 0) => {
-    pronunciationAudio?.pause();
+    stopPronunciationAudio();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     dictationAudioTimeRef.current = time;
     dictationAnchorTimeRef.current = time;
@@ -3233,36 +3222,39 @@ function VocabularyPractice({
       const pausedAt = Math.min(dictationAudioDuration, dictationAnchorTimeRef.current + elapsed);
       dictationAudioTimeRef.current = pausedAt;
       setDictationAudioTime(pausedAt);
+      stopPronunciationAudio();
       if ("speechSynthesis" in window) window.speechSynthesis.pause();
       setDictationPlayback("paused");
       return;
     }
     const startTime = dictationPlayback === "ended" ? 0 : dictationAudioTimeRef.current;
-    if (dictationPlayback === "paused" && "speechSynthesis" in window) window.speechSynthesis.resume();
+    const isResuming = dictationPlayback === "paused";
+    if (isResuming && "speechSynthesis" in window) window.speechSynthesis.resume();
     dictationAudioTimeRef.current = startTime;
     dictationAnchorTimeRef.current = startTime;
     dictationAnchorStartedRef.current = performance.now();
     const itemIndex = Math.min(dictationWords.length - 1, Math.floor(startTime / dictationSlotSeconds));
-    dictationLastSpokenRef.current = startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds ? -1 : itemIndex;
+    dictationLastSpokenRef.current = itemIndex;
     setDictationAudioTime(startTime);
     setDictationPlayback("playing");
-    if (isAppleMobileBrowser() && dictationPlayback !== "paused") speakSequence(dictationWords.map((item) => item.word), .9);
-    else if (startTime % dictationSlotSeconds <= dictationSpeechWindowSeconds) playPronunciation(dictationWords[itemIndex].word, .9);
+    playPronunciation(dictationWords[itemIndex].word, .9);
   };
 
   const seekDictationSequence = (nextTime: number) => {
     const wasPlaying = dictationPlayback === "playing";
+    stopPronunciationAudio();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     const safeTime = Math.max(0, Math.min(dictationAudioDuration, nextTime));
     const itemIndex = Math.min(dictationWords.length - 1, Math.floor(Math.min(safeTime, dictationAudioDuration - .01) / dictationSlotSeconds));
     dictationAudioTimeRef.current = safeTime;
     dictationAnchorTimeRef.current = safeTime;
     dictationAnchorStartedRef.current = performance.now();
-    dictationLastSpokenRef.current = safeTime % dictationSlotSeconds <= dictationSpeechWindowSeconds ? -1 : itemIndex;
+    dictationLastSpokenRef.current = itemIndex;
     setDictationAudioTime(safeTime);
     setActiveDictationItem(itemIndex);
-    dictationInputRefs.current[itemIndex]?.focus();
-    if (isAppleMobileBrowser() && wasPlaying) speakSequence(dictationWords.slice(itemIndex).map((item) => item.word), .9);
+    if (wasPlaying && safeTime % dictationSlotSeconds <= dictationSpeechWindowSeconds) {
+      playPronunciation(dictationWords[itemIndex].word, .9);
+    }
     if (safeTime >= dictationAudioDuration) setDictationPlayback("ended");
   };
 
@@ -3305,12 +3297,12 @@ function VocabularyPractice({
         <div className="exercise-layout is-single-column">
           <div className="exercise-main dictation-batch-practice">
             <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / {dictationGroupCount} 组</span><span>{completedDictationCount} / {dailyDictationWords.length}</span></div>
-            <h2>一段音频，连续听写 10 个词</h2><p>每个词后预留约 4 秒书写时间；可以随时暂停、继续或拖动进度，整组提交前不显示答案和中文。</p>
+            <h2>一段音频，连续听写 10 个词</h2><p>每个词后预留更长书写时间；播放会自动进入下一词但不会移动你的光标，按 Enter 可跳到下一个输入框。</p>
             <section className="dictation-sequence-player" aria-label={`第 ${dictationGroup + 1} 组连续听写播放器；语料来源 ${listeningCorpusMeta.source}`}>
               <button type="button" className="dictation-sequence-toggle" onClick={toggleDictationSequence} aria-label={dictationPlayback === "playing" ? "暂停本组听写" : "播放本组听写"}>{dictationPlayback === "playing" ? "Ⅱ" : "▶"}</button>
-              <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 个词` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 个词` : dictationPlayback === "ended" ? "本组音频播放完毕" : "播放本组 10 词录音"}</strong><small>10 个词 · IELTS 英式标准发音 · 间隔约 4 秒</small></div>
+              <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 个词` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 个词` : dictationPlayback === "ended" ? "本组音频播放完毕" : "播放本组 10 词录音"}</strong><small>10 个词 · IELTS 英式标准发音 · 词间停顿更长</small></div>
               <input type="range" min="0" max={dictationAudioDuration} step="0.1" value={dictationAudioTime} onChange={(event) => seekDictationSequence(Number(event.target.value))} aria-label="拖动场景听写进度" />
-              <span className="dictation-sequence-time">{Math.floor(dictationAudioTime / 60)}:{String(Math.floor(dictationAudioTime % 60)).padStart(2, "0")} / 0:{String(dictationAudioDuration).padStart(2, "0")}</span>
+              <span className="dictation-sequence-time">{formatDictationAudioTime(dictationAudioTime)} / {formatDictationAudioTime(dictationAudioDuration)}</span>
               <div className="dictation-sequence-markers" aria-hidden="true">{dictationWords.map((item, itemIndex) => <i className={activeDictationItem === itemIndex ? "is-active" : ""} key={item.word}><span>{itemIndex + 1}</span></i>)}</div>
             </section>
             <form className="dictation-batch-form" onSubmit={submitDictationGroup}>
@@ -3364,7 +3356,7 @@ function ConnectedSpeechPractice({
   const anchorTimeRef = useRef(0);
   const anchorStartedRef = useRef(0);
   const lastSpokenRef = useRef(-1);
-  const slotSeconds = 8;
+  const slotSeconds = 11;
   const speechWindowSeconds = 3.5;
   const audioDuration = groupPhrases.length * slotSeconds;
   const filledCount = answers.slice(0, groupPhrases.length).filter((answer) => answer.trim()).length;
@@ -3388,8 +3380,7 @@ function ConnectedSpeechPractice({
       const slotOffset = nextTime % slotSeconds;
       setActiveItem(itemIndex);
       if (lastSpokenRef.current !== itemIndex) {
-        inputRefs.current[itemIndex]?.focus();
-        if (!isAppleMobileBrowser() && slotOffset <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
+        if (slotOffset <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
         lastSpokenRef.current = itemIndex;
       }
     };
@@ -3399,12 +3390,12 @@ function ConnectedSpeechPractice({
   }, [audioDuration, groupPhrases, playback]);
 
   useEffect(() => () => {
-    pronunciationAudio?.pause();
+    stopPronunciationAudio();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
   const resetPlayer = (time = 0) => {
-    pronunciationAudio?.pause();
+    stopPronunciationAudio();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     audioTimeRef.current = time;
     anchorTimeRef.current = time;
@@ -3428,36 +3419,39 @@ function ConnectedSpeechPractice({
       const pausedAt = Math.min(audioDuration, anchorTimeRef.current + elapsed);
       audioTimeRef.current = pausedAt;
       setAudioTime(pausedAt);
+      stopPronunciationAudio();
       if ("speechSynthesis" in window) window.speechSynthesis.pause();
       setPlayback("paused");
       return;
     }
     const startTime = playback === "ended" ? 0 : audioTimeRef.current;
-    if (playback === "paused" && "speechSynthesis" in window) window.speechSynthesis.resume();
+    const isResuming = playback === "paused";
+    if (isResuming && "speechSynthesis" in window) window.speechSynthesis.resume();
     audioTimeRef.current = startTime;
     anchorTimeRef.current = startTime;
     anchorStartedRef.current = performance.now();
     const itemIndex = Math.min(groupPhrases.length - 1, Math.floor(startTime / slotSeconds));
-    lastSpokenRef.current = startTime % slotSeconds <= speechWindowSeconds ? -1 : itemIndex;
+    lastSpokenRef.current = itemIndex;
     setAudioTime(startTime);
     setPlayback("playing");
-    if (isAppleMobileBrowser() && playback !== "paused") speakSequence(groupPhrases.map((item) => item.phrase), .96);
-    else if (startTime % slotSeconds <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].phrase, .96);
+    playPronunciation(groupPhrases[itemIndex].phrase, .96);
   };
 
   const seekSequence = (nextTime: number) => {
     const wasPlaying = playback === "playing";
+    stopPronunciationAudio();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     const safeTime = Math.max(0, Math.min(audioDuration, nextTime));
     const itemIndex = Math.min(groupPhrases.length - 1, Math.floor(Math.min(safeTime, audioDuration - .01) / slotSeconds));
     audioTimeRef.current = safeTime;
     anchorTimeRef.current = safeTime;
     anchorStartedRef.current = performance.now();
-    lastSpokenRef.current = safeTime % slotSeconds <= speechWindowSeconds ? -1 : itemIndex;
+    lastSpokenRef.current = itemIndex;
     setAudioTime(safeTime);
     setActiveItem(itemIndex);
-    inputRefs.current[itemIndex]?.focus();
-    if (isAppleMobileBrowser() && wasPlaying) speakSequence(groupPhrases.slice(itemIndex).map((item) => item.phrase), .96);
+    if (wasPlaying && safeTime % slotSeconds <= speechWindowSeconds) {
+      playPronunciation(groupPhrases[itemIndex].phrase, .96);
+    }
     if (safeTime >= audioDuration) setPlayback("ended");
   };
 
@@ -3491,10 +3485,10 @@ function ConnectedSpeechPractice({
     <div className="exercise-layout is-single-column connected-speech-layout">
       <div className="exercise-main dictation-batch-practice connected-speech-batch">
         <div className="exercise-kicker"><span>连续词组听写 · 第 {group + 1} / {groupCount} 组</span><span>{completedCount} / {phrases.length}</span></div>
-        <h2>一段音频，连续听写 {groupPhrases.length} 个词组</h2><p>每个词组后预留约 4 秒书写；可以暂停、继续或拖动进度，整组提交前不显示原词组和中文。</p>
+        <h2>一段音频，连续听写 {groupPhrases.length} 个词组</h2><p>每个词组后预留更长书写时间；播放不会移动你的光标，按 Enter 可跳到下一个输入框。</p>
         <section className="dictation-sequence-player" aria-label={`第 ${group + 1} 组连续吞音词组播放器`}>
           <button type="button" className="dictation-sequence-toggle" onClick={toggleSequence} aria-label={playback === "playing" ? "暂停本组词组听写" : "播放本组词组听写"}>{playback === "playing" ? "Ⅱ" : "▶"}</button>
-          <div className="dictation-sequence-copy"><strong>{playback === "playing" ? `正在播放第 ${activeItem + 1} 个词组` : playback === "paused" ? `已暂停在第 ${activeItem + 1} 个词组` : playback === "ended" ? "本组音频播放完毕" : `播放本组 ${groupPhrases.length} 个词组`}</strong><small>{groupPhrases.length} 个词组 · IELTS 英式自然语速 · 间隔约 4 秒</small></div>
+          <div className="dictation-sequence-copy"><strong>{playback === "playing" ? `正在播放第 ${activeItem + 1} 个词组` : playback === "paused" ? `已暂停在第 ${activeItem + 1} 个词组` : playback === "ended" ? "本组音频播放完毕" : `播放本组 ${groupPhrases.length} 个词组`}</strong><small>{groupPhrases.length} 个词组 · IELTS 英式自然语速 · 词间停顿更长</small></div>
           <input type="range" min="0" max={audioDuration} step="0.1" value={audioTime} onChange={(event) => seekSequence(Number(event.target.value))} aria-label="拖动吞音词组听写进度" />
           <span className="dictation-sequence-time">{Math.floor(audioTime / 60)}:{String(Math.floor(audioTime % 60)).padStart(2, "0")} / {Math.floor(audioDuration / 60)}:{String(audioDuration % 60).padStart(2, "0")}</span>
           <div className="dictation-sequence-markers" style={{ gridTemplateColumns: `repeat(${groupPhrases.length},1fr)` }} aria-hidden="true">{groupPhrases.map((item, itemIndex) => <i className={activeItem === itemIndex ? "is-active" : ""} key={item.phrase}><span>{itemIndex + 1}</span></i>)}</div>
