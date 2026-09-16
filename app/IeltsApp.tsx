@@ -532,6 +532,123 @@ const officialReadingQuestionSets: Record<string, OfficialReadingQuestionSet> = 
     ],
   },
 };
+// Keep the listening question booklet in structured HTML as well. The PDF is
+// still available as the official source material after submission, but an
+// iframe can expose every task in a browser's PDF viewer. Rendering only the
+// active task here keeps listening consistent with the reading workspace.
+const officialListeningQuestionSets: Record<string, OfficialReadingQuestionSet> = {
+  "form-completion": {
+    sections: [{
+      instruction: "PART 1 · Questions 1–8 · Complete the form. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+      questions: [
+        { number: "1", prompt: "PACKHAM’S SHIPPING AGENCY · Name: Jacob _____" },
+        { number: "2", prompt: "Address to be collected from: _____ College, Downlands Rd, Bristol" },
+        { number: "3", prompt: "Postcode: _____" },
+        { number: "4", prompt: "Size of container · Width: _____" },
+        { number: "5", prompt: "Size of container · Height: _____" },
+        { number: "6", prompt: "Contents: clothes; _____" },
+        { number: "7", prompt: "Contents: _____" },
+        { number: "8", prompt: "Total estimated value: £_____" },
+      ],
+    }],
+  },
+  "multiple-choice": {
+    sections: [{
+      instruction: "PART 1 · Questions 9–10 · Choose the correct letter, A, B or C.",
+      options: ["A · Economy", "B · Standard", "C · Premium", "A · port", "B · home", "C · depot"],
+      questions: [
+        { number: "9", prompt: "Type of insurance chosen." },
+        { number: "10", prompt: "Customer wants goods delivered to." },
+      ],
+    }],
+  },
+  "short-answer": {
+    sections: [{
+      instruction: "PART 2 · Questions 11–16 · Answer the questions. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+      questions: [
+        { number: "11", prompt: "What TWO factors can make social contact in a foreign country difficult? · first factor" },
+        { number: "12", prompt: "What TWO factors can make social contact in a foreign country difficult? · second factor" },
+        { number: "13", prompt: "Which types of community group does the speaker give examples of? · second example" },
+        { number: "14", prompt: "Which types of community group does the speaker give examples of? · third example" },
+        { number: "15", prompt: "In which TWO places can information about community activities be found? · first place" },
+        { number: "16", prompt: "In which TWO places can information about community activities be found? · second place" },
+      ],
+    }],
+  },
+  "sentence-completion": {
+    sections: [{
+      instruction: "PART 3 · Questions 27–30 · Complete the sentences. Write NO MORE THAN TWO WORDS for each answer.",
+      questions: [
+        { number: "27", prompt: "Studying with the Open University demanded a great deal of _____." },
+        { number: "28", prompt: "Studying and working at the same time improved Rachel’s _____ skills." },
+        { number: "29", prompt: "It was helpful that the course was structured in _____." },
+        { number: "30", prompt: "She enjoyed meeting other students at _____." },
+      ],
+    }],
+  },
+  "matching-one": {
+    sections: [{
+      instruction: "PART 3 · Questions 21–25 · What does Jack tell his tutor about each course option? Write the correct letter, A, B or C. You may choose any letter more than once.",
+      options: ["A · He’ll definitely do it.", "B · He may or may not do it.", "C · He won’t do it."],
+      questions: [
+        { number: "21", prompt: "Media Studies" },
+        { number: "22", prompt: "Women and Power" },
+        { number: "23", prompt: "Culture and Society" },
+        { number: "24", prompt: "Identity and Popular Culture" },
+        { number: "25", prompt: "Introduction to Cultural Theory" },
+      ],
+    }],
+  },
+  "matching-two": {
+    sections: [{
+      instruction: "PART 1 · Questions 1–4 · Which hotel matches each description? Choose your answers from the box and write the correct letter, A–E, next to questions 1–4.",
+      options: ["A · The Bridge Hotel", "B · Carlton House", "C · The Imperial", "D · The Majestic", "E · The Royal Oak"],
+      questions: [
+        { number: "1", prompt: "_____ is in a rural area." },
+        { number: "2", prompt: "_____ only opened recently." },
+        { number: "3", prompt: "_____ offers facilities for business functions." },
+        { number: "4", prompt: "_____ has an indoor swimming pool." },
+      ],
+    }],
+  },
+  "map-labelling": {
+    sections: [{
+      instruction: "PART 2 · Questions 11–15 · Label the Town Library plan. Choose FIVE answers from the box and write the correct letters, A–I, next to questions 11–15.",
+      options: ["A · Art collection", "B · Children’s books", "C · Computers", "D · Local history collection", "E · Meeting room", "F · Multimedia", "G · Periodicals", "H · Reference books", "I · Tourist information"],
+      questions: [
+        { number: "11", prompt: "Lower-left room on the Town Library plan." },
+        { number: "12", prompt: "Lower-middle room on the Town Library plan." },
+        { number: "13", prompt: "Central room in the Library area." },
+        { number: "14", prompt: "Top-middle room on the Town Library plan." },
+        { number: "15", prompt: "Upper-right room on the Town Library plan." },
+      ],
+    }],
+  },
+  "note-completion": {
+    sections: [
+      {
+        instruction: "PART 2 · Questions 11–16 · Complete the notes about The National Arts Centre. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+        questions: [
+          { number: "11", prompt: "Well known for: _____" },
+          { number: "12", prompt: "Complex consists of concert rooms, theatres, cinemas, art galleries, public library, restaurants and _____." },
+          { number: "13", prompt: "In the 1960s, the Centre was _____." },
+          { number: "14", prompt: "The Centre opened to the public in _____." },
+          { number: "15", prompt: "Managed by: _____." },
+          { number: "16", prompt: "Open: _____ days per year." },
+        ],
+      },
+      {
+        instruction: "Questions 17–20 · Complete the table. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+        questions: [
+          { number: "17", prompt: "‘The Magic Flute’ · venue: _____." },
+          { number: "18", prompt: "Wednesday film title: ‘_____.’" },
+          { number: "19", prompt: "Wednesday film ticket price: _____." },
+          { number: "20", prompt: "Weekend art exhibition title: ‘_____.’" },
+        ],
+      },
+    ],
+  },
+};
 type ReadingSourceHighlight = { page: number; rects: Array<[number, number, number, number]> };
 const readingSourceHighlights: Record<string, ReadingSourceHighlight> = {
   "reading-passage-1:1": { page: 2, rects: [[12.1,26.29,74.24,2.14],[12.1,28.74,75.43,2.14]] },
@@ -2088,6 +2205,7 @@ function OfficialTestRunner({
   const taskOfficialHighlights = officialHighlights[taskKey] ?? [];
   const officialReadingPassage = material.passagePdfUrl ? officialReadingPassages[task.id] : undefined;
   const officialReadingQuestionSet = material.passagePdfUrl ? officialReadingQuestionSets[task.id] : undefined;
+  const officialListeningQuestionSet = material.audioTracks && !speakingTaskMode ? officialListeningQuestionSets[task.id] : undefined;
 
   useEffect(() => {
     if (timerState !== "running") return;
@@ -2138,17 +2256,23 @@ function OfficialTestRunner({
   const submitCurrentTask = (responseOverride?: Record<string, string>) => {
     const nextSubmittedTasks = { ...submittedTasks, [taskKey]: true };
     const taskResponses = taskAnswers.length > 0
-      ? Object.fromEntries(taskAnswers.map((answer) => [answer.number, officialResponses[`${taskKey}:${answer.number}`] ?? ""]))
+      ? responseOverride ?? Object.fromEntries(taskAnswers.map((answer) => [answer.number, officialResponses[`${taskKey}:${answer.number}`] ?? ""]))
       : responseOverride ?? { "open-response": openResponse };
+    const taskResponseState = Object.fromEntries(Object.entries(taskResponses).map(([number, response]) => [`${taskKey}:${number}`, response]));
     const taskScore = taskAnswers.length > 0
-      ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, officialResponses, taskKey)).length
+      ? taskAnswers.filter((answer) => officialAnswerIsCorrect(answer, taskAnswers, taskResponseState, taskKey)).length
       : null;
+    const currentTaskComplete = taskAnswers.length > 0
+      ? taskAnswers.every((answer) => (taskResponses[answer.number] ?? "").trim())
+      : task.minimumWords
+        ? (taskResponses["open-response"] ?? "").trim().split(/\s+/).filter(Boolean).length >= task.minimumWords
+        : Boolean(task.speakingPrompt);
     setSubmittedTasks(nextSubmittedTasks);
     updateProgress((current) => {
       const notebook = current.notebook.map((entry) => {
         const answer = taskAnswers.find((item) => entry.id === `question:${session.setCode}:${task.id}:${item.number}`);
         if (!answer) return entry;
-        const response = officialResponses[`${taskKey}:${answer.number}`] || "未作答";
+        const response = taskResponses[answer.number] || "未作答";
         return {
           ...entry,
           detail: buildOfficialQuestionNote(answer, response, true),
@@ -2156,11 +2280,6 @@ function OfficialTestRunner({
           reference: officialQuestionReference,
         };
       });
-      const currentTaskComplete = taskAnswers.length > 0
-        ? allAnswersFilled
-        : task.minimumWords
-          ? openResponseWordCount >= task.minimumWords
-          : Boolean(task.speakingPrompt);
       const allRequiredCompleted = requiredTasks.length > 0 && requiredTasks.every((requiredTask) => requiredTask.key === taskKey
         ? currentTaskComplete
         : officialTaskResultIsComplete(requiredTask.task, current.officialTaskResults[requiredTask.recordKey]));
@@ -2305,7 +2424,10 @@ function OfficialTestRunner({
           {taskAnswers.length > 0 ? (
             <form key={`${taskKey}:attempt-${taskAttemptVersions[taskKey] ?? 0}`} className={`official-answer-sheet ${taskSubmitted ? "is-submitted" : "is-fresh-attempt"}`} onSubmit={(event) => {
               event.preventDefault();
-              submitCurrentTask();
+              const submittedForm = new FormData(event.currentTarget);
+              const latestResponses = Object.fromEntries(taskAnswers.map((answer) => [answer.number, String(submittedForm.get(`answer-${answer.number}`) ?? "")]));
+              setOfficialResponses((current) => ({ ...current, ...Object.fromEntries(Object.entries(latestResponses).map(([number, response]) => [`${taskKey}:${number}`, response])) }));
+              submitCurrentTask(latestResponses);
             }}>
               <header>
                 <div><span>COMPUTER-DELIVERED ANSWER SHEET</span><strong>电子答题卡</strong><small>{material.passagePdfUrl ? "右侧作答 · 下方显示当前 Passage 完整题目" : "右侧并列显示 · 随页面同步滚动填写当前 Task"}</small></div>
@@ -2320,12 +2442,12 @@ function OfficialTestRunner({
                     <div className={`official-answer-item ${taskSubmitted ? correct ? "is-correct" : "is-wrong" : ""}`} key={answer.number}>
                       <span>Q{answer.number}</span>
                       {answer.choices ? (
-                        <select aria-label={`Question ${answer.number}`} disabled={taskSubmitted} value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))}>
+                        <select name={`answer-${answer.number}`} aria-label={`Question ${answer.number}`} disabled={taskSubmitted} value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))}>
                           <option value="">请选择</option>
                           {answer.choices.map((choice) => <option value={choice} key={choice}>{choice}</option>)}
                         </select>
                       ) : (
-                        <input aria-label={`Question ${answer.number}`} autoComplete="off" disabled={taskSubmitted} placeholder="输入答案" value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))} />
+                        <input name={`answer-${answer.number}`} aria-label={`Question ${answer.number}`} autoComplete="off" disabled={taskSubmitted} placeholder="输入答案" value={officialResponses[responseKey] ?? ""} onChange={(event) => setOfficialResponses((current) => ({ ...current, [responseKey]: event.target.value }))} />
                       )}
                       {taskSubmitted && <small><b>{correct ? "✓ 正确" : "✕ 错误"}</b><em>正确答案：{answer.displayAnswer}</em>{answer.explanation && <div className="official-reading-analysis"><div><strong>原文定位</strong><span>{sourceEvidence?.location ?? "当前题暂无精确定位"}</span></div><p><strong>判断依据</strong><span>{answer.explanation}</span></p><p><strong>解题方法</strong><span>{readingAnalysisMethod(answer)}</span></p>{sourceEvidence && <button type="button" className={activeReadingQuestion === answer.number ? "is-active" : ""} onClick={() => showReadingEvidence(answer.number)}>{activeReadingQuestion === answer.number ? "✓ 已在原文标出" : "荧光笔定位原文 →"}</button>}</div>}</small>}
                     </div>
@@ -2352,12 +2474,12 @@ function OfficialTestRunner({
                   })}</div>}
                 </section>
               )}
-              {material.passagePdfUrl && paperMode === "questions" && (
-                <section className="official-reading-questions-panel" aria-label={`${task.label} 对应题目`}>
-                  <header><b>{task.questionLabel.split(" · ").pop()}</b><span>仅当前 Passage</span></header>
+              {(material.passagePdfUrl || officialListeningQuestionSet) && paperMode === "questions" && (
+                <section className={`official-reading-questions-panel${officialListeningQuestionSet ? " official-listening-questions-panel" : ""}`} aria-label={`${task.label} 对应题目`}>
+                  <header><b>{task.questionLabel.split(" · ").pop()}</b><span>仅当前 {officialListeningQuestionSet ? "Listening Task" : "Passage"}</span></header>
                   <div className="official-reading-question-scroll" aria-label={`${task.label} 完整题目，可滚动查看`}>
-                    {officialReadingQuestionSet ? <div className="official-reading-question-list">
-                      {officialReadingQuestionSet.sections.map((section, sectionIndex) => <section key={`${task.id}-question-section-${sectionIndex}`}>
+                    {officialReadingQuestionSet || officialListeningQuestionSet ? <div className="official-reading-question-list">
+                      {(officialReadingQuestionSet ?? officialListeningQuestionSet)!.sections.map((section, sectionIndex) => <section key={`${task.id}-question-section-${sectionIndex}`}>
                         <p className="official-reading-question-instruction">{section.instruction}</p>
                         {section.options && <div className="official-reading-question-options" aria-label="题目选项">{section.options.map((option) => <span key={option}>{option}</span>)}</div>}
                         <div className="official-reading-question-items">{section.questions.map((question) => <article key={`${task.id}-question-${question.number}`}><b>{question.number}</b><span>{question.prompt}</span></article>)}</div>
@@ -2444,6 +2566,12 @@ function OfficialTestRunner({
                 </section>
               </div>
             </>
+          ) : material.audioTracks && !speakingTaskMode && paperMode === "questions" ? (
+            <section className="official-listening-material-note">
+              <span>LISTENING WORKSPACE</span>
+              <strong>{taskSubmitted ? "本 Task 已提交；下方可查看听力原文" : "先播放当前 Task 的官方录音"}</strong>
+              <p>{taskSubmitted ? "当前 Task 的完整题目仍保留在右侧答题卡下方；提交后解锁的官方原文会显示在本页下方。" : "当前 Task 的完整题目已放在右侧答题卡下方，与阅读专项保持同一版式；题目区域可独立滚动，滚动页面时会与答题卡同步查看。"}</p>
+            </section>
           ) : task.speakingPrompt && !taskSubmitted ? (
             <section className="official-speaking-material-lock">
               <span>REVIEW MATERIAL LOCKED</span>
