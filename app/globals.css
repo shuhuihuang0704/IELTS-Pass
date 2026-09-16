@@ -584,8 +584,9 @@ button { cursor: pointer; }
 .official-reading-questions-panel>header b { color:#29242d; font-size:12px; }
 .official-reading-questions-panel>header small,.official-reading-questions-panel>header span { color:var(--muted); font-size:8px; }
 .official-reading-question-scroll { max-height:min(72vh,760px); margin-top:10px; padding-right:3px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
-.official-reading-question-scroll .official-reading-page-stack { padding-right:2px; }
-.official-reading-question-scroll .official-paper-frame { margin:0; }
+.official-reading-question-scroll .official-reading-page-stack { gap:0; padding-right:2px; }
+.official-reading-question-scroll .official-pdf-page-lock { border-radius:0; }
+.official-reading-question-scroll .official-paper-frame { margin:0; border-radius:0; }
 .official-answer-sheet>footer { margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .official-answer-sheet>footer span { color:#6f6870; font-size:9px; }
 .official-answer-sheet>footer button { min-height:36px; padding:0 14px; border:0; border-radius:9px; color:white; background:var(--ink); font-size:9px; white-space:nowrap; }
