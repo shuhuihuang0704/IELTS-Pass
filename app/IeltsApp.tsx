@@ -1209,7 +1209,8 @@ function autoPronounceDailyVocabularyWord(word: string) {
 
 function renderClozeSentence(sentence: string, target: string) {
   const escapedTarget = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return sentence.replace(new RegExp(escapedTarget, "i"), "_____");
+  const targetPattern = new RegExp(`(^|[^A-Za-z0-9])${escapedTarget}(?=$|[^A-Za-z0-9])`, "i");
+  return sentence.replace(targetPattern, "$1_____");
 }
 
 type DailyWordDictionaryEntry = {

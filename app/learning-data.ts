@@ -23,9 +23,16 @@ listeningCorpusPhrases.forEach(({ term }) => {
   });
 });
 
-function buildListeningClozeSentence(target: string, kind: "word" | "phrase") {
-  const label = kind === "phrase" ? "phrase" : "word";
-  return `The speaker uses the ${label} "${target}" while explaining the situation.`;
+function buildListeningClozeSentence(target: string, kind: "word" | "phrase", context = "") {
+  const cleanTarget = target.trim();
+  const cleanContext = context.trim();
+  const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const hasExactTarget = cleanTarget.length > 0 && new RegExp(`(^|[^A-Za-z0-9])${escapedTarget}(?=$|[^A-Za-z0-9])`, "i").test(cleanContext);
+  if (kind === "word" && cleanContext && hasExactTarget) {
+    return `During the conversation, the speaker mentions ${cleanContext} while explaining the situation.`;
+  }
+  if (kind === "phrase") return `During the conversation, the speaker says "${cleanTarget}" as part of the explanation.`;
+  return `During the conversation, the speaker mentions "${cleanTarget}" as an important detail.`;
 }
 
 export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }) => ({
@@ -33,7 +40,7 @@ export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, secti
   meaning,
   section,
   example: corpusPhraseExampleByWord.get(word.toLowerCase()) ?? `Listen carefully for the word “${word}”.`,
-  sentence: buildListeningClozeSentence(word, "word"),
+  sentence: buildListeningClozeSentence(word, "word", corpusPhraseExampleByWord.get(word.toLowerCase())),
   phonetic: "",
   hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
 }));
