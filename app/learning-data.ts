@@ -23,11 +23,17 @@ listeningCorpusPhrases.forEach(({ term }) => {
   });
 });
 
+function buildListeningClozeSentence(target: string, kind: "word" | "phrase") {
+  const label = kind === "phrase" ? "phrase" : "word";
+  return `The speaker uses the ${label} "${target}" while explaining the situation.`;
+}
+
 export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }) => ({
   word,
   meaning,
   section,
   example: corpusPhraseExampleByWord.get(word.toLowerCase()) ?? `Listen carefully for the word “${word}”.`,
+  sentence: buildListeningClozeSentence(word, "word"),
   phonetic: "",
   hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
 }));
@@ -557,6 +563,7 @@ export const connectedSpeechPhrases = listeningCorpusPhrases.map(({ term: phrase
   phrase,
   meaning,
   section,
+  sentence: buildListeningClozeSentence(phrase, "phrase"),
   ...buildConnectedSpeechGuidance(phrase),
 }));
 
