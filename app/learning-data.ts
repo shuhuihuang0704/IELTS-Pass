@@ -24,7 +24,15 @@ listeningCorpusPhrases.forEach(({ term }) => {
 });
 
 function stableListeningSentenceIndex(value: string, size: number) {
-  return [...value].reduce((total, character) => total + character.charCodeAt(0), 0) % size;
+  // A small deterministic hash spreads neighbouring words across the full
+  // sentence bank.  A simple character sum made many IELTS words choose the
+  // same three examples, which made the cloze cards look duplicated.
+  let hash = 2166136261;
+  for (const character of value) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) % size;
 }
 
 type ListeningSentenceTopic = "education" | "travel" | "finance" | "health" | "environment" | "accommodation" | "technology" | "work" | "general";
@@ -42,100 +50,174 @@ function listeningSentenceTopic(target: string, meaning: string, context: string
   return "general";
 }
 
-const listeningSentenceFrames: Record<ListeningSentenceTopic, string[]> = {
-  education: [
-    "The tutor explained __TARGET__ during the evening class.",
-    "The student included __TARGET__ in the course notes.",
-    "The university office checked __TARGET__ before enrolment.",
-  ],
-  travel: [
-    "The receptionist checked __TARGET__ before confirming the journey.",
-    "The guide mentioned __TARGET__ while describing the route.",
-    "The traveller wrote __TARGET__ on the booking form.",
-  ],
-  finance: [
-    "The clerk recorded __TARGET__ on the payment form.",
-    "The customer asked about __TARGET__ before making the transfer.",
-    "The manager checked __TARGET__ before approving the budget.",
-  ],
-  health: [
-    "The nurse asked about __TARGET__ before the appointment.",
-    "The doctor recorded __TARGET__ in the patient's notes.",
-    "The lecturer used __TARGET__ when discussing public health.",
-  ],
-  environment: [
-    "The researcher measured __TARGET__ during the field survey.",
-    "The report describes how __TARGET__ affects local wildlife.",
-    "The volunteers recorded __TARGET__ beside the river.",
-  ],
-  accommodation: [
-    "The manager noted __TARGET__ before assigning the room.",
-    "The tenant mentioned __TARGET__ during the accommodation enquiry.",
-    "The form asks applicants to provide __TARGET__ before moving in.",
-  ],
-  technology: [
-    "The technician checked __TARGET__ before restarting the system.",
-    "The students tested __TARGET__ during the computer workshop.",
-    "The report explains how __TARGET__ changed the service.",
-  ],
-  work: [
-    "The coordinator confirmed __TARGET__ before the meeting.",
-    "The applicant mentioned __TARGET__ during the interview.",
-    "The manager recorded __TARGET__ in the staff report.",
-  ],
-  general: [
-    "The speaker mentioned __TARGET__ while explaining the situation.",
-    "The interviewer asked about __TARGET__ before moving to the next question.",
-    "The report uses __TARGET__ to describe an important detail.",
-  ],
-};
+type ListeningSentencePattern = { leads: string[]; tails: string[] };
 
-const listeningPhraseFrames: Record<ListeningSentenceTopic, string[]> = {
-  education: [
-    "The tutor put __TARGET__ on the board as a useful expression.",
-    "The student practised __TARGET__ during the language lesson.",
-    "The lecturer used __TARGET__ in an example for the class.",
-  ],
-  travel: [
-    "The guide used __TARGET__ while describing the route.",
-    "The receptionist repeated __TARGET__ before confirming the booking.",
-    "The traveller heard __TARGET__ in the directions to the station.",
-  ],
-  finance: [
-    "The clerk used __TARGET__ when explaining the payment.",
-    "The customer repeated __TARGET__ before authorising the transfer.",
-    "The manager wrote __TARGET__ beside the total on the form.",
-  ],
-  health: [
-    "The doctor used __TARGET__ while discussing the treatment.",
-    "The nurse repeated __TARGET__ before checking the patient.",
-    "The lecturer put __TARGET__ into a sentence about healthy habits.",
-  ],
-  environment: [
-    "The researcher used __TARGET__ to describe the field observation.",
-    "The guide repeated __TARGET__ while explaining the wildlife survey.",
-    "The report includes __TARGET__ in its discussion of climate change.",
-  ],
-  accommodation: [
-    "The manager used __TARGET__ while explaining the room arrangements.",
-    "The tenant repeated __TARGET__ during the housing enquiry.",
-    "The form includes __TARGET__ in the section about the new flat.",
-  ],
-  technology: [
-    "The technician used __TARGET__ while explaining the new software.",
-    "The student repeated __TARGET__ during the computer workshop.",
-    "The manual gives __TARGET__ as an example of the system's controls.",
-  ],
-  work: [
-    "The coordinator used __TARGET__ during the staff meeting.",
-    "The applicant repeated __TARGET__ while answering the interview question.",
-    "The manager wrote __TARGET__ in the final work plan.",
-  ],
-  general: [
-    "The speaker used __TARGET__ during the conversation.",
-    "The interviewer repeated __TARGET__ before moving to the next question.",
-    "The recording includes __TARGET__ in a natural exchange.",
-  ],
+// Each topic has 6 × 6 combinations instead of three recycled templates.
+// The combinations are complete, natural contexts so every target is heard
+// inside a different situation rather than as a bare word on a card.
+const listeningSentencePatterns: Record<ListeningSentenceTopic, ListeningSentencePattern> = {
+  education: {
+    leads: [
+      "During the evening seminar, the tutor discussed",
+      "In the course notes, the student highlighted",
+      "Before the final assignment, the lecturer reviewed",
+      "At the university office, the adviser checked",
+      "During the lab session, the class recorded",
+      "For the research project, the team compared",
+    ],
+    tails: [
+      "before moving to the next topic.",
+      "with an example from the lecture.",
+      "in a short paragraph.",
+      "against the information in the handbook.",
+      "before the students left the room.",
+      "while preparing the end-of-term report.",
+    ],
+  },
+  travel: {
+    leads: [
+      "At the airport desk, the agent checked",
+      "During the train journey, the guide mentioned",
+      "Before the coach left, the driver confirmed",
+      "On the booking form, the traveller wrote",
+      "At the station, the clerk repeated",
+      "While planning the route, the group discussed",
+    ],
+    tails: [
+      "before issuing the tickets.",
+      "while explaining the next stop.",
+      "so that everyone knew the arrangements.",
+      "before submitting the reservation.",
+      "when the platform announcement began.",
+      "before setting off that morning.",
+    ],
+  },
+  finance: {
+    leads: [
+      "Before approving the transfer, the clerk checked",
+      "On the monthly statement, the bank listed",
+      "During the budget meeting, the manager reviewed",
+      "At the payment desk, the customer confirmed",
+      "In the finance report, the analyst compared",
+      "Before the invoice was issued, the accountant recorded",
+    ],
+    tails: [
+      "against the original request.",
+      "for the previous quarter.",
+      "before agreeing on the final figure.",
+      "with the details on the receipt.",
+      "to explain the change in costs.",
+      "so the accounts could be closed.",
+    ],
+  },
+  health: {
+    leads: [
+      "Before the appointment, the nurse asked about",
+      "In the patient's notes, the doctor recorded",
+      "During the health lecture, the speaker discussed",
+      "At the clinic reception, the assistant confirmed",
+      "While preparing the treatment plan, the doctor reviewed",
+      "In the survey, researchers measured",
+    ],
+    tails: [
+      "before checking the patient's temperature.",
+      "after the first consultation.",
+      "with examples from recent research.",
+      "before sending the reminder message.",
+      "alongside the patient's other symptoms.",
+      "across several age groups.",
+    ],
+  },
+  environment: {
+    leads: [
+      "During the field survey, the researcher measured",
+      "In the conservation report, the team described",
+      "Beside the river, volunteers recorded",
+      "At the wildlife centre, the ranger monitored",
+      "During the climate study, the scientists compared",
+      "In the sample log, the technician noted",
+    ],
+    tails: [
+      "at three different sites.",
+      "before recommending a new policy.",
+      "after the heavy rain.",
+      "throughout the breeding season.",
+      "with data from the previous decade.",
+      "before sending the samples to the laboratory.",
+    ],
+  },
+  accommodation: {
+    leads: [
+      "Before assigning the room, the manager checked",
+      "On the tenancy form, the applicant entered",
+      "During the housing enquiry, the tenant mentioned",
+      "At the residence office, the adviser explained",
+      "Before moving in, the couple inspected",
+      "In the maintenance report, the caretaker recorded",
+    ],
+    tails: [
+      "against the booking details.",
+      "before signing the agreement.",
+      "while asking about the deposit.",
+      "to help the new resident choose a room.",
+      "before collecting the keys.",
+      "after visiting the building.",
+    ],
+  },
+  technology: {
+    leads: [
+      "Before restarting the system, the technician checked",
+      "During the computer workshop, the students tested",
+      "In the user guide, the writer described",
+      "At the help desk, the customer reported",
+      "While updating the website, the developer reviewed",
+      "In the security audit, the team examined",
+    ],
+    tails: [
+      "to find the source of the error.",
+      "on a separate practice account.",
+      "with a diagram of the process.",
+      "before the support call ended.",
+      "before publishing the new version.",
+      "after the latest software update.",
+    ],
+  },
+  work: {
+    leads: [
+      "Before the meeting, the coordinator confirmed",
+      "During the interview, the applicant mentioned",
+      "In the staff report, the manager recorded",
+      "At the company briefing, the team discussed",
+      "While planning the project, the supervisor reviewed",
+      "In the training session, the employees practised",
+    ],
+    tails: [
+      "with everyone on the project.",
+      "when describing the previous role.",
+      "for the human-resources team.",
+      "before assigning the next task.",
+      "against the agreed timetable.",
+      "before returning to their departments.",
+    ],
+  },
+  general: {
+    leads: [
+      "During the conversation, the speaker mentioned",
+      "Before making a decision, the interviewer asked about",
+      "In the report, the writer described",
+      "At the information desk, the assistant confirmed",
+      "While discussing the plan, the group considered",
+      "During the review meeting, the committee examined",
+    ],
+    tails: [
+      "as an important part of the situation.",
+      "before moving to the final question.",
+      "with details from the original interview.",
+      "so that the visitor could continue.",
+      "before choosing the most practical option.",
+      "and agreed on the next step.",
+    ],
+  },
 };
 
 function buildListeningClozeSentence(target: string, kind: "word" | "phrase", context = "", meaning = "", section = "") {
@@ -144,9 +226,11 @@ function buildListeningClozeSentence(target: string, kind: "word" | "phrase", co
   const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const hasExactTarget = cleanTarget.length > 0 && new RegExp(`(^|[^A-Za-z0-9])${escapedTarget}(?=$|[^A-Za-z0-9])`, "i").test(cleanContext);
   const topic = listeningSentenceTopic(cleanTarget, meaning, cleanContext, section);
-  const frames = kind === "phrase" ? listeningPhraseFrames[topic] : listeningSentenceFrames[topic];
+  const pattern = listeningSentencePatterns[topic];
   const displayTarget = kind === "word" && cleanContext && hasExactTarget ? cleanContext : `"${cleanTarget}"`;
-  return frames[stableListeningSentenceIndex(`${kind}:${cleanTarget}`, frames.length)].replace("__TARGET__", displayTarget);
+  const leadIndex = stableListeningSentenceIndex(`${kind}:lead:${cleanTarget}`, pattern.leads.length);
+  const tailIndex = stableListeningSentenceIndex(`${kind}:tail:${cleanTarget}`, pattern.tails.length);
+  return `${pattern.leads[leadIndex]} ${displayTarget} ${pattern.tails[tailIndex]}`;
 }
 
 export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }) => ({
