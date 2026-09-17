@@ -23,16 +23,130 @@ listeningCorpusPhrases.forEach(({ term }) => {
   });
 });
 
-function buildListeningClozeSentence(target: string, kind: "word" | "phrase", context = "") {
+function stableListeningSentenceIndex(value: string, size: number) {
+  return [...value].reduce((total, character) => total + character.charCodeAt(0), 0) % size;
+}
+
+type ListeningSentenceTopic = "education" | "travel" | "finance" | "health" | "environment" | "accommodation" | "technology" | "work" | "general";
+
+function listeningSentenceTopic(target: string, meaning: string, context: string, section: string): ListeningSentenceTopic {
+  const source = `${target} ${meaning} ${context} ${section}`.toLowerCase();
+  if (/course|student|school|university|academic|lecture|degree|class|teacher|课程|学生|学校|大学|学术|讲座|学位|课堂|教学/.test(source)) return "education";
+  if (/airport|flight|train|bus|travel|journey|tour|route|road|traffic|ticket|机场|航班|火车|公交|旅行|旅程|旅游|路线|道路|交通|票/.test(source)) return "travel";
+  if (/bank|fee|price|cost|payment|cash|money|budget|dollar|pound|financial|银行|费用|价格|成本|支付|现金|钱|预算|金融|英镑|美元/.test(source)) return "finance";
+  if (/doctor|patient|hospital|medicine|health|diet|allergy|pain|clinic|medical|医生|病人|医院|药|健康|饮食|过敏|疼|诊所|医疗/.test(source)) return "health";
+  if (/animal|bird|fish|plant|forest|climate|water|pollution|energy|environment|wildlife|动物|鸟|鱼|植物|森林|气候|水|污染|能源|环境|野生/.test(source)) return "environment";
+  if (/room|house|home|bed|accommodation|building|library|office|campus|住宿|房间|房屋|家庭|床|建筑|图书馆|办公室|校园/.test(source)) return "accommodation";
+  if (/computer|website|phone|internet|software|keyboard|screen|digital|technology|电脑|网站|电话|互联网|软件|键盘|屏幕|数字|科技/.test(source)) return "technology";
+  if (/job|work|career|manager|staff|company|business|worker|工作|职业|经理|员工|公司|商业|工人/.test(source)) return "work";
+  return "general";
+}
+
+const listeningSentenceFrames: Record<ListeningSentenceTopic, string[]> = {
+  education: [
+    "The tutor explained __TARGET__ during the evening class.",
+    "The student included __TARGET__ in the course notes.",
+    "The university office checked __TARGET__ before enrolment.",
+  ],
+  travel: [
+    "The receptionist checked __TARGET__ before confirming the journey.",
+    "The guide mentioned __TARGET__ while describing the route.",
+    "The traveller wrote __TARGET__ on the booking form.",
+  ],
+  finance: [
+    "The clerk recorded __TARGET__ on the payment form.",
+    "The customer asked about __TARGET__ before making the transfer.",
+    "The manager checked __TARGET__ before approving the budget.",
+  ],
+  health: [
+    "The nurse asked about __TARGET__ before the appointment.",
+    "The doctor recorded __TARGET__ in the patient's notes.",
+    "The lecturer used __TARGET__ when discussing public health.",
+  ],
+  environment: [
+    "The researcher measured __TARGET__ during the field survey.",
+    "The report describes how __TARGET__ affects local wildlife.",
+    "The volunteers recorded __TARGET__ beside the river.",
+  ],
+  accommodation: [
+    "The manager noted __TARGET__ before assigning the room.",
+    "The tenant mentioned __TARGET__ during the accommodation enquiry.",
+    "The form asks applicants to provide __TARGET__ before moving in.",
+  ],
+  technology: [
+    "The technician checked __TARGET__ before restarting the system.",
+    "The students tested __TARGET__ during the computer workshop.",
+    "The report explains how __TARGET__ changed the service.",
+  ],
+  work: [
+    "The coordinator confirmed __TARGET__ before the meeting.",
+    "The applicant mentioned __TARGET__ during the interview.",
+    "The manager recorded __TARGET__ in the staff report.",
+  ],
+  general: [
+    "The speaker mentioned __TARGET__ while explaining the situation.",
+    "The interviewer asked about __TARGET__ before moving to the next question.",
+    "The report uses __TARGET__ to describe an important detail.",
+  ],
+};
+
+const listeningPhraseFrames: Record<ListeningSentenceTopic, string[]> = {
+  education: [
+    "The tutor put __TARGET__ on the board as a useful expression.",
+    "The student practised __TARGET__ during the language lesson.",
+    "The lecturer used __TARGET__ in an example for the class.",
+  ],
+  travel: [
+    "The guide used __TARGET__ while describing the route.",
+    "The receptionist repeated __TARGET__ before confirming the booking.",
+    "The traveller heard __TARGET__ in the directions to the station.",
+  ],
+  finance: [
+    "The clerk used __TARGET__ when explaining the payment.",
+    "The customer repeated __TARGET__ before authorising the transfer.",
+    "The manager wrote __TARGET__ beside the total on the form.",
+  ],
+  health: [
+    "The doctor used __TARGET__ while discussing the treatment.",
+    "The nurse repeated __TARGET__ before checking the patient.",
+    "The lecturer put __TARGET__ into a sentence about healthy habits.",
+  ],
+  environment: [
+    "The researcher used __TARGET__ to describe the field observation.",
+    "The guide repeated __TARGET__ while explaining the wildlife survey.",
+    "The report includes __TARGET__ in its discussion of climate change.",
+  ],
+  accommodation: [
+    "The manager used __TARGET__ while explaining the room arrangements.",
+    "The tenant repeated __TARGET__ during the housing enquiry.",
+    "The form includes __TARGET__ in the section about the new flat.",
+  ],
+  technology: [
+    "The technician used __TARGET__ while explaining the new software.",
+    "The student repeated __TARGET__ during the computer workshop.",
+    "The manual gives __TARGET__ as an example of the system's controls.",
+  ],
+  work: [
+    "The coordinator used __TARGET__ during the staff meeting.",
+    "The applicant repeated __TARGET__ while answering the interview question.",
+    "The manager wrote __TARGET__ in the final work plan.",
+  ],
+  general: [
+    "The speaker used __TARGET__ during the conversation.",
+    "The interviewer repeated __TARGET__ before moving to the next question.",
+    "The recording includes __TARGET__ in a natural exchange.",
+  ],
+};
+
+function buildListeningClozeSentence(target: string, kind: "word" | "phrase", context = "", meaning = "", section = "") {
   const cleanTarget = target.trim();
   const cleanContext = context.trim();
   const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const hasExactTarget = cleanTarget.length > 0 && new RegExp(`(^|[^A-Za-z0-9])${escapedTarget}(?=$|[^A-Za-z0-9])`, "i").test(cleanContext);
-  if (kind === "word" && cleanContext && hasExactTarget) {
-    return `During the conversation, the speaker mentions ${cleanContext} while explaining the situation.`;
-  }
-  if (kind === "phrase") return `During the conversation, the speaker says "${cleanTarget}" as part of the explanation.`;
-  return `During the conversation, the speaker mentions "${cleanTarget}" as an important detail.`;
+  const topic = listeningSentenceTopic(cleanTarget, meaning, cleanContext, section);
+  const frames = kind === "phrase" ? listeningPhraseFrames[topic] : listeningSentenceFrames[topic];
+  const displayTarget = kind === "word" && cleanContext && hasExactTarget ? cleanContext : `"${cleanTarget}"`;
+  return frames[stableListeningSentenceIndex(`${kind}:${cleanTarget}`, frames.length)].replace("__TARGET__", displayTarget);
 }
 
 export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }) => ({
@@ -40,7 +154,7 @@ export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, secti
   meaning,
   section,
   example: corpusPhraseExampleByWord.get(word.toLowerCase()) ?? `Listen carefully for the word “${word}”.`,
-  sentence: buildListeningClozeSentence(word, "word", corpusPhraseExampleByWord.get(word.toLowerCase())),
+  sentence: buildListeningClozeSentence(word, "word", corpusPhraseExampleByWord.get(word.toLowerCase()), meaning, section),
   phonetic: "",
   hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
 }));
@@ -570,7 +684,7 @@ export const connectedSpeechPhrases = listeningCorpusPhrases.map(({ term: phrase
   phrase,
   meaning,
   section,
-  sentence: buildListeningClozeSentence(phrase, "phrase"),
+  sentence: buildListeningClozeSentence(phrase, "phrase", "", meaning, section),
   ...buildConnectedSpeechGuidance(phrase),
 }));
 
