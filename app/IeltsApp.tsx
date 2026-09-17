@@ -1024,9 +1024,9 @@ function weeklyOpeningTask(session: OfficialTestSession, weekKey = localWeekKey(
 type IeltsVoiceRole = "examiner" | "female" | "male";
 
 const preferredIeltsVoiceNames: Record<IeltsVoiceRole, string[]> = {
-  examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Flo (English (UK))", "Shelley (English (UK))", "Moira", "Serena", "Kate", "Daniel"],
-  female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Karen", "Flo (English (UK))", "Shelley (English (UK))", "Moira", "Serena", "Kate"],
-  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Daniel", "Oliver", "Arthur", "George", "Reed (English (UK))", "Eddy (English (UK))", "Ryan"],
+  examiner: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Samantha", "Karen", "Flo (English (UK))", "Shelley (English (UK))", "Moira", "Serena", "Kate", "Daniel"],
+  female: ["Microsoft Sonia Online (Natural)", "Microsoft Libby Online (Natural)", "Google UK English Female", "Samantha", "Karen", "Flo (English (UK))", "Shelley (English (UK))", "Moira", "Serena", "Kate"],
+  male: ["Microsoft Ryan Online (Natural)", "Google UK English Male", "Alex", "Daniel", "Oliver", "Arthur", "George", "Reed (English (UK))", "Eddy (English (UK))", "Ryan"],
 };
 
 function preferredIeltsVoice(role: IeltsVoiceRole = "examiner") {
@@ -1128,12 +1128,14 @@ function speakDialogue(turns: DialogueTurn[], rate = 0.92, handlers?: DialoguePl
     index += 1;
     // Keep the same comfortable ~0.90× pace used by Daily Vocabulary while
     // preserving a clear female/male contrast for the listening dialogue.
-    const utterance = createIeltsUtterance(turn.text, rate, turn.role === "female" ? 1.02 : .92, turn.role);
+    // Use a clear but restrained pitch contrast so the two speakers remain
+    // identifiable without making either voice sound cartoonish.
+    const utterance = createIeltsUtterance(turn.text, rate, turn.role === "female" ? 1.06 : .86, turn.role);
     utterance.onstart = () => { started = true; };
     // Keep a small, uneven turn-taking gap. Official sample conversations
     // leave room for brief acknowledgements and self-corrections rather than
     // cutting directly from one voice into the next.
-    utterance.onend = () => window.setTimeout(playNext, turn.text.endsWith("?") ? 520 : 620);
+    utterance.onend = () => window.setTimeout(playNext, turn.text.endsWith("?") ? 460 : 560);
     utterance.onerror = () => {
       synthesis.cancel();
       handlers?.onerror?.();
@@ -4060,7 +4062,6 @@ function ListeningPractice({
   const [audioDuration, setAudioDuration] = useState(0);
   const [dialoguePlayback, setDialoguePlayback] = useState<"idle" | "playing" | "paused">("idle");
   const [longDialogueMode, setLongDialogueMode] = useState(false);
-  const [naturalDialoguePreferred, setNaturalDialoguePreferred] = useState(true);
   const [dialogueAudioTime, setDialogueAudioTime] = useState(0);
   const listeningAudio = useRef<HTMLAudioElement | null>(null);
   const dialogueAudioTimeRef = useRef(0);
@@ -4116,10 +4117,10 @@ function ListeningPractice({
   }, []);
 
   const toggleListening = () => {
-    // Daily Vocabulary uses the device's natural speech path on iOS. Use the
-    // same speech-synthesis path for the daily listening dialogue by default;
-    // the bundled WAV remains available as a compatibility fallback/toggle.
-    if (naturalDialoguePreferred && naturalSpeechAvailable) {
+    // The daily listening player always uses the two-speaker dialogue. The
+    // bundled recording is only a silent compatibility fallback for browsers
+    // that do not expose speech synthesis; there is no user-facing mode switch.
+    if (naturalSpeechAvailable) {
       toggleDistinctDialogue();
       return;
     }
@@ -4144,7 +4145,7 @@ function ListeningPractice({
   };
 
   const restartListening = () => {
-    if (naturalDialoguePreferred && naturalSpeechAvailable) {
+    if (naturalSpeechAvailable) {
       window.speechSynthesis.cancel();
       setDialoguePlayback("idle");
       setLongDialogueMode(false);
@@ -4194,7 +4195,7 @@ function ListeningPractice({
     setDialogueAudioTime(0);
     setLongDialogueMode(true);
     setDialoguePlayback("playing");
-    const started = speakDialogue(dialogueTurns, .91, {
+    const started = speakDialogue(dialogueTurns, .9, {
       onend: () => {
         dialogueAudioTimeRef.current = dialogueDuration;
         setDialogueAudioTime(dialogueDuration);
@@ -4210,20 +4211,6 @@ function ListeningPractice({
       setDialoguePlayback("idle");
       setLongDialogueMode(false);
     }
-  };
-
-  const toggleListeningVoiceMode = () => {
-    if (naturalDialoguePreferred) {
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-      setDialoguePlayback("idle");
-      setLongDialogueMode(false);
-      dialogueAudioTimeRef.current = 0;
-      setDialogueAudioTime(0);
-      setNaturalDialoguePreferred(false);
-      return;
-    }
-    setNaturalDialoguePreferred(naturalSpeechAvailable);
-    setAudioError(false);
   };
 
   const formatAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -4389,6 +4376,12 @@ function ListeningPractice({
       audio.pause();
       audio.currentTime = 0;
     }
+    if (naturalSpeechAvailable) window.speechSynthesis.cancel();
+    setDialoguePlayback("idle");
+    setLongDialogueMode(false);
+    dialogueAudioTimeRef.current = 0;
+    dialogueAnchorTimeRef.current = 0;
+    setDialogueAudioTime(0);
     setFormAnswers({});
     setSelectedFacilities([]);
     setMatchingAnswers({});
@@ -4401,7 +4394,7 @@ function ListeningPractice({
   };
 
   const longDialogueActive = longDialogueMode && dialoguePlayback !== "idle";
-  const longDialogueVoiceLabel = "自然英式语速 · 女声 × 男声";
+  const longDialogueVoiceLabel = "英式女声 × 英式男声";
   const displayedPlayerTime = longDialogueActive ? dialogueAudioTime : audioTime;
   const displayedPlayerDuration = longDialogueActive ? dialogueDuration : audioDuration;
   const displayedPlayerState = longDialogueActive ? dialoguePlayback : playerState;
@@ -4414,14 +4407,12 @@ function ListeningPractice({
         <div className="listening-controls">
           <audio key={listeningSet.audioSrc} ref={listeningAudio} src={listeningSet.audioSrc} preload="auto" playsInline onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); setAudioError(false); }} onError={() => { setAudioError(true); setPlayerState("error"); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => { setAudioError(false); setPlayerState("playing"); }} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${displayedPlayerState}`}>
-            <button className="listening-toggle" onClick={toggleListening} aria-label={longDialogueActive ? displayedPlayerState === "playing" ? "暂停自然角色朗读" : "继续自然角色朗读" : naturalDialoguePreferred ? displayedPlayerState === "playing" ? "暂停自然角色朗读" : "播放自然角色朗读" : playerState === "playing" ? "暂停基础录音" : "播放基础录音"}>{displayedPlayerState === "playing" ? "Ⅱ" : "▶"}</button>
+            <button className="listening-toggle" onClick={toggleListening} aria-label={longDialogueActive ? displayedPlayerState === "playing" ? "暂停双人对话" : "继续双人对话" : naturalSpeechAvailable ? "播放双人对话" : playerState === "playing" ? "暂停双人录音" : "播放双人录音"}>{displayedPlayerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(displayedPlayerDuration, 1)} step="0.1" value={displayedPlayerTime} disabled={longDialogueActive} onChange={(event) => { if (longDialogueActive) return; const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label={longDialogueActive ? "长版角色朗读进度（不可拖动）" : "拖动听力录音进度"} />
-            <span className="listening-player-copy"><strong>{longDialogueActive ? displayedPlayerState === "playing" ? `正在播放自然角色朗读 · ${longDialogueVoiceLabel}` : `已暂停自然角色朗读 · ${longDialogueVoiceLabel}` : naturalDialoguePreferred ? displayedPlayerState === "playing" ? `正在播放自然角色朗读 · ${longDialogueVoiceLabel}` : displayedPlayerState === "paused" ? `已暂停自然角色朗读 · ${longDialogueVoiceLabel}` : "播放自然角色朗读" : playerState === "playing" ? `正在播放基础录音 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停基础录音 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放双人基础录音"}</strong><small>{longDialogueActive || naturalDialoguePreferred ? `${formatAudioTime(displayedPlayerTime)} / ${formatAudioTime(displayedPlayerDuration)} · 与每日词汇相同的约 0.90× 训练语速` : audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
+            <span className="listening-player-copy"><strong>{longDialogueActive ? displayedPlayerState === "playing" ? `正在播放双人对话 · ${longDialogueVoiceLabel}` : `已暂停双人对话 · ${longDialogueVoiceLabel}` : naturalSpeechAvailable ? "播放双人自然对话" : playerState === "playing" ? `正在播放双人录音 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停双人录音 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放双人录音"}</strong><small>{longDialogueActive || naturalSpeechAvailable ? `${formatAudioTime(displayedPlayerTime)} / ${formatAudioTime(displayedPlayerDuration)} · 女声与男声交替 · 约 0.90× 自然训练语速` : audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
           </div>
-          <button className="listening-replay" disabled={!longDialogueActive && audioTime === 0 && playerState === "idle"} onClick={restartListening}>↺ 从头重播</button>
-          <button className={`listening-dialogue-toggle is-${dialoguePlayback}`} onClick={() => { setNaturalDialoguePreferred(true); toggleDistinctDialogue(); }}>{dialoguePlayback === "playing" ? "Ⅱ 暂停自然角色朗读" : dialoguePlayback === "paused" ? "▶ 继续自然角色朗读" : "♫ 播放自然角色朗读"}</button>
-          <button className="listening-voice-mode" type="button" onClick={toggleListeningVoiceMode}>{naturalDialoguePreferred ? "切换基础录音" : "使用自然角色朗读"}</button>
-          <small className="listening-dialogue-note">默认使用与每日词汇一致的约 0.90× 自然语速；女声与男声分别选用设备可用的英式英语声音。需要时可切回基础录音。</small>
+          <button className="listening-replay" disabled={dialogueAudioTime === 0 && audioTime === 0 && playerState === "idle" && dialoguePlayback === "idle"} onClick={restartListening}>↺ 从头重播双人对话</button>
+          <small className="listening-dialogue-note">默认使用约 0.90× 自然训练语速，女声与男声分别朗读不同角色；播放过程中会保留短暂、自然的轮次停顿。</small>
         </div>
         <div className="listening-answer-progress"><i style={{ width: `${answeredCount * 10}%` }} /><span>{answeredCount}/10</span></div>
 

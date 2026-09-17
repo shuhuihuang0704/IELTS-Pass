@@ -88,7 +88,7 @@ const artsCentreListening: DailyListeningSet = {
   code: "Daily Set B",
   audioSrc: localPracticeAsset("/listening-arts-centre.wav?voices=natural-uk-dual-v6"),
   captionsSrc: localPracticeAsset("/listening-arts-centre.vtt?voices=natural-uk-dual-v6"),
-  voiceLabel: "基础双人录音 · 英国女课程顾问 × 英国男学员",
+  voiceLabel: "备用双人录音 · 英国女课程顾问 × 英国男学员",
   audioCues: {
     l1: { startSeconds: 5.9, endSeconds: 12.5 }, l2: { startSeconds: 12.7, endSeconds: 18.1 },
     l3: { startSeconds: 18.3, endSeconds: 23.5 }, l4: { startSeconds: 24.8, endSeconds: 31.1 },
@@ -138,7 +138,7 @@ const wildlifeListening: DailyListeningSet = {
   code: "Daily Set C",
   audioSrc: localPracticeAsset("/listening-wildlife-volunteer.wav?voices=natural-uk-dual-v6"),
   captionsSrc: localPracticeAsset("/listening-wildlife-volunteer.vtt?voices=natural-uk-dual-v6"),
-  voiceLabel: "基础双人录音 · 英国女志愿者主管 × 英国男申请者",
+  voiceLabel: "备用双人录音 · 英国女志愿者主管 × 英国男申请者",
   audioCues: {
     l1: { startSeconds: 6, endSeconds: 12.2 }, l2: { startSeconds: 12.3, endSeconds: 19 },
     l3: { startSeconds: 19.2, endSeconds: 23.7 }, l4: { startSeconds: 23.8, endSeconds: 28.2 },
@@ -191,7 +191,7 @@ const listeningSets: DailyListeningSet[] = [
     evidence: listeningReviewEvidence,
     audioSrc: localPracticeAsset("/listening-section-1-v2.wav?voices=natural-uk-dual-v6"),
     captionsSrc: localPracticeAsset("/listening-section-1.vtt?voices=natural-uk-dual-v6"),
-    voiceLabel: "基础双人录音 · 英国女接待员 × 英国男学生",
+    voiceLabel: "备用双人录音 · 英国女接待员 × 英国男学生",
     audioCues: {
       l1: { startSeconds: 8.6, endSeconds: 16.1 }, l2: { startSeconds: 16.2, endSeconds: 24.1 },
       l3: { startSeconds: 24.2, endSeconds: 32.9 }, l4: { startSeconds: 33, endSeconds: 39.9 },
