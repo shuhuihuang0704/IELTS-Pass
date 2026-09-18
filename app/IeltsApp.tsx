@@ -1067,12 +1067,12 @@ type SpeechPlaybackHandlers = {
   onerror?: () => void;
 };
 
-function speak(text: string, rate = 0.94, handlers?: SpeechPlaybackHandlers) {
+function speak(text: string, rate = 0.94, handlers?: SpeechPlaybackHandlers, cancelBefore = true) {
   if (!("speechSynthesis" in window) || !text.trim()) return false;
   const synthesis = window.speechSynthesis;
   // Android Chrome can leave the synthesizer paused after the first utterance.
   // Resume it before every new request and wait for voices to become available.
-  synthesis.cancel();
+  if (cancelBefore) synthesis.cancel();
   synthesis.resume();
   let started = false;
   const speakNow = () => {
@@ -1210,9 +1210,11 @@ function playPronunciation(text: string, rate = 1) {
 // of mixing the remote dictionary voice with the browser synthesizer.
 function playListeningSentence(text: string, rate = 0.9) {
   if (typeof window === "undefined" || !text.trim()) return false;
-  stopPronunciationAudio();
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  return speak(text, rate);
+  // Keep successive sentences in the browser's native queue. Cancelling and
+  // recreating an utterance at every ten-second slot is what caused clipped,
+  // crackling starts on mobile. Seek/pause handlers cancel explicitly before
+  // calling this function, so normal progression remains continuous.
+  return speak(text, rate, undefined, false);
 }
 
 function autoPronounceDailyVocabularyWord(word: string) {
@@ -4068,7 +4070,10 @@ function ListeningPractice({
   const dialogueAudioTimeRef = useRef(0);
   const dialogueAnchorTimeRef = useRef(0);
   const dialogueAnchorStartedRef = useRef(0);
-  const naturalSpeechAvailable = typeof window !== "undefined" && "speechSynthesis" in window;
+  // Use the bundled pre-rendered dual-speaker WAV for this exercise. Browser
+  // speech synthesis was the source of metallic artefacts and broken turns on
+  // phones; it remains available for speaking practice only.
+  const useBundledDialogueAudio = true;
   const dialogueTurns = useMemo<DialogueTurn[]>(() => {
     const pattern = /(Coordinator|Caller|Supervisor|Applicant|Receptionist|Student):\s*/g;
     const turns: DialogueTurn[] = [];
@@ -4118,10 +4123,10 @@ function ListeningPractice({
   }, []);
 
   const toggleListening = () => {
-    // The daily listening player always uses the two-speaker dialogue. The
-    // bundled recording is only a silent compatibility fallback for browsers
-    // that do not expose speech synthesis; there is no user-facing mode switch.
-    if (naturalSpeechAvailable) {
+    // The daily listening player always uses the bundled, pre-rendered
+    // two-speaker dialogue. It is stable on mobile and does not depend on the
+    // browser's speech-synthesis voice list.
+    if (!useBundledDialogueAudio) {
       toggleDistinctDialogue();
       return;
     }
@@ -4146,7 +4151,7 @@ function ListeningPractice({
   };
 
   const restartListening = () => {
-    if (naturalSpeechAvailable) {
+    if (!useBundledDialogueAudio) {
       window.speechSynthesis.cancel();
       setDialoguePlayback("idle");
       setLongDialogueMode(false);
@@ -4157,7 +4162,7 @@ function ListeningPractice({
       return;
     }
     if (longDialogueMode) {
-      if (naturalSpeechAvailable) window.speechSynthesis.cancel();
+      if (!useBundledDialogueAudio) window.speechSynthesis.cancel();
       setDialoguePlayback("idle");
       setLongDialogueMode(false);
       dialogueAudioTimeRef.current = 0;
@@ -4377,7 +4382,7 @@ function ListeningPractice({
       audio.pause();
       audio.currentTime = 0;
     }
-    if (naturalSpeechAvailable) window.speechSynthesis.cancel();
+    if (!useBundledDialogueAudio) window.speechSynthesis.cancel();
     setDialoguePlayback("idle");
     setLongDialogueMode(false);
     dialogueAudioTimeRef.current = 0;
@@ -4408,9 +4413,9 @@ function ListeningPractice({
         <div className="listening-controls">
           <audio key={listeningSet.audioSrc} ref={listeningAudio} src={listeningSet.audioSrc} preload="auto" playsInline onLoadedMetadata={(event) => { event.currentTarget.playbackRate = difficulty.listening.rate; setAudioDuration(event.currentTarget.duration); setAudioError(false); }} onError={() => { setAudioError(true); setPlayerState("error"); }} onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)} onPlay={() => { setAudioError(false); setPlayerState("playing"); }} onPause={(event) => setPlayerState(event.currentTarget.currentTime === 0 || event.currentTarget.ended ? "idle" : "paused")} onEnded={() => setPlayerState("idle")}><track kind="captions" src={listeningSet.captionsSrc} srcLang="en" label="English" /></audio>
           <div className={`listening-player is-${displayedPlayerState}`}>
-            <button className="listening-toggle" onClick={toggleListening} aria-label={longDialogueActive ? displayedPlayerState === "playing" ? "暂停双人对话" : "继续双人对话" : naturalSpeechAvailable ? "播放双人对话" : playerState === "playing" ? "暂停双人录音" : "播放双人录音"}>{displayedPlayerState === "playing" ? "Ⅱ" : "▶"}</button>
+            <button className="listening-toggle" onClick={toggleListening} aria-label={longDialogueActive ? displayedPlayerState === "playing" ? "暂停双人对话" : "继续双人对话" : !useBundledDialogueAudio ? "播放双人对话" : playerState === "playing" ? "暂停双人录音" : "播放双人录音"}>{displayedPlayerState === "playing" ? "Ⅱ" : "▶"}</button>
             <input className="listening-scrubber" type="range" min="0" max={Math.max(displayedPlayerDuration, 1)} step="0.1" value={displayedPlayerTime} disabled={longDialogueActive} onChange={(event) => { if (longDialogueActive) return; const nextTime = Number(event.target.value); if (listeningAudio.current) listeningAudio.current.currentTime = nextTime; setAudioTime(nextTime); }} aria-label={longDialogueActive ? "长版角色朗读进度（不可拖动）" : "拖动听力录音进度"} />
-            <span className="listening-player-copy"><strong>{longDialogueActive ? displayedPlayerState === "playing" ? `正在播放双人对话 · ${longDialogueVoiceLabel}` : `已暂停双人对话 · ${longDialogueVoiceLabel}` : naturalSpeechAvailable ? "播放双人自然对话" : playerState === "playing" ? `正在播放双人录音 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停双人录音 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放双人录音"}</strong><small>{longDialogueActive || naturalSpeechAvailable ? `${formatAudioTime(displayedPlayerTime)} / ${formatAudioTime(displayedPlayerDuration)} · 女声与男声交替 · 约 0.90× 自然训练语速` : audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
+            <span className="listening-player-copy"><strong>{longDialogueActive ? displayedPlayerState === "playing" ? `正在播放双人对话 · ${longDialogueVoiceLabel}` : `已暂停双人对话 · ${longDialogueVoiceLabel}` : !useBundledDialogueAudio ? "播放双人自然对话" : playerState === "playing" ? `正在播放双人录音 · ${listeningSet.voiceLabel}` : playerState === "paused" ? `已暂停双人录音 · ${listeningSet.voiceLabel}` : playerState === "error" ? "音频加载失败，请重试" : "播放双人录音"}</strong><small>{longDialogueActive || !useBundledDialogueAudio ? `${formatAudioTime(displayedPlayerTime)} / ${formatAudioTime(displayedPlayerDuration)} · 女声与男声交替 · 约 0.90× 自然训练语速` : audioError ? "请检查网络后点击播放；手机端不会自动播放音频。" : `${formatAudioTime(audioTime)} / ${formatAudioTime(audioDuration)} · Band ${difficulty.band}.0 训练语速 ${difficulty.listening.rate.toFixed(2)}×`}</small></span>
           </div>
           <button className="listening-replay" disabled={dialogueAudioTime === 0 && audioTime === 0 && playerState === "idle" && dialoguePlayback === "idle"} onClick={restartListening}>↺ 从头重播双人对话</button>
           <small className="listening-dialogue-note">默认使用约 0.90× 自然训练语速，女声与男声分别朗读不同角色；播放过程中会保留短暂、自然的轮次停顿。</small>
