@@ -7,7 +7,7 @@ const conversations = [
   {
     output: "public/listening-arts-centre.wav",
     captions: "public/listening-arts-centre.vtt",
-    speakers: { female: "Coordinator (Australian female)", male: "Caller (British male)" },
+    speakers: { female: "Coordinator (American female)", male: "Caller (British male)" },
     lines: [
       ["female", "Good afternoon, Riverside Arts Centre. How can I help?"],
       ["male", "Hello. I'd like to book an evening course. I saw the leaflet last week, but I wanted to check a few details before paying."],
@@ -40,7 +40,7 @@ const conversations = [
   {
     output: "public/listening-wildlife-volunteer.wav",
     captions: "public/listening-wildlife-volunteer.vtt",
-    speakers: { female: "Supervisor (Australian female)", male: "Applicant (British male)" },
+    speakers: { female: "Supervisor (American female)", male: "Applicant (British male)" },
     lines: [
       ["female", "Good morning, Northwood Wildlife Park. How can I help?"],
       ["male", "Hello. I'm calling about the volunteer programme. I read the information online, but I wanted to check the timetable and the application documents."],
@@ -153,11 +153,11 @@ function synthesizeTurn({ role, text, index, directory }) {
     const fileStem = `${index}-${chunkIndex}`;
     const aiffPath = join(directory, `${fileStem}.aiff`);
     const wavPath = join(directory, `${fileStem}.wav`);
-    // Keep the two speakers unmistakably different: Karen is an Australian
+    // Keep the two speakers unmistakably different: Samantha is an American
     // female voice, while Daniel has a deeper British male timbre. IELTS
     // recordings use varied English accents, so this is both natural and
     // faithful to the exam's listening experience.
-    const voice = role === "female" ? "Karen" : "Daniel";
+    const voice = role === "female" ? "Samantha" : "Daniel";
     const baseRate = role === "female" ? 156 : 163;
     const naturalVariation = [-3, 1, 0, 2, -1][index % 5];
     const rate = String(chunks.length > 1 && chunkIndex > 0 ? 148 : baseRate + naturalVariation);

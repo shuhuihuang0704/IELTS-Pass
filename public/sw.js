@@ -1,4 +1,4 @@
-const CACHE_NAME = "ielts-pass-shell-2026-09-18-contextual-cloze-9";
+const CACHE_NAME = "ielts-pass-shell-2026-09-18-contextual-cloze-10";
 const APP_SCOPE = new URL("./", self.registration.scope);
 const scopedPath = (path) => new URL(path, APP_SCOPE).pathname;
 const OFFLINE_DOCUMENT = scopedPath("__ielts-pass-offline-document__");
