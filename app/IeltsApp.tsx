@@ -1203,6 +1203,18 @@ function playPronunciation(text: string, rate = 1) {
   });
 }
 
+// Complete listening sentences must use the device's sentence-capable voice.
+// The dictionary MP3 endpoint is useful for isolated words, but passing a
+// whole sentence to it can produce a clipped, metallic voice—especially in
+// Android WebViews. Keep sentence playback on one local TTS utterance instead
+// of mixing the remote dictionary voice with the browser synthesizer.
+function playListeningSentence(text: string, rate = 0.9) {
+  if (typeof window === "undefined" || !text.trim()) return false;
+  stopPronunciationAudio();
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  return speak(text, rate);
+}
+
 function autoPronounceDailyVocabularyWord(word: string) {
   return playPronunciation(word, .9);
 }
@@ -3513,7 +3525,7 @@ function VocabularyPractice({
       setActiveDictationItem(itemIndex);
       if (dictationLastSpokenRef.current !== itemIndex) {
         if (slotOffset <= dictationSpeechWindowSeconds) {
-          playPronunciation(dictationWords[itemIndex].sentence, .9);
+          playListeningSentence(dictationWords[itemIndex].sentence, .9);
         }
         dictationLastSpokenRef.current = itemIndex;
       }
@@ -3569,7 +3581,7 @@ function VocabularyPractice({
     dictationLastSpokenRef.current = itemIndex;
     setDictationAudioTime(startTime);
     setDictationPlayback("playing");
-    playPronunciation(dictationWords[itemIndex].sentence, .9);
+    playListeningSentence(dictationWords[itemIndex].sentence, .9);
   };
 
   const seekDictationSequence = (nextTime: number) => {
@@ -3585,7 +3597,7 @@ function VocabularyPractice({
     setDictationAudioTime(safeTime);
     setActiveDictationItem(itemIndex);
     if (wasPlaying && safeTime % dictationSlotSeconds <= dictationSpeechWindowSeconds) {
-      playPronunciation(dictationWords[itemIndex].sentence, .9);
+      playListeningSentence(dictationWords[itemIndex].sentence, .9);
     }
     if (safeTime >= dictationAudioDuration) setDictationPlayback("ended");
   };
@@ -3717,7 +3729,7 @@ function ConnectedSpeechPractice({
       const slotOffset = nextTime % slotSeconds;
       setActiveItem(itemIndex);
       if (lastSpokenRef.current !== itemIndex) {
-        if (slotOffset <= speechWindowSeconds) playPronunciation(groupPhrases[itemIndex].sentence, .96);
+        if (slotOffset <= speechWindowSeconds) playListeningSentence(groupPhrases[itemIndex].sentence, .9);
         lastSpokenRef.current = itemIndex;
       }
     };
@@ -3772,7 +3784,7 @@ function ConnectedSpeechPractice({
     lastSpokenRef.current = itemIndex;
     setAudioTime(startTime);
     setPlayback("playing");
-    playPronunciation(groupPhrases[itemIndex].sentence, .96);
+    playListeningSentence(groupPhrases[itemIndex].sentence, .9);
   };
 
   const seekSequence = (nextTime: number) => {
@@ -3788,7 +3800,7 @@ function ConnectedSpeechPractice({
     setAudioTime(safeTime);
     setActiveItem(itemIndex);
     if (wasPlaying && safeTime % slotSeconds <= speechWindowSeconds) {
-      playPronunciation(groupPhrases[itemIndex].sentence, .96);
+      playListeningSentence(groupPhrases[itemIndex].sentence, .9);
     }
     if (safeTime >= audioDuration) setPlayback("ended");
   };
