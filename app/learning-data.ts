@@ -1,5 +1,6 @@
 import { userHeadwordVocabularyRows } from "./vocabulary-user-headwords";
 import { listeningCorpusMeta, listeningCorpusPhrases, listeningCorpusWords } from "./listening-corpus";
+import { listeningSentenceBank } from "./listening-sentence-bank";
 
 export type Skill = "vocabulary" | "listening" | "speaking" | "reading";
 
@@ -31,6 +32,7 @@ listeningCorpusPhrases.forEach(({ term, section }) => {
 });
 
 const usedListeningClozeSentences = new Set<string>();
+const usedListeningRawSentences = new Set<string>();
 
 function blankListeningTarget(sentence: string, target: string) {
   const cleanTarget = target.trim();
@@ -232,6 +234,11 @@ const listeningSentencePatterns: Record<ListeningSentenceTopic, ListeningSentenc
 function buildListeningClozeSentence(target: string, kind: "word" | "phrase", context = "", meaning = "", section = "", variantSeed = 0) {
   const cleanTarget = target.trim();
   const cleanContext = context.trim();
+  const crawledSentence = listeningSentenceBank[`${kind}:${cleanTarget.toLowerCase()}`];
+  if (crawledSentence && !usedListeningRawSentences.has(crawledSentence.toLowerCase())) {
+    usedListeningRawSentences.add(crawledSentence.toLowerCase());
+    return crawledSentence;
+  }
   const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const hasExactTarget = cleanTarget.length > 0 && new RegExp(`(^|[^A-Za-z0-9])${escapedTarget}(?=$|[^A-Za-z0-9])`, "i").test(cleanContext);
   const topic = listeningSentenceTopic(cleanTarget, meaning, cleanContext, section);
@@ -248,14 +255,17 @@ function buildListeningClozeSentence(target: string, kind: "word" | "phrase", co
     const tailIndex = Math.floor(combination / pattern.leads.length) % pattern.tails.length;
     const candidate = `${pattern.leads[leadIndex]} ${displayTarget}${kind === "phrase" && cleanContext ? ` while discussing ${cleanContext}` : ""} ${pattern.tails[tailIndex]}`;
     const visibleSentenceKey = `${kind}:${blankListeningTarget(candidate, cleanTarget).toLowerCase()}`;
-    if (!usedListeningClozeSentences.has(visibleSentenceKey)) {
+    if (!usedListeningClozeSentences.has(visibleSentenceKey) && !usedListeningRawSentences.has(candidate.toLowerCase())) {
       usedListeningClozeSentences.add(visibleSentenceKey);
+      usedListeningRawSentences.add(candidate.toLowerCase());
       return candidate;
     }
   }
   const leadIndex = variantSeed % pattern.leads.length;
   const tailIndex = Math.floor(variantSeed / pattern.leads.length) % pattern.tails.length;
-  return `${pattern.leads[leadIndex]} ${displayTarget}${kind === "phrase" && cleanContext ? ` while discussing ${cleanContext}` : ""} ${pattern.tails[tailIndex]}`;
+  const fallback = `${pattern.leads[leadIndex]} ${displayTarget}${kind === "phrase" && cleanContext ? ` while discussing ${cleanContext}` : ""} ${pattern.tails[tailIndex]}`;
+  usedListeningRawSentences.add(fallback.toLowerCase());
+  return fallback;
 }
 
 export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }, index) => ({

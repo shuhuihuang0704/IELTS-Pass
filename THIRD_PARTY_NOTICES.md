@@ -6,7 +6,7 @@
 - Excluded: the source document's Chinese definitions, examples, memory aids, page design and ordering.
 - Changes: malformed or clipped candidates are rejected, duplicates are removed, and the remaining words are independently re-ordered with ECDICT frequency metadata.
 - Distribution: the source PDF is not included in the repository or website.
-- App-authored material: all daily example sentences are generated from original topic-aware templates in `app/learning-data.ts`.
+- App-authored material: targets without an exact CC0 sentence match use the original topic-aware fallback generator in `app/learning-data.ts`; matched examples are listed in `app/listening-sentence-bank.ts`.
 
 The expanded vocabulary dataset in `app/vocabulary-expanded.ts` combines the following sources. The generated dataset is kept separate from the rest of the application so its attribution and license remain explicit.
 
@@ -40,5 +40,12 @@ The expanded vocabulary dataset in `app/vocabulary-expanded.ts` combines the fol
 - Source: <https://github.com/skywind3000/ECDICT>
 - Use in this project: concise Chinese meanings for the selected NGSL and NAWL headwords.
 - License: MIT License, Copyright (c) Linwei. The full license is available in the upstream [LICENSE](https://github.com/skywind3000/ECDICT/blob/master/LICENSE) file.
+
+## Tatoeba CC0 English sentence export
+
+- Source: <https://downloads.tatoeba.org/exports/per_language/eng/eng_sentences_CC0.tsv.bz2>
+- Use in this project: exact-match example sentences for the listening vocabulary and connected-speech targets.
+- License: the export contains sentences explicitly released under CC0; the selected sentences are stored in `app/listening-sentence-bank.ts`.
+- Changes: sentences are filtered for exact target matches, reasonable length, and duplicate visible contexts before bundling. Targets without a CC0 match continue through the app's clearly marked generated fallback.
 
 The dataset is not presented as an electronic edition of the user-supplied source document.
