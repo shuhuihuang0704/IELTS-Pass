@@ -3486,8 +3486,11 @@ function VocabularyPractice({
     () => dailyDictationWords.slice(dictationGroup * 10, dictationGroup * 10 + 10),
     [dailyDictationWords, dictationGroup],
   );
-  const dictationSlotSeconds = 8;
-  const dictationSpeechWindowSeconds = 1.6;
+  // Leave a clear breath between complete sentences. The speech window is
+  // deliberately shorter than the slot so the next sentence never starts
+  // immediately after the previous one.
+  const dictationSlotSeconds = 10;
+  const dictationSpeechWindowSeconds = 3.5;
   const dictationAudioDuration = dictationWords.length * dictationSlotSeconds;
   const formatDictationAudioTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
   const filledDictationCount = dictationAnswers.filter((answer) => answer.trim()).length;
@@ -3590,13 +3593,14 @@ function VocabularyPractice({
   const moveToNextDictationInput = (itemIndex: number) => {
     if (itemIndex >= dictationWords.length - 1) return;
     const nextIndex = itemIndex + 1;
+    setDictationAnswers((current) => current.map((answer, index) => index === nextIndex ? "" : answer));
+    setDictationResults((current) => current.map((result, index) => index === nextIndex ? null : result));
     setActiveDictationItem(nextIndex);
     dictationInputRefs.current[nextIndex]?.focus();
   };
 
   const submitDictationGroup = (event: FormEvent) => {
     event.preventDefault();
-    if (filledDictationCount < dictationWords.length) return;
     setDictationResults(dictationWords.map((item, itemIndex) => dictationAnswers[itemIndex]?.trim().toLowerCase() === item.word.toLowerCase()));
     setDictationSubmitted(true);
     updateProgress((current) => {
@@ -3651,8 +3655,8 @@ function VocabularyPractice({
                 })}
               </div>
               <footer className="dictation-batch-footer">
-                <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / ${dictationWords.length} 正确` : `${filledDictationCount} / ${dictationWords.length} 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 跳到下一个词；最后提交本组统一批改"}</span></div>
-                {!dictationSubmitted ? <button type="submit" disabled={filledDictationCount < dictationWords.length}>提交本组并查看答案</button> : <div><button type="button" className="is-secondary" onClick={() => { resetDictationPlayer(); setDictationAnswers(Array(dictationWords.length).fill("")); setDictationResults(Array(dictationWords.length).fill(null)); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < dictationGroupCount - 1 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
+                <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / ${dictationWords.length} 正确` : `${filledDictationCount} / ${dictationWords.length} 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 跳到下一个词；未填写的题目也可以直接提交"}</span></div>
+                {!dictationSubmitted ? <button type="submit">提交本组并查看答案</button> : <div><button type="button" className="is-secondary" onClick={() => { resetDictationPlayer(); setDictationAnswers(Array(dictationWords.length).fill("")); setDictationResults(Array(dictationWords.length).fill(null)); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < dictationGroupCount - 1 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
               </footer>
             </form>
           </div>
@@ -3838,7 +3842,7 @@ function ConnectedSpeechPractice({
               return <article className={`${activeItem === itemIndex ? "is-active " : ""}${result !== null ? result ? "is-correct" : "is-wrong" : ""}`} key={item.phrase}>
                 <span className="dictation-item-number">{group * groupSize + itemIndex + 1}</span>
                 <p className="dictation-sentence">{renderClozeSentence(item.sentence, item.phrase)}</p>
-                <label><span>第 {itemIndex + 1} 个目标词组</span><input ref={(node) => { inputRefs.current[itemIndex] = node; }} value={answer} disabled={submitted} onFocus={() => setActiveItem(itemIndex)} onChange={(event) => { setAnswers((current) => current.map((currentAnswer, answerIndex) => answerIndex === itemIndex ? event.target.value : currentAnswer)); setResults((current) => current.map((currentResult, answerIndex) => answerIndex === itemIndex ? null : currentResult)); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (itemIndex < groupPhrases.length - 1) { setActiveItem(itemIndex + 1); inputRefs.current[itemIndex + 1]?.focus(); } } }} spellCheck={false} autoComplete="off" placeholder="填写句中挖空的词组" aria-label={`第 ${itemIndex + 1} 个目标词组听写答案`} aria-invalid={result === false} /><em className={`dictation-live-status${result === true ? " is-correct" : result === false ? " is-wrong" : ""}`} aria-live="polite">{result === true ? "✓ 正确" : result === false ? "✕ 错误" : ""}</em></label>
+                <label><span>第 {itemIndex + 1} 个目标词组</span><input ref={(node) => { inputRefs.current[itemIndex] = node; }} value={answer} disabled={submitted} onFocus={() => setActiveItem(itemIndex)} onChange={(event) => { setAnswers((current) => current.map((currentAnswer, answerIndex) => answerIndex === itemIndex ? event.target.value : currentAnswer)); setResults((current) => current.map((currentResult, answerIndex) => answerIndex === itemIndex ? null : currentResult)); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (itemIndex < groupPhrases.length - 1) { const nextIndex = itemIndex + 1; setAnswers((current) => current.map((currentAnswer, answerIndex) => answerIndex === nextIndex ? "" : currentAnswer)); setResults((current) => current.map((currentResult, answerIndex) => answerIndex === nextIndex ? null : currentResult)); setActiveItem(nextIndex); inputRefs.current[nextIndex]?.focus(); } } }} spellCheck={false} autoComplete="off" placeholder="填写句中挖空的词组" aria-label={`第 ${itemIndex + 1} 个目标词组听写答案`} aria-invalid={result === false} /><em className={`dictation-live-status${result === true ? " is-correct" : result === false ? " is-wrong" : ""}`} aria-live="polite">{result === true ? "✓ 正确" : result === false ? "✕ 错误" : ""}</em></label>
                 {submitted && <div className="dictation-item-result phrase-batch-result"><span>{correct ? "正确" : "需要复习"} · {item.feature}</span><strong>{item.phrase}</strong><p>{item.meaning}</p><small>{item.note}</small><button type="button" className={saved ? "is-saved" : ""} onClick={() => updateProgress((current) => toggleNotebookEntry(current, { id: `word:${item.phrase.toLowerCase()}`, kind: "word", title: item.phrase, detail: `${item.meaning}\n${item.note}`, source: `吞音词组 · ${item.feature}` }))}>{saved ? "★ 已在笔记" : "☆ 加入笔记"}</button></div>}
               </article>;
             })}
