@@ -23,6 +23,27 @@ listeningCorpusPhrases.forEach(({ term }) => {
   });
 });
 
+const listeningPhraseContextBySection = new Map<string, string[]>();
+listeningCorpusPhrases.forEach(({ term, section }) => {
+  const entries = listeningPhraseContextBySection.get(section) ?? [];
+  entries.push(term);
+  listeningPhraseContextBySection.set(section, entries);
+});
+
+const usedListeningClozeSentences = new Set<string>();
+
+function blankListeningTarget(sentence: string, target: string) {
+  const cleanTarget = target.trim();
+  if (!cleanTarget) return sentence;
+  const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return sentence.replace(new RegExp(`(^|[^A-Za-z0-9])${escapedTarget}(?=$|[^A-Za-z0-9])`, "gi"), "$1_____");
+}
+
+function relatedListeningPhrase(phrase: string, section: string, index: number) {
+  const candidates = (listeningPhraseContextBySection.get(section) ?? []).filter((entry) => entry.toLowerCase() !== phrase.toLowerCase());
+  return candidates.length > 0 ? candidates[index % candidates.length] : "";
+}
+
 type ListeningSentenceTopic = "education" | "travel" | "finance" | "health" | "environment" | "accommodation" | "technology" | "work" | "general";
 
 function listeningSentenceTopic(target: string, meaning: string, context: string, section: string): ListeningSentenceTopic {
@@ -220,9 +241,21 @@ function buildListeningClozeSentence(target: string, kind: "word" | "phrase", co
   // practice takes contiguous slices, so neighbouring targets receive
   // neighbouring but different situations instead of repeatedly hashing to
   // one visible template.
+  const combinationCount = pattern.leads.length * pattern.tails.length;
+  for (let offset = 0; offset < combinationCount; offset += 1) {
+    const combination = (variantSeed + offset) % combinationCount;
+    const leadIndex = combination % pattern.leads.length;
+    const tailIndex = Math.floor(combination / pattern.leads.length) % pattern.tails.length;
+    const candidate = `${pattern.leads[leadIndex]} ${displayTarget}${kind === "phrase" && cleanContext ? ` while discussing ${cleanContext}` : ""} ${pattern.tails[tailIndex]}`;
+    const visibleSentenceKey = `${kind}:${blankListeningTarget(candidate, cleanTarget).toLowerCase()}`;
+    if (!usedListeningClozeSentences.has(visibleSentenceKey)) {
+      usedListeningClozeSentences.add(visibleSentenceKey);
+      return candidate;
+    }
+  }
   const leadIndex = variantSeed % pattern.leads.length;
   const tailIndex = Math.floor(variantSeed / pattern.leads.length) % pattern.tails.length;
-  return `${pattern.leads[leadIndex]} ${displayTarget} ${pattern.tails[tailIndex]}`;
+  return `${pattern.leads[leadIndex]} ${displayTarget}${kind === "phrase" && cleanContext ? ` while discussing ${cleanContext}` : ""} ${pattern.tails[tailIndex]}`;
 }
 
 export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }, index) => ({
@@ -760,7 +793,7 @@ export const connectedSpeechPhrases = listeningCorpusPhrases.map(({ term: phrase
   phrase,
   meaning,
   section,
-  sentence: buildListeningClozeSentence(phrase, "phrase", "", meaning, section, index),
+  sentence: buildListeningClozeSentence(phrase, "phrase", relatedListeningPhrase(phrase, section, index), meaning, section, index),
   ...buildConnectedSpeechGuidance(phrase),
 }));
 
