@@ -23,18 +23,6 @@ listeningCorpusPhrases.forEach(({ term }) => {
   });
 });
 
-function stableListeningSentenceIndex(value: string, size: number) {
-  // A small deterministic hash spreads neighbouring words across the full
-  // sentence bank.  A simple character sum made many IELTS words choose the
-  // same three examples, which made the cloze cards look duplicated.
-  let hash = 2166136261;
-  for (const character of value) {
-    hash ^= character.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0) % size;
-}
-
 type ListeningSentenceTopic = "education" | "travel" | "finance" | "health" | "environment" | "accommodation" | "technology" | "work" | "general";
 
 function listeningSentenceTopic(target: string, meaning: string, context: string, section: string): ListeningSentenceTopic {
@@ -220,7 +208,7 @@ const listeningSentencePatterns: Record<ListeningSentenceTopic, ListeningSentenc
   },
 };
 
-function buildListeningClozeSentence(target: string, kind: "word" | "phrase", context = "", meaning = "", section = "") {
+function buildListeningClozeSentence(target: string, kind: "word" | "phrase", context = "", meaning = "", section = "", variantSeed = 0) {
   const cleanTarget = target.trim();
   const cleanContext = context.trim();
   const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -228,17 +216,21 @@ function buildListeningClozeSentence(target: string, kind: "word" | "phrase", co
   const topic = listeningSentenceTopic(cleanTarget, meaning, cleanContext, section);
   const pattern = listeningSentencePatterns[topic];
   const displayTarget = kind === "word" && cleanContext && hasExactTarget ? cleanContext : `"${cleanTarget}"`;
-  const leadIndex = stableListeningSentenceIndex(`${kind}:lead:${cleanTarget}`, pattern.leads.length);
-  const tailIndex = stableListeningSentenceIndex(`${kind}:tail:${cleanTarget}`, pattern.tails.length);
+  // The corpus order is used as a second, collision-resistant seed. Daily
+  // practice takes contiguous slices, so neighbouring targets receive
+  // neighbouring but different situations instead of repeatedly hashing to
+  // one visible template.
+  const leadIndex = variantSeed % pattern.leads.length;
+  const tailIndex = Math.floor(variantSeed / pattern.leads.length) % pattern.tails.length;
   return `${pattern.leads[leadIndex]} ${displayTarget} ${pattern.tails[tailIndex]}`;
 }
 
-export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }) => ({
+export const vocabulary = listeningCorpusWords.map(({ term: word, meaning, section }, index) => ({
   word,
   meaning,
   section,
   example: corpusPhraseExampleByWord.get(word.toLowerCase()) ?? `Listen carefully for the word “${word}”.`,
-  sentence: buildListeningClozeSentence(word, "word", corpusPhraseExampleByWord.get(word.toLowerCase()), meaning, section),
+  sentence: buildListeningClozeSentence(word, "word", corpusPhraseExampleByWord.get(word.toLowerCase()), meaning, section, index),
   phonetic: "",
   hint: `${word.length} 个字母，以 ${word.slice(0, Math.min(3, word.length))} 开头`,
 }));
@@ -764,11 +756,11 @@ function buildConnectedSpeechGuidance(phrase: string) {
   };
 }
 
-export const connectedSpeechPhrases = listeningCorpusPhrases.map(({ term: phrase, meaning, section }) => ({
+export const connectedSpeechPhrases = listeningCorpusPhrases.map(({ term: phrase, meaning, section }, index) => ({
   phrase,
   meaning,
   section,
-  sentence: buildListeningClozeSentence(phrase, "phrase", "", meaning, section),
+  sentence: buildListeningClozeSentence(phrase, "phrase", "", meaning, section, index),
   ...buildConnectedSpeechGuidance(phrase),
 }));
 
