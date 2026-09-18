@@ -3627,7 +3627,7 @@ function VocabularyPractice({
         <div className="exercise-layout is-single-column">
           <div className="exercise-main dictation-batch-practice">
             <div className="exercise-kicker"><span>连续听写 · 第 {dictationGroup + 1} / {dictationGroupCount} 组</span><span>{completedDictationCount} / {dailyDictationWords.length}</span></div>
-            <h2>完整句子，听写句中的目标词</h2><p>每次播放一句完整英文句子，只挖出一个目标词；按 Enter 检查当前答案并跳到下一个输入框。</p>
+            <h2>完整句子，听写句中的目标词</h2><p>每次播放一句完整英文句子，只挖出一个目标词；按 Enter 直接跳到下一个输入框，提交本组后统一查看结果。</p>
             <section className="dictation-sequence-player" aria-label={`第 ${dictationGroup + 1} 组连续听写播放器；语料来源 ${listeningCorpusMeta.source}`}>
               <button type="button" className="dictation-sequence-toggle" onClick={toggleDictationSequence} aria-label={dictationPlayback === "playing" ? "暂停本组听写" : "播放本组听写"}>{dictationPlayback === "playing" ? "Ⅱ" : "▶"}</button>
               <div className="dictation-sequence-copy"><strong>{dictationPlayback === "playing" ? `正在播放第 ${activeDictationItem + 1} 句` : dictationPlayback === "paused" ? `已暂停在第 ${activeDictationItem + 1} 句` : dictationPlayback === "ended" ? "本组句子播放完毕" : "播放本组完整句子"}</strong><small>每句完整播放 · 只挖空一个目标词 · 句间停顿更长</small></div>
@@ -3651,7 +3651,7 @@ function VocabularyPractice({
                 })}
               </div>
               <footer className="dictation-batch-footer">
-                <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / ${dictationWords.length} 正确` : `${filledDictationCount} / ${dictationWords.length} 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 检查并跳到下一个词；最后提交本组"}</span></div>
+                <div><strong>{dictationSubmitted ? `${dictationCorrectCount} / ${dictationWords.length} 正确` : `${filledDictationCount} / ${dictationWords.length} 已填写`}</strong><span>{dictationSubmitted ? "错词已自动加入复习" : "按 Enter 跳到下一个词；最后提交本组统一批改"}</span></div>
                 {!dictationSubmitted ? <button type="submit" disabled={filledDictationCount < dictationWords.length}>提交本组并查看答案</button> : <div><button type="button" className="is-secondary" onClick={() => { resetDictationPlayer(); setDictationAnswers(Array(dictationWords.length).fill("")); setDictationResults(Array(dictationWords.length).fill(null)); setDictationSubmitted(false); setActiveDictationItem(0); }}>重做本组</button>{dictationGroup < dictationGroupCount - 1 && <button type="button" onClick={() => openDictationGroup(dictationGroup + 1)}>下一组 →</button>}</div>}
               </footer>
             </form>
@@ -3820,7 +3820,7 @@ function ConnectedSpeechPractice({
     <div className="exercise-layout is-single-column connected-speech-layout">
       <div className="exercise-main dictation-batch-practice connected-speech-batch">
         <div className="exercise-kicker"><span>连续词组听写 · 第 {group + 1} / {groupCount} 组</span><span>{completedCount} / {phrases.length}</span></div>
-        <h2>完整句子，听写句中的吞音词组</h2><p>每次播放一句完整英文句子，只挖出一个目标词组；按 Enter 检查当前答案并跳到下一个输入框。</p>
+        <h2>完整句子，听写句中的吞音词组</h2><p>每次播放一句完整英文句子，只挖出一个目标词组；按 Enter 直接跳到下一个输入框，提交本组后统一查看结果。</p>
         <section className="dictation-sequence-player" aria-label={`第 ${group + 1} 组连续吞音词组播放器`}>
           <button type="button" className="dictation-sequence-toggle" onClick={toggleSequence} aria-label={playback === "playing" ? "暂停本组词组听写" : "播放本组词组听写"}>{playback === "playing" ? "Ⅱ" : "▶"}</button>
           <div className="dictation-sequence-copy"><strong>{playback === "playing" ? `正在播放第 ${activeItem + 1} 句` : playback === "paused" ? `已暂停在第 ${activeItem + 1} 句` : playback === "ended" ? "本组句子播放完毕" : "播放本组完整句子"}</strong><small>每句完整播放 · 只挖空一个目标词组 · 句间停顿更长</small></div>
@@ -3844,7 +3844,7 @@ function ConnectedSpeechPractice({
             })}
           </div>
           <footer className="dictation-batch-footer">
-            <div><strong>{submitted ? `${correctCount} / ${groupPhrases.length} 正确` : `${filledCount} / ${groupPhrases.length} 已填写`}</strong><span>{submitted ? "拼错词组已自动加入复习" : "按 Enter 检查并跳到下一个词组；最后提交本组"}</span></div>
+            <div><strong>{submitted ? `${correctCount} / ${groupPhrases.length} 正确` : `${filledCount} / ${groupPhrases.length} 已填写`}</strong><span>{submitted ? "拼错词组已自动加入复习" : "按 Enter 跳到下一个词组；最后提交本组统一批改"}</span></div>
             {!submitted ? <button type="submit" disabled={filledCount < groupPhrases.length}>提交本组并查看答案</button> : <div><button type="button" className="is-secondary" onClick={() => { resetPlayer(); setAnswers(Array(groupSize).fill("")); setResults(Array(groupSize).fill(null)); setSubmitted(false); setActiveItem(0); }}>重做本组</button><button type="button" onClick={advanceGroup}>{group < groupCount - 1 ? "下一组 →" : "完成加练"}</button></div>}
           </footer>
         </form>
