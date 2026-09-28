@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const serviceWorkerVersion = "2026.09.18-contextual-cloze-10";
+const serviceWorkerVersion = "2026.09.28-cambridge16-test1-1";
 
 function appBasePath() {
   const configuredBase = import.meta.env.BASE_URL || "/";

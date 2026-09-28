@@ -59,6 +59,34 @@ const storageKey = "ielts-ai-learning-progress-v1";
 const profileStorageKey = "ielts-pass-local-profile-v1";
 const studyIdleTimeoutMs = 90_000;
 
+// Cambridge IELTS 16 · Test 1 is the first licensed source set connected to
+// daily training. Keep the question pages in the source PDF instead of
+// duplicating the book text in the bundle; each Part/Passage is shown alone.
+const cambridge16Test1PdfUrl = encodeURI("https://zeeklog.github.io/IELTS/剑桥雅思真题16.pdf");
+const cambridge16Test1ListeningAudio = [1, 2, 3, 4].map((part) => encodeURI(`https://zeeklog.github.io/IELTS/雅思真题音频/16-剑桥雅思16/Test 1/Test 1 Part ${part}.mp3`));
+
+type CambridgeDailyPart = {
+  id: string;
+  label: string;
+  questionLabel: string;
+  pages: number[];
+  questions: number[];
+  answers: string[][];
+};
+
+const cambridge16Test1ListeningParts: CambridgeDailyPart[] = [
+  { id: "listening-part-1", label: "Part 1", questionLabel: "Questions 1–10", pages: [12], questions: Array.from({ length: 10 }, (_, index) => index + 1), answers: [["egg"], ["tower"], ["car"], ["animals"], ["bridge"], ["movie", "film"], ["decorate"], ["wednesdays"], ["fradstone"], ["parking"]] },
+  { id: "listening-part-2", label: "Part 2", questionLabel: "Questions 11–20", pages: [13, 14], questions: Array.from({ length: 10 }, (_, index) => index + 11), answers: [["c"], ["a"], ["b"], ["c"], ["h"], ["c"], ["g"], ["b"], ["i"], ["a"]] },
+  { id: "listening-part-3", label: "Part 3", questionLabel: "Questions 21–30", pages: [15, 16], questions: Array.from({ length: 10 }, (_, index) => index + 21), answers: [["c", "e"], ["c", "e"], ["b", "e"], ["b", "e"], ["d"], ["c"], ["a"], ["h"], ["f"], ["g"]] },
+  { id: "listening-part-4", label: "Part 4", questionLabel: "Questions 31–40", pages: [17], questions: Array.from({ length: 10 }, (_, index) => index + 31), answers: [["practical"], ["publication"], ["choices"], ["negative"], ["play"], ["capitalism"], ["depression"], ["logic"], ["opportunity"], ["practice", "practise"]] },
+];
+
+const cambridge16Test1ReadingPassages: CambridgeDailyPart[] = [
+  { id: "reading-passage-1", label: "Passage 1", questionLabel: "Questions 1–13", pages: [18, 19, 20, 21], questions: Array.from({ length: 13 }, (_, index) => index + 1), answers: [["false"], ["false"], ["not given"], ["true"], ["true"], ["false"], ["true"], ["violent"], ["tool"], ["meat"], ["photographer"], ["game"], ["frustration"]] },
+  { id: "reading-passage-2", label: "Passage 2", questionLabel: "Questions 14–26", pages: [22, 23, 24, 25], questions: Array.from({ length: 13 }, (_, index) => index + 14), answers: [["iv"], ["vii"], ["ii"], ["v"], ["i"], ["viii"], ["vi"], ["city"], ["priest", "priests"], ["trench"], ["location"], ["b", "d"], ["b", "d"]] },
+  { id: "reading-passage-3", label: "Passage 3", questionLabel: "Questions 27–40", pages: [26, 27, 28, 29, 30], questions: Array.from({ length: 14 }, (_, index) => index + 27), answers: [["b"], ["d"], ["c"], ["d"], ["g"], ["e"], ["c"], ["f"], ["b"], ["a"], ["c"], ["a"], ["b"], ["c"]] },
+];
+
 function readLocalProfile(value: string | null): AuthUser | null {
   if (!value) return null;
   try {
@@ -3442,14 +3470,14 @@ function SceneView({
       </div>
       <section className="exercise-surface">
         {activeSkill === "vocabulary" && <VocabularyPractice key={`vocabulary:${contentDate}`} contentDate={contentDate} mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
-        {activeSkill === "listening" && <ListeningPractice key={`listening:${contentDate}:${difficultyBand}`} exerciseDate={contentDate} difficulty={difficultyProfile} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
-          updateProgress((current) => ({ ...current, listeningCorrect: score === 10, listeningScore: score }));
-          if (fullyAnswered) onComplete("listening", 12);
+        {activeSkill === "listening" && <CambridgeDailySourcePractice key={`cambridge-listening:${contentDate}`} skill="listening" onComplete={(score, fullyAnswered) => {
+          updateProgress((current) => ({ ...current, listeningCorrect: score >= 28, listeningScore: score }));
+          if (fullyAnswered) onComplete("listening", 40);
         }} />}
         {activeSkill === "speaking" && <SpeakingPractice key={`speaking:${contentDate}:${difficultyBand}`} exerciseDate={contentDate} difficulty={difficultyProfile} progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
-        {activeSkill === "reading" && <ReadingPractice key={`reading:${contentDate}:${difficultyBand}`} exerciseDate={contentDate} difficulty={difficultyProfile} progress={progress} updateProgress={updateProgress} onComplete={(score, fullyAnswered) => {
+        {activeSkill === "reading" && <CambridgeDailySourcePractice key={`cambridge-reading:${contentDate}`} skill="reading" onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, readingScore: score }));
-          if (fullyAnswered) onComplete("reading", 18);
+          if (fullyAnswered) onComplete("reading", 30);
         }} />}
       </section>
     </>
@@ -4996,6 +5024,78 @@ function ReadingPractice({
         {score === null ? <button className="secondary-action reading-submit" onClick={submit}>{answeredCount < totalQuestions ? `提交当前答案（${answeredCount}/${totalQuestions}）` : `提交 ${totalQuestions} 道答案`} →</button> : <button className="secondary-action reading-submit" onClick={redoReading}>↺ 再写一遍</button>}
       </section>
     </div>
+  );
+}
+
+function CambridgeDailySourcePractice({
+  skill,
+  onComplete,
+}: {
+  skill: "listening" | "reading";
+  onComplete: (score: number, fullyAnswered: boolean) => void;
+}) {
+  const isListening = skill === "listening";
+  const parts = isListening ? cambridge16Test1ListeningParts : cambridge16Test1ReadingPassages;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState<Record<string, boolean>>({});
+  const [partScores, setPartScores] = useState<Record<string, number>>({});
+  const answerRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const activePart = parts[activeIndex];
+  const sourcePdf = `${cambridge16Test1PdfUrl}#page=${activePart.pages[0]}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+  const answerId = (question: number) => `${activePart.id}:${question}`;
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/[.,!?;:()[\]{}]/g, "").replace(/\s+/g, " ");
+  const isAnswerCorrect = (question: number, value = answers[answerId(question)] ?? "") => {
+    const acceptable = activePart.answers[question - activePart.questions[0]] ?? [];
+    return acceptable.includes(normalize(value));
+  };
+  const allAnswered = parts.every((part) => part.questions.every((question) => Boolean(answers[`${part.id}:${question}`]?.trim())));
+  const submitPart = (event: FormEvent) => {
+    event.preventDefault();
+    const score = activePart.questions.filter((question) => isAnswerCorrect(question)).length;
+    const nextSubmitted = { ...submitted, [activePart.id]: true };
+    const nextScores = { ...partScores, [activePart.id]: score };
+    setSubmitted(nextSubmitted);
+    setPartScores(nextScores);
+    if (Object.keys(nextSubmitted).length === parts.length) {
+      onComplete(Object.values(nextScores).reduce((total, value) => total + value, 0), allAnswered);
+    }
+  };
+  const selectPart = (index: number) => setActiveIndex(index);
+  const currentSubmitted = Boolean(submitted[activePart.id]);
+  const currentScore = partScores[activePart.id] ?? 0;
+  return (
+    <section className="cambridge-daily-practice">
+      <header className="cambridge-daily-header">
+        <div><span>CAMBRIDGE IELTS 16 · TEST 1</span><h2>{isListening ? "Listening 真题" : "Academic Reading 真题"}</h2><p>按 {isListening ? "Part 1–4" : "Passage 1–3"} 分开训练；当前只显示这一部分的题册页面和答题卡。</p></div>
+        <a href={cambridge16Test1PdfUrl} target="_blank" rel="noreferrer">打开原始题册 ↗</a>
+      </header>
+      <nav className="cambridge-daily-tabs" aria-label={isListening ? "选择听力 Part" : "选择阅读 Passage"}>
+        {parts.map((part, index) => <button type="button" className={activeIndex === index ? "is-active" : ""} aria-current={activeIndex === index ? "page" : undefined} onClick={() => selectPart(index)} key={part.id}><span>{submitted[part.id] ? "✓" : index + 1}</span>{part.label}</button>)}
+      </nav>
+      <div className="cambridge-daily-grid">
+        <section className="cambridge-daily-paper">
+          <header><div><strong>{activePart.label} · {activePart.questionLabel}</strong><small>仅当前部分 · 题目来自 Cambridge IELTS 16 Test 1</small></div><span>{activePart.pages.length} 页</span></header>
+          {isListening && <audio className="cambridge-daily-audio" controls preload="metadata" src={cambridge16Test1ListeningAudio[activeIndex]}>当前浏览器不支持音频播放。</audio>}
+          <div className="cambridge-daily-pdf-stack">
+            {activePart.pages.map((page) => <iframe className="cambridge-daily-pdf" title={`${activePart.label} · 第 ${page} 页`} src={`${cambridge16Test1PdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} key={`${activePart.id}-${page}`} />)}
+          </div>
+        </section>
+        <form className="cambridge-daily-answer-card" onSubmit={submitPart}>
+          <header><div><span>ANSWER CARD</span><strong>{activePart.label} 答题卡</strong><small>{activePart.questionLabel} · {currentSubmitted ? `本部分得分 ${currentScore}/${activePart.questions.length}` : "提交后查看对错"}</small></div><b>{activePart.questions.length}</b></header>
+          <div className="cambridge-daily-answer-list">
+            {activePart.questions.map((question, index) => {
+              const id = answerId(question);
+              const value = answers[id] ?? "";
+              const correct = isAnswerCorrect(question, value);
+              return <label className={currentSubmitted ? correct ? "is-correct" : "is-wrong" : ""} key={id}><span>Q{question}</span><input ref={(node) => { answerRefs.current[id] = node; }} value={value} disabled={currentSubmitted} onChange={(event) => setAnswers((current) => ({ ...current, [id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const nextQuestion = activePart.questions[index + 1]; if (nextQuestion) answerRefs.current[answerId(nextQuestion)]?.focus(); } }} placeholder="输入答案" autoComplete="off" spellCheck={false} /><em>{currentSubmitted ? correct ? "✓" : `✕ ${activePart.answers[index]?.join(" / ") ?? ""}` : ""}</em></label>;
+            })}
+          </div>
+          <footer><span>{currentSubmitted ? `本部分 ${currentScore}/${activePart.questions.length}；可切换其他部分继续。` : "题册和答题卡同时显示；按 Enter 跳到下一题。"}</span>{currentSubmitted ? <button type="button" onClick={() => setSubmitted((current) => ({ ...current, [activePart.id]: false }))}>重新作答</button> : <button type="submit">提交本部分</button>}</footer>
+        </form>
+      </div>
+      <p className="cambridge-daily-source-note">资料来源：<a href="https://zeeklog.github.io/IELTS/#IELTS" target="_blank" rel="noreferrer">IELTS 资料库</a> · 你已确认拥有使用授权。每个 Part / Passage 独立显示，避免把不同阅读或听力部分混在一起。</p>
+    </section>
   );
 }
 

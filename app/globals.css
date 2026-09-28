@@ -892,6 +892,44 @@ button { cursor: pointer; }
 .daily-training-nav { margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .daily-training-nav button { min-height:38px; padding:0 13px; border:0; border-radius:11px; color:white; background:var(--ink); font-size:9px; font-weight:700; }
 .daily-training-nav span { color:var(--muted); font-size:8px; font-weight:750; letter-spacing:.7px; }
+.cambridge-daily-practice { padding:24px; border:1px solid var(--line); border-radius:24px; background:#fbfafc; box-shadow:var(--soft-shadow); }
+.cambridge-daily-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding-bottom:18px; border-bottom:1px solid var(--line); }
+.cambridge-daily-header span,.cambridge-daily-answer-card header span { display:block; color:var(--violet); font-size:9px; font-weight:800; letter-spacing:.9px; }
+.cambridge-daily-header h2 { margin:6px 0 6px; font-size:27px; letter-spacing:-1px; }
+.cambridge-daily-header p { margin:0; color:var(--muted); font-size:11px; }
+.cambridge-daily-header>a { flex:0 0 auto; padding:9px 12px; border-radius:10px; color:var(--violet); background:#eeeafd; font-size:10px; font-weight:750; text-decoration:none; }
+.cambridge-daily-tabs { display:flex; gap:8px; margin:16px 0; overflow:auto; }
+.cambridge-daily-tabs button { min-width:112px; min-height:44px; padding:8px 12px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid #e2dde6; border-radius:12px; color:#726b78; background:white; font-size:10px; font-weight:750; white-space:nowrap; }
+.cambridge-daily-tabs button span { width:20px; height:20px; display:grid; place-items:center; border-radius:50%; color:#877e8e; background:#f0edf2; font-size:9px; }
+.cambridge-daily-tabs button.is-active { color:white; border-color:#5b4fc4; background:#5b4fc4; box-shadow:0 7px 16px rgba(91,79,196,.2); }
+.cambridge-daily-tabs button.is-active span { color:#5b4fc4; background:white; }
+.cambridge-daily-grid { display:grid; grid-template-columns:minmax(0,1fr) 330px; align-items:start; gap:18px; }
+.cambridge-daily-paper,.cambridge-daily-answer-card { min-width:0; border:1px solid var(--line); border-radius:18px; background:white; overflow:hidden; }
+.cambridge-daily-paper>header,.cambridge-daily-answer-card>header { min-height:62px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--line); background:#fff; }
+.cambridge-daily-paper>header strong,.cambridge-daily-paper>header small,.cambridge-daily-answer-card>header strong,.cambridge-daily-answer-card>header small { display:block; }
+.cambridge-daily-paper>header strong,.cambridge-daily-answer-card>header strong { color:#423b49; font-size:12px; }
+.cambridge-daily-paper>header small,.cambridge-daily-answer-card>header small { margin-top:4px; color:#928b97; font-size:9px; }
+.cambridge-daily-paper>header>span,.cambridge-daily-answer-card>header>b { color:var(--violet); font-size:12px; }
+.cambridge-daily-audio { width:calc(100% - 28px); margin:14px; }
+.cambridge-daily-pdf-stack { display:grid; gap:10px; padding:10px; background:#f2f0f3; }
+.cambridge-daily-pdf { width:100%; min-height:680px; display:block; border:0; border-radius:10px; background:white; }
+.cambridge-daily-answer-card { position:sticky; top:16px; }
+.cambridge-daily-answer-card header>b { width:34px; height:34px; display:grid; place-items:center; border-radius:11px; color:white; background:var(--violet); }
+.cambridge-daily-answer-list { padding:12px 14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.cambridge-daily-answer-list label { min-width:0; min-height:40px; padding:5px 7px; display:grid; grid-template-columns:32px minmax(0,1fr) 20px; align-items:center; gap:5px; border:1px solid #e8e3eb; border-radius:10px; background:#fbfafc; }
+.cambridge-daily-answer-list label>span { color:#756d7c; font-size:10px; font-weight:800; }
+.cambridge-daily-answer-list input { width:100%; min-width:0; padding:7px 5px; border:0; outline:0; color:#3f3846; background:transparent; font-size:11px; }
+.cambridge-daily-answer-list input:focus { border-radius:6px; background:#eeeafd; }
+.cambridge-daily-answer-list label.is-correct { border-color:#94d1b4; background:#effaf4; }
+.cambridge-daily-answer-list label.is-wrong { border-color:#e2aaa4; background:#fff4f2; }
+.cambridge-daily-answer-list em { color:#ce5d59; font-size:9px; font-style:normal; text-align:right; }
+.cambridge-daily-answer-list label.is-correct em { color:#23845a; }
+.cambridge-daily-answer-card footer { padding:12px 14px 14px; border-top:1px solid var(--line); }
+.cambridge-daily-answer-card footer>span { display:block; min-height:28px; color:#8b8490; font-size:9px; line-height:1.45; }
+.cambridge-daily-answer-card footer button { width:100%; min-height:38px; margin-top:8px; border:0; border-radius:10px; color:white; background:var(--ink); font-size:10px; font-weight:750; }
+.cambridge-daily-answer-card footer button:hover { background:var(--violet); }
+.cambridge-daily-source-note { margin:14px 0 0; color:#918a96; font-size:9px; line-height:1.55; }
+.cambridge-daily-source-note a { color:var(--violet); }
 .scene-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:30px; padding:7px; border-radius:18px; background:#e5e0da; }
 .scene-tabs button { min-height:48px; border:0; border-radius:13px; color:#777179; background:transparent; font-size:12px; }
 .scene-tabs button span { display:inline-grid; width:23px; height:23px; margin-right:7px; place-items:center; border-radius:50%; color:#827b84; background:rgba(255,255,255,.55); font-size:9px; }
@@ -1625,6 +1663,15 @@ button { cursor: pointer; }
   .official-standard-paper-body>.official-answer-sheet,.official-standard-paper-body>.official-writing-response,.official-standard-paper-body>.official-speaking-response,.official-standard-paper-body>.official-open-response-note { width:auto; max-height:none; overflow:visible; position:static; }
   .official-full-reading-body>.official-answer-sheet>header,.official-full-reading-body>.official-answer-sheet>footer { padding:0; position:static; box-shadow:none; }
   .official-standard-paper-body>.official-material-column { max-height:none; padding-right:0; overflow:visible; position:static; }
+  .cambridge-daily-practice { padding:14px; border-radius:18px; }
+  .cambridge-daily-header { flex-direction:column; }
+  .cambridge-daily-header>a { align-self:flex-start; }
+  .cambridge-daily-grid { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; }
+  .cambridge-daily-answer-card { position:static; }
+  .cambridge-daily-paper>header,.cambridge-daily-answer-card>header { align-items:flex-start; flex-direction:column; }
+  .cambridge-daily-answer-card>header { flex-direction:row; }
+  .cambridge-daily-answer-list { grid-template-columns:1fr; }
+  .cambridge-daily-pdf { min-height:600px; }
   .official-reading-booklet { max-height:none; grid-column:1; grid-row:1; padding-right:0; overflow:visible; position:static; }
   .official-reading-booklet>header { align-items:stretch; flex-direction:column; }
   .official-reading-sections button { flex:1; }
