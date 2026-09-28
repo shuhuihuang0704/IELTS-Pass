@@ -5182,6 +5182,64 @@ function CambridgeMarkupOverlay({
   );
 }
 
+function CambridgePdfPage({
+  pdfUrl,
+  page,
+  annotations,
+  mode,
+  color,
+  onAdd,
+}: {
+  pdfUrl: string;
+  page: number;
+  annotations: CambridgeMarkup[];
+  mode: CambridgeMarkupMode;
+  color: CambridgeMarkupColor;
+  onAdd: (points: Array<[number, number]>) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  useEffect(() => {
+    let disposed = false;
+    let loadingTask: { destroy?: () => void } | undefined;
+    const renderPage = async () => {
+      try {
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+        loadingTask = pdfjs.getDocument({ url: pdfUrl, withCredentials: false });
+        const documentProxy = await loadingTask.promise;
+        const pageProxy = await documentProxy.getPage(page);
+        const canvas = canvasRef.current;
+        if (disposed || !canvas) return;
+        const baseViewport = pageProxy.getViewport({ scale: 1 });
+        const width = canvas.parentElement?.clientWidth ?? 720;
+        const viewport = pageProxy.getViewport({ scale: Math.max(1, Math.min(2, width / baseViewport.width)) });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) throw new Error("Canvas is unavailable");
+        await pageProxy.render({ canvasContext: context, viewport }).promise;
+        if (!disposed) setStatus("ready");
+      } catch {
+        if (!disposed) setStatus("error");
+      }
+    };
+    void renderPage();
+    return () => {
+      disposed = true;
+      loadingTask?.destroy?.();
+    };
+  }, [pdfUrl, page]);
+  return (
+    <div className="cambridge-daily-pdf-page">
+      <canvas ref={canvasRef} className="cambridge-daily-pdf-canvas" aria-label={`题页第 ${page} 页`} />
+      {status === "loading" && <div className="cambridge-pdf-status">正在加载当前题页…</div>}
+      {status === "error" && <div className="cambridge-pdf-status is-error"><strong>题页暂时无法加载</strong><a href={`${pdfUrl}#page=${page}`} target="_blank" rel="noreferrer">打开原始题页 ↗</a></div>}
+      <CambridgeMarkupOverlay annotations={annotations} mode={mode} color={color} onAdd={onAdd} />
+    </div>
+  );
+}
+
 function CambridgeDailySourcePractice({
   skill,
   contentDate,
@@ -5257,10 +5315,15 @@ function CambridgeDailySourcePractice({
             <button type="button" className="is-secondary" onClick={clearCurrentPartMarkups}>清除本部分</button>
           </div>
           <div className="cambridge-daily-pdf-stack" aria-label={`${activePart.label} 题目，仅显示当前${isListening ? "听力" : "阅读"}部分`}>
-            {activePart.pages.map((page) => <div className="cambridge-daily-pdf-page" key={`${activePart.id}-${page}`}>
-              <iframe className="cambridge-daily-pdf" title={`${activePart.label} · 第 ${page} 页`} scrolling="no" src={`${sourceSet.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />
-              <CambridgeMarkupOverlay annotations={markups[`${activePart.id}:${page}`] ?? []} mode={markupMode} color={markupColor} onAdd={(points) => addMarkup(page, points)} />
-            </div>)}
+            {activePart.pages.map((page) => <CambridgePdfPage
+              key={`${activePart.id}-${page}`}
+              pdfUrl={sourceSet.pdfUrl}
+              page={page}
+              annotations={markups[`${activePart.id}:${page}`] ?? []}
+              mode={markupMode}
+              color={markupColor}
+              onAdd={(points) => addMarkup(page, points)}
+            />)}
           </div>
         </section>
         <form className="cambridge-daily-answer-card" onSubmit={submitPart}>

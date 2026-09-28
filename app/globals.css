@@ -914,7 +914,11 @@ button { cursor: pointer; }
 .cambridge-daily-audio { width:calc(100% - 28px); margin:14px; }
 .cambridge-daily-pdf-stack { display:grid; gap:10px; padding:10px; background:#f2f0f3; }
 .cambridge-daily-pdf-page { position:relative; width:100%; aspect-ratio:595 / 842; min-height:460px; overflow:hidden; border-radius:10px; background:white; box-shadow:0 1px 3px rgba(42,35,48,.08); }
-.cambridge-daily-pdf { width:100%; height:100%; display:block; border:0; background:white; pointer-events:none; }
+.cambridge-daily-pdf-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; background:white; }
+.cambridge-pdf-status { position:absolute; inset:0; z-index:2; display:grid; place-items:center; color:#756d78; background:rgba(255,255,255,.92); font-size:11px; }
+.cambridge-pdf-status.is-error { gap:8px; align-content:center; color:#aa5c62; }
+.cambridge-pdf-status strong,.cambridge-pdf-status a { display:block; }
+.cambridge-pdf-status a { color:#5d50bd; font-weight:700; text-decoration:none; }
 .cambridge-markup-overlay { position:absolute; inset:0; z-index:3; width:100%; height:100%; cursor:crosshair; touch-action:none; }
 .cambridge-markup-toolbar { margin:0 10px 10px; padding:9px 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; border:1px solid #e4dfe8; border-radius:11px; background:#faf9fc; }
 .cambridge-markup-toolbar>div:first-child { min-width:145px; flex:1; }

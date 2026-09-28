@@ -17,6 +17,7 @@
   "dependencies": {
     "@noble/hashes": "2.0.1",
     "drizzle-orm": "0.45.2",
+    "pdfjs-dist": "^4.10.38",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
