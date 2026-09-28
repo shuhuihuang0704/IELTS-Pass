@@ -74,6 +74,15 @@ type CambridgeDailyPart = {
   answers: string[][];
 };
 
+type CambridgeDailySourceSet = {
+  id: string;
+  label: string;
+  pdfUrl: string;
+  listeningAudio: string[];
+  listeningParts: CambridgeDailyPart[];
+  readingPassages: CambridgeDailyPart[];
+};
+
 const cambridge16Test1ListeningParts: CambridgeDailyPart[] = [
   { id: "listening-part-1", label: "Part 1", questionLabel: "Questions 1–10", pages: [12], questions: Array.from({ length: 10 }, (_, index) => index + 1), answers: [["egg"], ["tower"], ["car"], ["animals"], ["bridge"], ["movie", "film"], ["decorate"], ["wednesdays"], ["fradstone"], ["parking"]] },
   { id: "listening-part-2", label: "Part 2", questionLabel: "Questions 11–20", pages: [13, 14], questions: Array.from({ length: 10 }, (_, index) => index + 11), answers: [["c"], ["a"], ["b"], ["c"], ["h"], ["c"], ["g"], ["b"], ["i"], ["a"]] },
@@ -86,6 +95,59 @@ const cambridge16Test1ReadingPassages: CambridgeDailyPart[] = [
   { id: "reading-passage-2", label: "Passage 2", questionLabel: "Questions 14–26", pages: [22, 23, 24, 25], questions: Array.from({ length: 13 }, (_, index) => index + 14), answers: [["iv"], ["vii"], ["ii"], ["v"], ["i"], ["viii"], ["vi"], ["city"], ["priest", "priests"], ["trench"], ["location"], ["b", "d"], ["b", "d"]] },
   { id: "reading-passage-3", label: "Passage 3", questionLabel: "Questions 27–40", pages: [26, 27, 28, 29, 30], questions: Array.from({ length: 14 }, (_, index) => index + 27), answers: [["b"], ["d"], ["c"], ["d"], ["g"], ["e"], ["c"], ["f"], ["b"], ["a"], ["c"], ["a"], ["b"], ["c"]] },
 ];
+
+const cambridge16Test2ListeningParts: CambridgeDailyPart[] = [
+  { id: "listening-part-1", label: "Part 1", questionLabel: "Questions 1–10", pages: [34], questions: Array.from({ length: 10 }, (_, index) => index + 1), answers: [["frame"], ["195"], ["payment"], ["grandparents"], ["colour", "color"], ["hand"], ["background"], ["focus"], ["ten", "10 days"], ["plastic"]] },
+  { id: "listening-part-2", label: "Part 2", questionLabel: "Questions 11–20", pages: [35], questions: Array.from({ length: 10 }, (_, index) => index + 11), answers: [["c"], ["b"], ["a"], ["a"], ["c"], ["d"], ["a"], ["b"], ["b", "c"], ["b", "c"]] },
+  { id: "listening-part-3", label: "Part 3", questionLabel: "Questions 21–30", pages: [36, 37], questions: Array.from({ length: 10 }, (_, index) => index + 21), answers: [["b"], ["a"], ["c"], ["c"], ["history"], ["paper"], ["humans", "people"], ["stress"], ["graph"], ["evaluate"]] },
+  { id: "listening-part-4", label: "Part 4", questionLabel: "Questions 31–40", pages: [38], questions: Array.from({ length: 10 }, (_, index) => index + 31), answers: [["creativity"], ["therapy"], ["fitness"], ["balance"], ["brain"], ["motivation"], ["isolation"], ["calories"], ["obesity"], ["habit"]] },
+];
+
+const cambridge16Test2ReadingPassages: CambridgeDailyPart[] = [
+  { id: "reading-passage-1", label: "Passage 1", questionLabel: "Questions 1–13", pages: [39, 40, 41, 42], questions: Array.from({ length: 13 }, (_, index) => index + 1), answers: [["true"], ["not given"], ["true"], ["false"], ["false"], ["true"], ["true"], ["not given"], ["ridgeway"], ["documents"], ["soil"], ["fertility"], ["rhiannon"]] },
+  { id: "reading-passage-2", label: "Passage 2", questionLabel: "Questions 14–26", pages: [43, 44, 45, 46, 47, 48], questions: Array.from({ length: 13 }, (_, index) => index + 14), answers: [["d"], ["c"], ["a"], ["g"], ["b"], ["e"], ["yes"], ["no"], ["not given"], ["yes"], ["not given"], ["no"], ["no"]] },
+  { id: "reading-passage-3", label: "Passage 3", questionLabel: "Questions 27–40", pages: [49, 50, 51, 52, 53], questions: Array.from({ length: 14 }, (_, index) => index + 27), answers: [["b"], ["c"], ["b"], ["d"], ["d"], ["a"], ["c"], ["f"], ["g"], ["false"], ["not given"], ["not given"], ["true"], ["true"]] },
+];
+
+const cambridge16Test3ListeningParts: CambridgeDailyPart[] = [
+  { id: "listening-part-1", label: "Part 1", questionLabel: "Questions 1–10", pages: [58], questions: Array.from({ length: 10 }, (_, index) => index + 1), answers: [["park"], ["blue"], ["reference"], ["story"], ["rain"], ["snack"], ["medication"], ["helmet"], ["tent"], ["199"]] },
+  { id: "listening-part-2", label: "Part 2", questionLabel: "Questions 11–20", pages: [59], questions: Array.from({ length: 10 }, (_, index) => index + 11), answers: [["a", "c"], ["a", "c"], ["b", "c"], ["b", "c"], ["d"], ["f"], ["a"], ["h"], ["c"], ["g"]] },
+  { id: "listening-part-3", label: "Part 3", questionLabel: "Questions 21–30", pages: [60, 61], questions: Array.from({ length: 10 }, (_, index) => index + 21), answers: [["c", "d"], ["c", "d"], ["c", "e"], ["c", "e"], ["c"], ["a"], ["b"], ["a"], ["a"], ["c"]] },
+  { id: "listening-part-4", label: "Part 4", questionLabel: "Questions 31–40", pages: [62], questions: Array.from({ length: 10 }, (_, index) => index + 31), answers: [["grandmother"], ["decade"], ["equipment"], ["economic"], ["basic"], ["round"], ["bone"], ["rough"], ["style"], ["sheep"]] },
+];
+
+const cambridge16Test3ReadingPassages: CambridgeDailyPart[] = [
+  { id: "reading-passage-1", label: "Passage 1", questionLabel: "Questions 1–13", pages: [63, 64, 65], questions: Array.from({ length: 13 }, (_, index) => index + 1), answers: [["false"], ["not given"], ["false"], ["true"], ["true"], ["lightweight"], ["bronze"], ["levels"], ["hull"], ["triangular"], ["music"], ["grain"], ["towboats"]] },
+  { id: "reading-passage-2", label: "Passage 2", questionLabel: "Questions 14–26", pages: [66, 67, 68, 69], questions: Array.from({ length: 13 }, (_, index) => index + 14), answers: [["d"], ["c"], ["h"], ["f"], ["g"], ["b"], ["microorganisms", "micro-organisms"], ["reindeer"], ["insects"], ["b", "c"], ["a", "c"], ["a"], ["c"]] },
+  { id: "reading-passage-3", label: "Passage 3", questionLabel: "Questions 27–40", pages: [70, 71, 72, 73, 74], questions: Array.from({ length: 14 }, (_, index) => index + 27), answers: [["not given"], ["true"], ["true"], ["not given"], ["false"], ["false"], ["h"], ["d"], ["g"], ["c"], ["a"], ["warm", "winter"], ["summer"], ["mustard plant", "mustard plants", "mustard"]] },
+];
+
+const cambridge16Test4ListeningParts: CambridgeDailyPart[] = [
+  { id: "listening-part-1", label: "Part 1", questionLabel: "Questions 1–10", pages: [79], questions: Array.from({ length: 10 }, (_, index) => index + 1), answers: [["28th"], ["550"], ["chervil"], ["garage"], ["garden"], ["parking"], ["wood"], ["bridge"], ["monument"], ["march"]] },
+  { id: "listening-part-2", label: "Part 2", questionLabel: "Questions 11–20", pages: [80], questions: Array.from({ length: 10 }, (_, index) => index + 11), answers: [["c"], ["a"], ["b"], ["b"], ["c"], ["f"], ["a"], ["i"], ["e"], ["h"]] },
+  { id: "listening-part-3", label: "Part 3", questionLabel: "Questions 21–30", pages: [81, 82], questions: Array.from({ length: 10 }, (_, index) => index + 21), answers: [["b", "c"], ["b", "c"], ["b", "c"], ["b", "c"], ["c"], ["f"], ["d"], ["e"], ["b"], ["a"]] },
+  { id: "listening-part-4", label: "Part 4", questionLabel: "Questions 31–40", pages: [83], questions: Array.from({ length: 10 }, (_, index) => index + 31), answers: [["spice", "spices"], ["colony", "settlement"], ["fat"], ["head"], ["movement"], ["balance", "balancing"], ["brain"], ["smell"], ["rats"], ["forest"]] },
+];
+
+const cambridge16Test4ReadingPassages: CambridgeDailyPart[] = [
+  { id: "reading-passage-1", label: "Passage 1", questionLabel: "Questions 1–13", pages: [84, 85, 86], questions: Array.from({ length: 13 }, (_, index) => index + 1), answers: [["posts"], ["canal"], ["ventilation"], ["lid"], ["weight"], ["climbing"], ["false"], ["not given"], ["false"], ["true"], ["gold"], ["architect"], ["harbour", "harbor"]] },
+  { id: "reading-passage-2", label: "Passage 2", questionLabel: "Questions 14–26", pages: [87, 88, 89, 90], questions: Array.from({ length: 13 }, (_, index) => index + 14), answers: [["a"], ["b"], ["d"], ["b"], ["d"], ["h"], ["f"], ["b"], ["c"], ["yes"], ["no"], ["not given"], ["yes"]] },
+  { id: "reading-passage-3", label: "Passage 3", questionLabel: "Questions 27–40", pages: [91, 92, 93, 94, 95, 96], questions: Array.from({ length: 14 }, (_, index) => index + 27), answers: [["iii"], ["vi"], ["ii"], ["i"], ["vii"], ["v"], ["c"], ["b"], ["a"], ["no"], ["not given"], ["yes"], ["no"], ["yes"]] },
+];
+
+const cambridge16DailySourceSets: CambridgeDailySourceSet[] = [
+  { id: "cambridge-16-test-1", label: "Cambridge IELTS 16 · Test 1", pdfUrl: cambridge16Test1PdfUrl, listeningAudio: cambridge16Test1ListeningAudio, listeningParts: cambridge16Test1ListeningParts, readingPassages: cambridge16Test1ReadingPassages },
+  { id: "cambridge-16-test-2", label: "Cambridge IELTS 16 · Test 2", pdfUrl: cambridge16Test1PdfUrl, listeningAudio: [1, 2, 3, 4].map((part) => encodeURI(`https://zeeklog.github.io/IELTS/雅思真题音频/16-剑桥雅思16/Test 2/Test 2 Part ${part}.mp3`)), listeningParts: cambridge16Test2ListeningParts, readingPassages: cambridge16Test2ReadingPassages },
+  { id: "cambridge-16-test-3", label: "Cambridge IELTS 16 · Test 3", pdfUrl: cambridge16Test1PdfUrl, listeningAudio: [1, 2, 3, 4].map((part) => encodeURI(`https://zeeklog.github.io/IELTS/雅思真题音频/16-剑桥雅思16/Test 3/Test 3 Part ${part}.mp3`)), listeningParts: cambridge16Test3ListeningParts, readingPassages: cambridge16Test3ReadingPassages },
+  { id: "cambridge-16-test-4", label: "Cambridge IELTS 16 · Test 4", pdfUrl: cambridge16Test1PdfUrl, listeningAudio: [1, 2, 3, 4].map((part) => encodeURI(`https://zeeklog.github.io/IELTS/雅思真题音频/16-剑桥雅思16/Test 4/Test 4 Part ${part}.mp3`)), listeningParts: cambridge16Test4ListeningParts, readingPassages: cambridge16Test4ReadingPassages },
+];
+
+function dailyCambridgeSourceIndex(contentDate: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(contentDate);
+  if (!match) return 0;
+  const utcDay = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86_400_000;
+  return Math.abs(Math.floor(utcDay)) % cambridge16DailySourceSets.length;
+}
 
 function readLocalProfile(value: string | null): AuthUser | null {
   if (!value) return null;
@@ -3470,12 +3532,12 @@ function SceneView({
       </div>
       <section className="exercise-surface">
         {activeSkill === "vocabulary" && <VocabularyPractice key={`vocabulary:${contentDate}`} contentDate={contentDate} mode={vocabularyMode} setMode={setVocabularyMode} progress={progress} onSectionComplete={completeVocabularySection} updateProgress={updateProgress} />}
-        {activeSkill === "listening" && <CambridgeDailySourcePractice key={`cambridge-listening:${contentDate}`} skill="listening" onComplete={(score, fullyAnswered) => {
+        {activeSkill === "listening" && <CambridgeDailySourcePractice key={`cambridge-listening:${contentDate}`} skill="listening" contentDate={contentDate} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, listeningCorrect: score >= 28, listeningScore: score }));
           if (fullyAnswered) onComplete("listening", 40);
         }} />}
         {activeSkill === "speaking" && <SpeakingPractice key={`speaking:${contentDate}:${difficultyBand}`} exerciseDate={contentDate} difficulty={difficultyProfile} progress={progress} updateProgress={updateProgress} onComplete={() => onComplete("speaking", 5)} />}
-        {activeSkill === "reading" && <CambridgeDailySourcePractice key={`cambridge-reading:${contentDate}`} skill="reading" onComplete={(score, fullyAnswered) => {
+        {activeSkill === "reading" && <CambridgeDailySourcePractice key={`cambridge-reading:${contentDate}`} skill="reading" contentDate={contentDate} onComplete={(score, fullyAnswered) => {
           updateProgress((current) => ({ ...current, readingScore: score }));
           if (fullyAnswered) onComplete("reading", 30);
         }} />}
@@ -5029,20 +5091,23 @@ function ReadingPractice({
 
 function CambridgeDailySourcePractice({
   skill,
+  contentDate,
   onComplete,
 }: {
   skill: "listening" | "reading";
+  contentDate: string;
   onComplete: (score: number, fullyAnswered: boolean) => void;
 }) {
   const isListening = skill === "listening";
-  const parts = isListening ? cambridge16Test1ListeningParts : cambridge16Test1ReadingPassages;
+  const sourceSet = cambridge16DailySourceSets[dailyCambridgeSourceIndex(contentDate)];
+  const parts = isListening ? sourceSet.listeningParts : sourceSet.readingPassages;
   const [activeIndex, setActiveIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<Record<string, boolean>>({});
   const [partScores, setPartScores] = useState<Record<string, number>>({});
   const answerRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const activePart = parts[activeIndex];
-  const sourcePdf = `${cambridge16Test1PdfUrl}#page=${activePart.pages[0]}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+  const sourcePdf = `${sourceSet.pdfUrl}#page=${activePart.pages[0]}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
   const answerId = (question: number) => `${activePart.id}:${question}`;
   const normalize = (value: string) => value.trim().toLowerCase().replace(/[.,!?;:()[\]{}]/g, "").replace(/\s+/g, " ");
   const isAnswerCorrect = (question: number, value = answers[answerId(question)] ?? "") => {
@@ -5067,7 +5132,7 @@ function CambridgeDailySourcePractice({
   return (
     <section className="cambridge-daily-practice">
       <header className="cambridge-daily-header">
-        <div><span>今日唯一套题 · CAMBRIDGE IELTS 16 · TEST 1</span><h2>{isListening ? "Listening 真题" : "Academic Reading 真题"}</h2><p>每天只使用这一套真题；按 {isListening ? "Part 1–4" : "Passage 1–3"} 分开训练。当前页面只显示正在做的{isListening ? "听力" : "阅读"}部分、对应音频和答题卡。</p></div>
+        <div><span>今日唯一套题 · {sourceSet.label.toUpperCase()}</span><h2>{isListening ? "Listening 真题" : "Academic Reading 真题"}</h2><p>题目按日期从资料库轮换，避免连续几天重复；按 {isListening ? "Part 1–4" : "Passage 1–3"} 分开训练。当前页面只显示正在做的{isListening ? "听力" : "阅读"}部分、对应音频和答题卡。</p></div>
         <a href={sourcePdf} target="_blank" rel="noreferrer">打开当前部分题页 ↗</a>
       </header>
       <nav className="cambridge-daily-tabs" aria-label={isListening ? "选择听力 Part" : "选择阅读 Passage"}>
@@ -5076,9 +5141,9 @@ function CambridgeDailySourcePractice({
       <div className="cambridge-daily-grid">
         <section className="cambridge-daily-paper">
           <header><div><strong>{activePart.label} · {activePart.questionLabel}</strong><small>仅当前部分 · 题目来自 Cambridge IELTS 16 Test 1</small></div><span>{activePart.pages.length} 页</span></header>
-          {isListening && <audio className="cambridge-daily-audio" controls preload="metadata" src={cambridge16Test1ListeningAudio[activeIndex]}>当前浏览器不支持音频播放。</audio>}
+          {isListening && <audio className="cambridge-daily-audio" controls preload="metadata" src={sourceSet.listeningAudio[activeIndex]}>当前浏览器不支持音频播放。</audio>}
           <div className="cambridge-daily-pdf-stack">
-            {activePart.pages.map((page) => <iframe className="cambridge-daily-pdf" title={`${activePart.label} · 第 ${page} 页`} src={`${cambridge16Test1PdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} key={`${activePart.id}-${page}`} />)}
+            {activePart.pages.map((page) => <iframe className="cambridge-daily-pdf" title={`${activePart.label} · 第 ${page} 页`} src={`${sourceSet.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} key={`${activePart.id}-${page}`} />)}
           </div>
         </section>
         <form className="cambridge-daily-answer-card" onSubmit={submitPart}>
@@ -5094,7 +5159,7 @@ function CambridgeDailySourcePractice({
           <footer><span>{currentSubmitted ? `本部分 ${currentScore}/${activePart.questions.length}；可切换其他部分继续。` : "题册和答题卡同时显示；按 Enter 跳到下一题。"}</span>{currentSubmitted ? <button type="button" onClick={() => setSubmitted((current) => ({ ...current, [activePart.id]: false }))}>重新作答</button> : <button type="submit">提交本部分</button>}</footer>
         </form>
       </div>
-      <p className="cambridge-daily-source-note">资料来源：<a href="https://zeeklog.github.io/IELTS/#IELTS" target="_blank" rel="noreferrer">IELTS 资料库</a> · 你已确认拥有使用授权。每个 Part / Passage 独立显示，避免把不同阅读或听力部分混在一起。</p>
+      <p className="cambridge-daily-source-note">资料来源：<a href="https://zeeklog.github.io/IELTS/#IELTS" target="_blank" rel="noreferrer">IELTS 资料库</a> · 今日使用 {sourceSet.label}，同一日期固定同一套，下一天自动轮换到另一套；你已确认拥有使用授权。</p>
     </section>
   );
 }
