@@ -898,6 +898,7 @@ button { cursor: pointer; }
 .cambridge-daily-header h2 { margin:6px 0 6px; font-size:27px; letter-spacing:-1px; }
 .cambridge-daily-header p { margin:0; color:var(--muted); font-size:11px; }
 .cambridge-daily-header>a { flex:0 0 auto; padding:9px 12px; border-radius:10px; color:var(--violet); background:#eeeafd; font-size:10px; font-weight:750; text-decoration:none; }
+.cambridge-daily-source-lock { padding:8px 11px; border-radius:10px; color:var(--violet); background:#eeeafd; font-size:10px; font-weight:750; }
 .cambridge-daily-tabs { display:flex; gap:8px; margin:16px 0; overflow:auto; }
 .cambridge-daily-tabs button { min-width:112px; min-height:44px; padding:8px 12px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid #e2dde6; border-radius:12px; color:#726b78; background:white; font-size:10px; font-weight:750; white-space:nowrap; }
 .cambridge-daily-tabs button span { width:20px; height:20px; display:grid; place-items:center; border-radius:50%; color:#877e8e; background:#f0edf2; font-size:9px; }
@@ -913,6 +914,10 @@ button { cursor: pointer; }
 .cambridge-daily-audio { width:calc(100% - 28px); margin:14px; }
 .cambridge-daily-pdf-stack { display:grid; gap:10px; padding:10px; background:#f2f0f3; }
 .cambridge-daily-pdf { width:100%; min-height:680px; display:block; border:0; border-radius:10px; background:white; }
+.cambridge-daily-listening-only { min-height:180px; padding:34px 24px; display:flex; flex-direction:column; justify-content:center; background:linear-gradient(145deg,#fbfaff,#f5f3ff); }
+.cambridge-daily-listening-only strong { color:#3f376f; font-size:18px; }
+.cambridge-daily-listening-only p { max-width:520px; margin:9px 0 0; color:var(--muted); font-size:12px; line-height:1.6; }
+.cambridge-daily-listening-only small { margin-top:18px; color:#8b8492; font-size:10px; }
 .cambridge-daily-answer-card { position:sticky; top:16px; }
 .cambridge-daily-answer-card header>b { width:34px; height:34px; display:grid; place-items:center; border-radius:11px; color:white; background:var(--violet); }
 .cambridge-daily-answer-list { padding:12px 14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
