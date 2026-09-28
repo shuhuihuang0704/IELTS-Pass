@@ -913,7 +913,8 @@ button { cursor: pointer; }
 .cambridge-daily-paper>header>span,.cambridge-daily-answer-card>header>b { color:var(--violet); font-size:12px; }
 .cambridge-daily-audio { width:calc(100% - 28px); margin:14px; }
 .cambridge-daily-pdf-stack { display:grid; gap:10px; padding:10px; background:#f2f0f3; }
-.cambridge-daily-pdf { width:100%; min-height:680px; display:block; border:0; border-radius:10px; background:white; }
+.cambridge-daily-pdf-page { position:relative; width:100%; aspect-ratio:595 / 842; min-height:460px; overflow:hidden; border-radius:10px; background:white; box-shadow:0 1px 3px rgba(42,35,48,.08); }
+.cambridge-daily-pdf { width:100%; height:100%; display:block; border:0; background:white; pointer-events:none; }
 .cambridge-daily-listening-only { min-height:180px; padding:34px 24px; display:flex; flex-direction:column; justify-content:center; background:linear-gradient(145deg,#fbfaff,#f5f3ff); }
 .cambridge-daily-listening-only strong { color:#3f376f; font-size:18px; }
 .cambridge-daily-listening-only p { max-width:520px; margin:9px 0 0; color:var(--muted); font-size:12px; line-height:1.6; }
@@ -1676,7 +1677,7 @@ button { cursor: pointer; }
   .cambridge-daily-paper>header,.cambridge-daily-answer-card>header { align-items:flex-start; flex-direction:column; }
   .cambridge-daily-answer-card>header { flex-direction:row; }
   .cambridge-daily-answer-list { grid-template-columns:1fr; }
-  .cambridge-daily-pdf { min-height:600px; }
+  .cambridge-daily-pdf-page { min-height:360px; }
   .official-reading-booklet { max-height:none; grid-column:1; grid-row:1; padding-right:0; overflow:visible; position:static; }
   .official-reading-booklet>header { align-items:stretch; flex-direction:column; }
   .official-reading-sections button { flex:1; }

@@ -5107,7 +5107,6 @@ function CambridgeDailySourcePractice({
   const [partScores, setPartScores] = useState<Record<string, number>>({});
   const answerRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const activePart = parts[activeIndex];
-  const sourcePdf = `${sourceSet.pdfUrl}#page=${activePart.pages[0]}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
   const answerId = (question: number) => `${activePart.id}:${question}`;
   const normalize = (value: string) => value.trim().toLowerCase().replace(/[.,!?;:()[\]{}]/g, "").replace(/\s+/g, " ");
   const isAnswerCorrect = (question: number, value = answers[answerId(question)] ?? "") => {
@@ -5133,7 +5132,7 @@ function CambridgeDailySourcePractice({
     <section className="cambridge-daily-practice">
       <header className="cambridge-daily-header">
         <div><span>今日唯一套题 · {sourceSet.label.toUpperCase()}</span><h2>{isListening ? "Listening 真题" : "Academic Reading 真题"}</h2><p>题目按日期从资料库轮换，避免连续几天重复；按 {isListening ? "Part 1–4" : "Passage 1–3"} 分开训练。当前页面只显示正在做的{isListening ? "听力" : "阅读"}部分、对应音频和答题卡。</p></div>
-        {isListening ? <span className="cambridge-daily-source-lock">听力页不加载阅读题册</span> : <a href={sourcePdf} target="_blank" rel="noreferrer">打开当前部分题页 ↗</a>}
+        <span className="cambridge-daily-source-lock">{isListening ? "听力仅显示当前 Part 题页" : "阅读仅显示当前 Passage 题页"}</span>
       </header>
       <nav className="cambridge-daily-tabs" aria-label={isListening ? "选择听力 Part" : "选择阅读 Passage"}>
         {parts.map((part, index) => <button type="button" className={activeIndex === index ? "is-active" : ""} aria-current={activeIndex === index ? "page" : undefined} onClick={() => selectPart(index)} key={part.id}><span>{submitted[part.id] ? "✓" : index + 1}</span>{part.label}</button>)}
@@ -5142,9 +5141,11 @@ function CambridgeDailySourcePractice({
         <section className="cambridge-daily-paper">
           <header><div><strong>{activePart.label} · {activePart.questionLabel}</strong><small>仅当前部分 · 题目来自 Cambridge IELTS 16 Test 1</small></div><span>{activePart.pages.length} 页</span></header>
           {isListening && <audio className="cambridge-daily-audio" controls preload="metadata" src={sourceSet.listeningAudio[activeIndex]}>当前浏览器不支持音频播放。</audio>}
-          {isListening ? <div className="cambridge-daily-listening-only"><strong>当前只做 {activePart.label}</strong><p>阅读题册不会在听力精听页面加载。请播放上方音频，再在右侧答题卡填写本 Part 的答案。</p><small>资料库：{sourceSet.label} · {activePart.questionLabel}</small></div> : <div className="cambridge-daily-pdf-stack">
-            {activePart.pages.map((page) => <iframe className="cambridge-daily-pdf" title={`${activePart.label} · 第 ${page} 页`} src={`${sourceSet.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`} key={`${activePart.id}-${page}`} />)}
-          </div>}
+          <div className="cambridge-daily-pdf-stack" aria-label={`${activePart.label} 题目，仅显示当前${isListening ? "听力" : "阅读"}部分`}>
+            {activePart.pages.map((page) => <div className="cambridge-daily-pdf-page" key={`${activePart.id}-${page}`}>
+              <iframe className="cambridge-daily-pdf" title={`${activePart.label} · 第 ${page} 页`} scrolling="no" src={`${sourceSet.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />
+            </div>)}
+          </div>
         </section>
         <form className="cambridge-daily-answer-card" onSubmit={submitPart}>
           <header><div><span>ANSWER CARD</span><strong>{activePart.label} 答题卡</strong><small>{activePart.questionLabel} · {currentSubmitted ? `本部分得分 ${currentScore}/${activePart.questions.length}` : "提交后查看对错"}</small></div><b>{activePart.questions.length}</b></header>
