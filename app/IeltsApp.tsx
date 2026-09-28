@@ -5140,7 +5140,13 @@ function CambridgeMarkupOverlay({
       preserveAspectRatio="none"
       onPointerDown={(event) => {
         drawingRef.current = true;
-        event.currentTarget.setPointerCapture(event.pointerId);
+        // Safari/iOS versions differ in pointer-capture support. A tap on the
+        // marker layer must never throw and take down the practice page.
+        try {
+          if (typeof event.currentTarget.setPointerCapture === "function") event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          // Drawing still works through pointermove/pointerup without capture.
+        }
         setDraft([getPoint(event)]);
       }}
       onPointerMove={(event) => {
