@@ -5067,8 +5067,8 @@ function CambridgeDailySourcePractice({
   return (
     <section className="cambridge-daily-practice">
       <header className="cambridge-daily-header">
-        <div><span>CAMBRIDGE IELTS 16 · TEST 1</span><h2>{isListening ? "Listening 真题" : "Academic Reading 真题"}</h2><p>按 {isListening ? "Part 1–4" : "Passage 1–3"} 分开训练；当前只显示这一部分的题册页面和答题卡。</p></div>
-        <a href={cambridge16Test1PdfUrl} target="_blank" rel="noreferrer">打开原始题册 ↗</a>
+        <div><span>今日唯一套题 · CAMBRIDGE IELTS 16 · TEST 1</span><h2>{isListening ? "Listening 真题" : "Academic Reading 真题"}</h2><p>每天只使用这一套真题；按 {isListening ? "Part 1–4" : "Passage 1–3"} 分开训练。当前页面只显示正在做的{isListening ? "听力" : "阅读"}部分、对应音频和答题卡。</p></div>
+        <a href={sourcePdf} target="_blank" rel="noreferrer">打开当前部分题页 ↗</a>
       </header>
       <nav className="cambridge-daily-tabs" aria-label={isListening ? "选择听力 Part" : "选择阅读 Passage"}>
         {parts.map((part, index) => <button type="button" className={activeIndex === index ? "is-active" : ""} aria-current={activeIndex === index ? "page" : undefined} onClick={() => selectPart(index)} key={part.id}><span>{submitted[part.id] ? "✓" : index + 1}</span>{part.label}</button>)}
