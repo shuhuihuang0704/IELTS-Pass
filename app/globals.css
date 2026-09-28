@@ -915,6 +915,19 @@ button { cursor: pointer; }
 .cambridge-daily-pdf-stack { display:grid; gap:10px; padding:10px; background:#f2f0f3; }
 .cambridge-daily-pdf-page { position:relative; width:100%; aspect-ratio:595 / 842; min-height:460px; overflow:hidden; border-radius:10px; background:white; box-shadow:0 1px 3px rgba(42,35,48,.08); }
 .cambridge-daily-pdf { width:100%; height:100%; display:block; border:0; background:white; pointer-events:none; }
+.cambridge-markup-overlay { position:absolute; inset:0; z-index:3; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+.cambridge-markup-toolbar { margin:0 10px 10px; padding:9px 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; border:1px solid #e4dfe8; border-radius:11px; background:#faf9fc; }
+.cambridge-markup-toolbar>div:first-child { min-width:145px; flex:1; }
+.cambridge-markup-toolbar strong,.cambridge-markup-toolbar small { display:block; }
+.cambridge-markup-toolbar strong { color:#4f43ac; font-size:10px; }
+.cambridge-markup-toolbar small { margin-top:2px; color:#89818e; font-size:8px; }
+.cambridge-markup-toolbar>button { min-height:27px; padding:0 8px; border:1px solid #ddd7e4; border-radius:7px; color:#68616f; background:white; font-size:8px; font-weight:700; }
+.cambridge-markup-toolbar>button.is-active { color:white; border-color:#6255c9; background:#6255c9; }
+.cambridge-markup-toolbar>button.is-secondary { color:#8d5963; background:#fff5f4; }
+.cambridge-markup-colors { display:flex; align-items:center; gap:4px; }
+.cambridge-markup-colors button { width:25px; height:25px; padding:3px; border:1px solid transparent; border-radius:7px; background:#f0edf3; }
+.cambridge-markup-colors button.is-active { border-color:#6255c9; box-shadow:0 0 0 2px rgba(98,85,201,.14); }
+.cambridge-markup-colors i { width:100%; height:100%; display:block; border-radius:4px; }
 .cambridge-daily-listening-only { min-height:180px; padding:34px 24px; display:flex; flex-direction:column; justify-content:center; background:linear-gradient(145deg,#fbfaff,#f5f3ff); }
 .cambridge-daily-listening-only strong { color:#3f376f; font-size:18px; }
 .cambridge-daily-listening-only p { max-width:520px; margin:9px 0 0; color:var(--muted); font-size:12px; line-height:1.6; }

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import AuthFlow from "./AuthFlow";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 import type { AuthUser } from "./auth-server";
@@ -5089,6 +5089,93 @@ function ReadingPractice({
   );
 }
 
+type CambridgeMarkupMode = "highlight" | "underline";
+type CambridgeMarkupColor = "yellow" | "blue" | "pink" | "green";
+type CambridgeMarkup = {
+  id: string;
+  mode: CambridgeMarkupMode;
+  color: CambridgeMarkupColor;
+  points: Array<[number, number]>;
+};
+
+const cambridgeMarkupColors: Array<{ id: CambridgeMarkupColor; label: string; value: string }> = [
+  { id: "yellow", label: "黄", value: "#f6d84a" },
+  { id: "blue", label: "蓝", value: "#64a9ed" },
+  { id: "pink", label: "粉", value: "#ee8bb0" },
+  { id: "green", label: "绿", value: "#70c49b" },
+];
+
+function CambridgeMarkupOverlay({
+  annotations,
+  mode,
+  color,
+  onAdd,
+}: {
+  annotations: CambridgeMarkup[];
+  mode: CambridgeMarkupMode;
+  color: CambridgeMarkupColor;
+  onAdd: (points: Array<[number, number]>) => void;
+}) {
+  const [draft, setDraft] = useState<Array<[number, number]>>([]);
+  const drawingRef = useRef(false);
+  const getPoint = (event: ReactPointerEvent<SVGSVGElement>): [number, number] => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return [
+      Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+      Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+    ];
+  };
+  const finish = () => {
+    if (!drawingRef.current) return;
+    drawingRef.current = false;
+    if (draft.length > 1) onAdd(draft);
+    setDraft([]);
+  };
+  const colorValue = cambridgeMarkupColors.find((item) => item.id === color)?.value ?? "#f6d84a";
+  const renderPoints = (points: Array<[number, number]>) => points.map(([x, y]) => `${x * 100},${y * 100}`).join(" ");
+  return (
+    <svg
+      className="cambridge-markup-overlay"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      onPointerDown={(event) => {
+        drawingRef.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setDraft([getPoint(event)]);
+      }}
+      onPointerMove={(event) => {
+        if (!drawingRef.current) return;
+        setDraft((current) => [...current, getPoint(event)]);
+      }}
+      onPointerUp={finish}
+      onPointerCancel={finish}
+      aria-label="题目标记区域"
+    >
+      {annotations.map((annotation) => <polyline
+        key={annotation.id}
+        points={renderPoints(annotation.points)}
+        fill="none"
+        stroke={cambridgeMarkupColors.find((item) => item.id === annotation.color)?.value ?? colorValue}
+        strokeWidth={annotation.mode === "highlight" ? 8 : 1.35}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={annotation.mode === "highlight" ? .38 : .9}
+        vectorEffect="non-scaling-stroke"
+      />)}
+      {draft.length > 1 && <polyline
+        points={renderPoints(draft)}
+        fill="none"
+        stroke={colorValue}
+        strokeWidth={mode === "highlight" ? 8 : 1.35}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={mode === "highlight" ? .38 : .9}
+        vectorEffect="non-scaling-stroke"
+      />}
+    </svg>
+  );
+}
+
 function CambridgeDailySourcePractice({
   skill,
   contentDate,
@@ -5105,6 +5192,9 @@ function CambridgeDailySourcePractice({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<Record<string, boolean>>({});
   const [partScores, setPartScores] = useState<Record<string, number>>({});
+  const [markupMode, setMarkupMode] = useState<CambridgeMarkupMode>("highlight");
+  const [markupColor, setMarkupColor] = useState<CambridgeMarkupColor>("yellow");
+  const [markups, setMarkups] = useState<Record<string, CambridgeMarkup[]>>({});
   const answerRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const activePart = parts[activeIndex];
   const answerId = (question: number) => `${activePart.id}:${question}`;
@@ -5128,6 +5218,16 @@ function CambridgeDailySourcePractice({
   const selectPart = (index: number) => setActiveIndex(index);
   const currentSubmitted = Boolean(submitted[activePart.id]);
   const currentScore = partScores[activePart.id] ?? 0;
+  const addMarkup = (page: number, points: Array<[number, number]>) => {
+    const pageKey = `${activePart.id}:${page}`;
+    setMarkups((current) => ({
+      ...current,
+      [pageKey]: [...(current[pageKey] ?? []), { id: `${pageKey}:${Date.now()}`, mode: markupMode, color: markupColor, points }],
+    }));
+  };
+  const clearCurrentPartMarkups = () => {
+    setMarkups((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${activePart.id}:`))));
+  };
   return (
     <section className="cambridge-daily-practice">
       <header className="cambridge-daily-header">
@@ -5141,9 +5241,19 @@ function CambridgeDailySourcePractice({
         <section className="cambridge-daily-paper">
           <header><div><strong>{activePart.label} · {activePart.questionLabel}</strong><small>仅当前部分 · 题目来自 Cambridge IELTS 16 Test 1</small></div><span>{activePart.pages.length} 页</span></header>
           {isListening && <audio className="cambridge-daily-audio" controls preload="metadata" src={sourceSet.listeningAudio[activeIndex]}>当前浏览器不支持音频播放。</audio>}
+          <div className="cambridge-markup-toolbar" role="toolbar" aria-label="阅读和听力题目标记工具">
+            <div><strong>题目标记</strong><small>在题页上拖动即可画线或高亮</small></div>
+            <button type="button" className={markupMode === "highlight" ? "is-active" : ""} onClick={() => setMarkupMode("highlight")}>荧光笔</button>
+            <button type="button" className={markupMode === "underline" ? "is-active" : ""} onClick={() => setMarkupMode("underline")}>下划线</button>
+            <div className="cambridge-markup-colors" aria-label="选择标记颜色">
+              {cambridgeMarkupColors.map((item) => <button type="button" key={item.id} className={`cambridge-markup-color is-${item.id}${markupColor === item.id ? " is-active" : ""}`} aria-label={`${item.label}色`} aria-pressed={markupColor === item.id} onClick={() => setMarkupColor(item.id)}><i style={{ backgroundColor: item.value }} /></button>)}
+            </div>
+            <button type="button" className="is-secondary" onClick={clearCurrentPartMarkups}>清除本部分</button>
+          </div>
           <div className="cambridge-daily-pdf-stack" aria-label={`${activePart.label} 题目，仅显示当前${isListening ? "听力" : "阅读"}部分`}>
             {activePart.pages.map((page) => <div className="cambridge-daily-pdf-page" key={`${activePart.id}-${page}`}>
               <iframe className="cambridge-daily-pdf" title={`${activePart.label} · 第 ${page} 页`} scrolling="no" src={`${sourceSet.pdfUrl}#page=${page}&toolbar=0&navpanes=0&scrollbar=0&view=Fit`} />
+              <CambridgeMarkupOverlay annotations={markups[`${activePart.id}:${page}`] ?? []} mode={markupMode} color={markupColor} onAdd={(points) => addMarkup(page, points)} />
             </div>)}
           </div>
         </section>
