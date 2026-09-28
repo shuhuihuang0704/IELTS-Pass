@@ -5105,6 +5105,28 @@ const cambridgeMarkupColors: Array<{ id: CambridgeMarkupColor; label: string; va
   { id: "green", label: "绿", value: "#70c49b" },
 ];
 
+type CambridgePdfPageProxy = {
+  getViewport: (options: { scale: number }) => { width: number; height: number };
+  render: (options: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<unknown>; cancel?: () => void };
+};
+type CambridgePdfDocumentProxy = { getPage: (page: number) => Promise<CambridgePdfPageProxy> };
+const cambridgePdfModulePromise = import("pdfjs-dist/legacy/build/pdf.mjs");
+const cambridgePdfDocumentCache = new Map<string, Promise<CambridgePdfDocumentProxy>>();
+
+function getCambridgePdfDocument(pdfUrl: string) {
+  const cached = cambridgePdfDocumentCache.get(pdfUrl);
+  if (cached) return cached;
+  const promise = cambridgePdfModulePromise.then((pdfjs) => {
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
+    return pdfjs.getDocument({ url: pdfUrl, withCredentials: false }).promise;
+  }).catch((error) => {
+    cambridgePdfDocumentCache.delete(pdfUrl);
+    throw error;
+  });
+  cambridgePdfDocumentCache.set(pdfUrl, promise);
+  return promise;
+}
+
 function CambridgeMarkupOverlay({
   annotations,
   mode,
@@ -5201,13 +5223,10 @@ function CambridgePdfPage({
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   useEffect(() => {
     let disposed = false;
-    let loadingTask: { destroy?: () => void } | undefined;
+    let renderTask: { cancel?: () => void } | undefined;
     const renderPage = async () => {
       try {
-        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
-        loadingTask = pdfjs.getDocument({ url: pdfUrl, withCredentials: false });
-        const documentProxy = await loadingTask.promise;
+        const documentProxy = await getCambridgePdfDocument(pdfUrl);
         const pageProxy = await documentProxy.getPage(page);
         const canvas = canvasRef.current;
         if (disposed || !canvas) return;
@@ -5218,7 +5237,8 @@ function CambridgePdfPage({
         canvas.height = viewport.height;
         const context = canvas.getContext("2d", { alpha: false });
         if (!context) throw new Error("Canvas is unavailable");
-        await pageProxy.render({ canvasContext: context, viewport }).promise;
+        renderTask = pageProxy.render({ canvasContext: context, viewport });
+        await renderTask.promise;
         if (!disposed) setStatus("ready");
       } catch {
         if (!disposed) setStatus("error");
@@ -5227,7 +5247,7 @@ function CambridgePdfPage({
     void renderPage();
     return () => {
       disposed = true;
-      loadingTask?.destroy?.();
+      renderTask?.cancel?.();
     };
   }, [pdfUrl, page]);
   return (
