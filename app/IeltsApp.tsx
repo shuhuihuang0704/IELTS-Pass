@@ -5132,11 +5132,13 @@ function CambridgeMarkupOverlay({
   mode,
   color,
   onAdd,
+  onRemove,
 }: {
   annotations: CambridgeMarkup[];
   mode: CambridgeMarkupMode;
   color: CambridgeMarkupColor;
   onAdd: (points: Array<[number, number]>) => void;
+  onRemove: (id: string) => void;
 }) {
   const [draft, setDraft] = useState<Array<[number, number]>>([]);
   const drawingRef = useRef(false);
@@ -5224,6 +5226,12 @@ function CambridgeMarkupOverlay({
         strokeLinejoin="round"
         opacity={annotation.mode === "highlight" ? .38 : .9}
         vectorEffect="non-scaling-stroke"
+        pointerEvents="stroke"
+        aria-label="删除这条标记"
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onRemove(annotation.id);
+        }}
       />)}
       {draft.length > 1 && <polyline
         points={renderPoints(draft)}
@@ -5246,6 +5254,7 @@ function CambridgePdfPage({
   mode,
   color,
   onAdd,
+  onRemove,
 }: {
   pdfUrl: string;
   page: number;
@@ -5253,6 +5262,7 @@ function CambridgePdfPage({
   mode: CambridgeMarkupMode;
   color: CambridgeMarkupColor;
   onAdd: (points: Array<[number, number]>) => void;
+  onRemove: (id: string) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -5290,7 +5300,7 @@ function CambridgePdfPage({
       <canvas ref={canvasRef} className="cambridge-daily-pdf-canvas" aria-label={`题页第 ${page} 页`} />
       {status === "loading" && <div className="cambridge-pdf-status">正在加载当前题页…</div>}
       {status === "error" && <div className="cambridge-pdf-status is-error"><strong>题页暂时无法加载</strong><a href={`${pdfUrl}#page=${page}`} target="_blank" rel="noreferrer">打开原始题页 ↗</a></div>}
-      <CambridgeMarkupOverlay annotations={annotations} mode={mode} color={color} onAdd={onAdd} />
+      <CambridgeMarkupOverlay annotations={annotations} mode={mode} color={color} onAdd={onAdd} onRemove={onRemove} />
     </div>
   );
 }
@@ -5344,6 +5354,27 @@ function CambridgeDailySourcePractice({
       [pageKey]: [...(current[pageKey] ?? []), { id: `${pageKey}:${Date.now()}`, mode: markupMode, color: markupColor, points }],
     }));
   };
+  const removeMarkup = (page: number, id: string) => {
+    const pageKey = `${activePart.id}:${page}`;
+    setMarkups((current) => ({
+      ...current,
+      [pageKey]: (current[pageKey] ?? []).filter((annotation) => annotation.id !== id),
+    }));
+  };
+  const removeLastMarkup = () => {
+    for (let index = activePart.pages.length - 1; index >= 0; index -= 1) {
+      const page = activePart.pages[index];
+      const pageKey = `${activePart.id}:${page}`;
+      const annotations = markups[pageKey] ?? [];
+      if (annotations.length === 0) continue;
+      setMarkups((current) => ({
+        ...current,
+        [pageKey]: annotations.slice(0, -1),
+      }));
+      return;
+    }
+  };
+  const currentPartMarkupCount = activePart.pages.reduce((total, page) => total + (markups[`${activePart.id}:${page}`] ?? []).length, 0);
   const clearCurrentPartMarkups = () => {
     setMarkups((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${activePart.id}:`))));
   };
@@ -5361,13 +5392,14 @@ function CambridgeDailySourcePractice({
           <header><div><strong>{activePart.label} · {activePart.questionLabel}</strong><small>仅当前部分 · 题目来自 Cambridge IELTS 16 Test 1</small></div><span>{activePart.pages.length} 页</span></header>
           {isListening && <audio className="cambridge-daily-audio" controls preload="metadata" src={sourceSet.listeningAudio[activeIndex]}>当前浏览器不支持音频播放。</audio>}
           <div className="cambridge-markup-toolbar" role="toolbar" aria-label="阅读和听力题目标记工具">
-            <div><strong>题目标记</strong><small>在题页上拖动即可画线或高亮</small></div>
+            <div><strong>题目标记</strong><small>拖动绘制；点击已有标记可单独删除</small></div>
             <button type="button" className={markupMode === "highlight" ? "is-active" : ""} onClick={() => setMarkupMode("highlight")}>荧光笔</button>
             <button type="button" className={markupMode === "underline" ? "is-active" : ""} onClick={() => setMarkupMode("underline")}>下划线</button>
             <div className="cambridge-markup-colors" aria-label="选择标记颜色">
               {cambridgeMarkupColors.map((item) => <button type="button" key={item.id} className={`cambridge-markup-color is-${item.id}${markupColor === item.id ? " is-active" : ""}`} aria-label={`${item.label}色`} aria-pressed={markupColor === item.id} onClick={() => setMarkupColor(item.id)}><i style={{ backgroundColor: item.value }} /></button>)}
             </div>
-            <button type="button" className="is-secondary" onClick={clearCurrentPartMarkups}>清除本部分</button>
+            <button type="button" className="is-secondary" onClick={removeLastMarkup} disabled={currentPartMarkupCount === 0}>撤销上一条</button>
+            <button type="button" className="is-secondary" onClick={clearCurrentPartMarkups} disabled={currentPartMarkupCount === 0}>清除本部分</button>
           </div>
           <div className="cambridge-daily-pdf-stack" aria-label={`${activePart.label} 题目，仅显示当前${isListening ? "听力" : "阅读"}部分`}>
             {activePart.pages.map((page) => <CambridgePdfPage
@@ -5378,6 +5410,7 @@ function CambridgeDailySourcePractice({
               mode={markupMode}
               color={markupColor}
               onAdd={(points) => addMarkup(page, points)}
+              onRemove={(id) => removeMarkup(page, id)}
             />)}
           </div>
         </section>
