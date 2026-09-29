@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const serviceWorkerVersion = "2026.09.28-cambridge-pdf-canvas-2";
+const serviceWorkerVersion = "2026.09.29-cambridge-markup-touch-1";
 
 function appBasePath() {
   const configuredBase = import.meta.env.BASE_URL || "/";

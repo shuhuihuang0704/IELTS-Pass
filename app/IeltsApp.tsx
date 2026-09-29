@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from "react";
 import AuthFlow from "./AuthFlow";
 import { AccountAvatar, AccountAvatarPicker, defaultAccountAvatar } from "./AccountAvatar";
 import type { AuthUser } from "./auth-server";
@@ -5140,18 +5140,61 @@ function CambridgeMarkupOverlay({
 }) {
   const [draft, setDraft] = useState<Array<[number, number]>>([]);
   const drawingRef = useRef(false);
-  const getPoint = (event: ReactPointerEvent<SVGSVGElement>): [number, number] => {
-    const rect = event.currentTarget.getBoundingClientRect();
+  const pointsRef = useRef<Array<[number, number]>>([]);
+  const getPointFromClient = (clientX: number, clientY: number, element: SVGSVGElement): [number, number] => {
+    const rect = element.getBoundingClientRect();
     return [
-      Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
-      Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+      Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+      Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
     ];
+  };
+  const getPoint = (event: ReactPointerEvent<SVGSVGElement>): [number, number] => {
+    return getPointFromClient(event.clientX, event.clientY, event.currentTarget);
   };
   const finish = () => {
     if (!drawingRef.current) return;
     drawingRef.current = false;
-    if (draft.length > 1) onAdd(draft);
+    const points = pointsRef.current;
+    pointsRef.current = [];
+    if (points.length > 1) onAdd(points);
     setDraft([]);
+  };
+  const begin = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    drawingRef.current = true;
+    const points = [getPoint(event)];
+    pointsRef.current = points;
+    setDraft(points);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Some older iOS WebViews do not implement pointer capture.
+    }
+  };
+  const move = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (!drawingRef.current) return;
+    event.preventDefault();
+    const points = [...pointsRef.current, getPoint(event)];
+    pointsRef.current = points;
+    setDraft(points);
+  };
+  const beginTouch = (event: ReactTouchEvent<SVGSVGElement>) => {
+    if (drawingRef.current || event.touches.length === 0) return;
+    event.preventDefault();
+    const touch = event.touches[0];
+    const points = [getPointFromClient(touch.clientX, touch.clientY, event.currentTarget)];
+    drawingRef.current = true;
+    pointsRef.current = points;
+    setDraft(points);
+  };
+  const moveTouch = (event: ReactTouchEvent<SVGSVGElement>) => {
+    if (!drawingRef.current || event.touches.length === 0) return;
+    event.preventDefault();
+    const touch = event.touches[0];
+    const points = [...pointsRef.current, getPointFromClient(touch.clientX, touch.clientY, event.currentTarget)];
+    pointsRef.current = points;
+    setDraft(points);
   };
   const colorValue = cambridgeMarkupColors.find((item) => item.id === color)?.value ?? "#f6d84a";
   const renderPoints = (points: Array<[number, number]>) => points.map(([x, y]) => `${x * 100},${y * 100}`).join(" ");
@@ -5160,23 +5203,16 @@ function CambridgeMarkupOverlay({
       className="cambridge-markup-overlay"
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
-      onPointerDown={(event) => {
-        drawingRef.current = true;
-        // Safari/iOS versions differ in pointer-capture support. A tap on the
-        // marker layer must never throw and take down the practice page.
-        try {
-          if (typeof event.currentTarget.setPointerCapture === "function") event.currentTarget.setPointerCapture(event.pointerId);
-        } catch {
-          // Drawing still works through pointermove/pointerup without capture.
-        }
-        setDraft([getPoint(event)]);
-      }}
-      onPointerMove={(event) => {
-        if (!drawingRef.current) return;
-        setDraft((current) => [...current, getPoint(event)]);
-      }}
+      onPointerDown={begin}
+      onPointerMove={move}
       onPointerUp={finish}
       onPointerCancel={finish}
+      onPointerLeave={finish}
+      onTouchStart={beginTouch}
+      onTouchMove={moveTouch}
+      onTouchEnd={finish}
+      onTouchCancel={finish}
+      onContextMenu={(event) => event.preventDefault()}
       aria-label="题目标记区域"
     >
       {annotations.map((annotation) => <polyline

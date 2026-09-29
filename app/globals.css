@@ -919,7 +919,7 @@ button { cursor: pointer; }
 .cambridge-pdf-status.is-error { gap:8px; align-content:center; color:#aa5c62; }
 .cambridge-pdf-status strong,.cambridge-pdf-status a { display:block; }
 .cambridge-pdf-status a { color:#5d50bd; font-weight:700; text-decoration:none; }
-.cambridge-markup-overlay { position:absolute; inset:0; z-index:3; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+.cambridge-markup-overlay { position:absolute; inset:0; z-index:3; width:100%; height:100%; cursor:crosshair; pointer-events:all; touch-action:none; user-select:none; -webkit-user-select:none; }
 .cambridge-markup-toolbar { margin:0 10px 10px; padding:9px 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; border:1px solid #e4dfe8; border-radius:11px; background:#faf9fc; }
 .cambridge-markup-toolbar>div:first-child { min-width:145px; flex:1; }
 .cambridge-markup-toolbar strong,.cambridge-markup-toolbar small { display:block; }
