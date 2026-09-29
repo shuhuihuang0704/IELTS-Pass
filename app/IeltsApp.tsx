@@ -5207,7 +5207,6 @@ function CambridgeMarkupOverlay({
       onPointerMove={move}
       onPointerUp={finish}
       onPointerCancel={finish}
-      onPointerLeave={finish}
       onTouchStart={beginTouch}
       onTouchMove={moveTouch}
       onTouchEnd={finish}
